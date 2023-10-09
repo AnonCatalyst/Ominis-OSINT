@@ -21,12 +21,10 @@ header = {"User-Agent": user_agent}
 with open("social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
-# Initialize the global variables
 unique_social_profiles = set()
 mention_links = []
 mention_counts = {}
 
-# Function to introduce a delay between requests
 def delay():
     time.sleep(3)  # Adjust the delay time as needed
 
@@ -149,6 +147,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Assuming you still want to run the other script
 print("")
 os.system(f"python3 usr.py {query}")  # username search
