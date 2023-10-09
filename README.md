@@ -4,6 +4,8 @@
 
 Ominis OSINT is a powerful open-source information gathering tool designed for extracting valuable insights from search engine results, including mentions of a specific query and identification of associated social profiles. This tool utilizes web scraping techniques to analyze Google search results and provides a comprehensive report on relevant information.
 
+<img src="img/screenshot.png" alt="Ominis Osint Project - screenshot" width="300"/>
+
 ## Features
 
 - **Google Search Integration:** Ominis OSINT leverages Google Search to fetch results based on user queries, allowing for a broader exploration of online content.
