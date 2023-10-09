@@ -8,7 +8,7 @@ from fake_useragent import UserAgent
 import urllib3
 import urllib.parse
 import time
-from concurrent.futures import ThreadPoolExecutor  # Add this line
+from concurrent.futures import ThreadPoolExecutor  
 
 # Disable urllib3 warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
