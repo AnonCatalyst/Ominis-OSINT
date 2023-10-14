@@ -1,5 +1,5 @@
-# Ominis OSINT Toolkit 🌐🕵️‍♂️
-![Ominis OSINT Tools](<your-repo-url>/img/screenshot.png)
+>>># Ominis OSINT Toolkit 🌐🕵️‍♂️
+![Ominis OSINT Tools](https://github.com/AnonCatalyst/Ominis-Osint/img/screenshot.png)
 
 >## Overview
 
@@ -24,7 +24,7 @@ Ominis OSINT Tools is dedicated to delivering results that are not only targeted
 
 ## Installation
 
-1. Clone the repository: `git clone https://github.com/YourUsername/Ominis-OSINT-Tools.git`
+1. Clone the repository: `git clone https://github.com/YourUsername/Ominis-OSINT`
 2. Install dependencies: `pip install -r requirements.txt`
 
 >>## Usage
