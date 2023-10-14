@@ -8,7 +8,31 @@ from fake_useragent import UserAgent
 import urllib3
 import urllib.parse
 import time
-from concurrent.futures import ThreadPoolExecutor  
+
+print(f"""{Fore.CYAN}
+⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣦⠀
+⢀⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡄
+⣜⢸⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⡏⢣
+⡿⡀⢿⣆⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⣰⣿⠀⣿
+⣇⠁⠘⡌⢷⣀⣠⣴⣾⣟⠉⠉⠉⠉⠉⠉⣻⣷⣦⣄⣀⡴⢫⠃⠈⣸
+⢻⡆⠀⠀⠀⠙⠻⣶⢝⢻⣧⡀⠀⠀⢀⣴⡿⡫⣶⠞⠛⠁⠀⠀⣰⡿
+⠀⠳⡀⠢⡀⠀⠀⠸⡇⢢⠹⡌⠀⠀⢉⠏⡰⢱⡏⠀⠀⢀⡰⢀⡞⠁
+⠀⢀⠟⢦⣈⠲⢌⣲⣿⠀⠀⢱⠀⠀⠜⠀⠁⣾⢒⣡⠔⢉⡴⠻⡄⠀
+⠀⢸⠀⠀⣈⣻⣞⡛⠛⢤⡀⠀⠀⠀⠀⢀⡠⠟⢛⣓⣟⣉⠀⠀⣧⠀
+⠀⢸⣶⢸⣍⡉⠉⠣⡀⠀⠈⢳⣠⣄⡜⠁⠀⢀⡴⠋⠉⠉⡏⢸⡿⠀
+⠀⠈⡏⢸⡜⣿⠑⢤⡘⠲⠤⠤⣿⣿⠤⠤⠔⠋⡠⠊⣿⣃⡆⢸⠁⠀
+⠀⢀⡿⠋⠙⠿⢷⣤⣹⣦⣀⣠⣼⣧⣄⣀⣠⣎⣤⡾⠿⠋⠙⢺⡄⠀
+⠀⠘⣷⠀⠀⢠⠆⠈⢙⡛⢯⣤⠀⠐⣤⡽⠛⠋⠁⠐⡄⠀⢀⣾⠇⠀
+⠀⠀⠘⣷⣀⡇⠀⢀⡀⣈⡆⢠⠀⠀⠀⢰⣇⡀⠀⠀⢸⣀⣼⠏⠀⠀
+⠀⠀⠀⣸⡿⣷⣞⠋⠉⢹⠁⢈⠀⠀⠀⠀⡏⠉⠙⣲⣾⢿⣇⠀⠀⠀
+⠀⠀⠀⣿⡇⣿⣿⢿⣆⠈⠻⣆⢣⡴⢱⠟⠁⣰⡶⣿⣿⠘⣿⠀⠀⠀
+⠀⠀⠀⠹⣆⢈⡿⢸⣿⣻⠦⣼⣦⣴⣯⠴⣞⣿⡇⢻⡇⢸⠏⠀⠀⠀
+⠀⠀⠀⠀⠘⣞⣠⢾⣿⣿⣶⣿⣼⣧⣼⣶⣿⣿⡷⢌⢻⡋⠀⠀⠀⠀
+⠀⠀⠀⠀⠘⠉⢿⡀⣹⣿⣿⣿⣿⣿⣿⣿⣿⢏⢁⡼⠋⠃⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⢻⡟⢿⣿⣿⣿⣿⣿⣿⡿⢸⡟⠁⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠘⠳⢦⣬⠿⠿⣡⣤⠾⠃⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀""")
 
 # Disable urllib3 warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -18,7 +42,7 @@ user_agent = UserAgent().random
 header = {"User-Agent": user_agent}
 
 # Load social platform patterns from a JSON file
-with open("social_platforms.json", "r") as json_file:
+with open("src/social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
 unique_social_profiles = set()
@@ -28,13 +52,25 @@ mention_counts = {}
 def delay():
     time.sleep(3)  # Adjust the delay time as needed
 
+# DuckDuckGo search function
+def duckduckgo_search(query, num_results):
+    search_results = []
+    try:
+        response = requests.get(f"https://duckduckgo.com/html/?q={query}&s={num_results}", headers=header, verify=False)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        search_results = soup.find_all("a", class_="result__url")
+    except requests.exceptions.RequestException as e:
+        print(f"Error making request to DuckDuckGo: {e}")
+    return search_results
+
 # Function to clear the screen
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 # Function to handle user input for the number of results
 def get_num_results():
-    num_results = input(f"{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter the number of results (default is 10){Fore.YELLOW}:{Fore.WHITE} ")
+    num_results = input(f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter the number of results (default is 10){Fore.YELLOW}:{Fore.WHITE} ")
     return int(num_results) if num_results.isdigit() else 10
 
 def make_request(url):
@@ -73,10 +109,34 @@ def is_potential_forum(url):
 
 def main():
     clear_screen()
-    print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Ominis Osint - Information Gathering{Fore.YELLOW}")
+    print(f"""{Fore.RED}
+⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣦⠀
+⢀⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡄
+⣜⢸⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⡏⢣
+⡿⡀⢿⣆⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⣰⣿⠀⣿
+⣇⠁⠘⡌⢷⣀⣠⣴⣾⣟⠉⠉⠉⠉⠉⠉⣻⣷⣦⣄⣀⡴⢫⠃⠈⣸
+⢻⡆⠀⠀⠀⠙⠻⣶⢝⢻⣧⡀⠀⠀⢀⣴⡿⡫⣶⠞⠛⠁⠀⠀⣰⡿
+⠀⠳⡀⠢⡀⠀⠀⠸⡇⢢⠹⡌⠀⠀⢉⠏⡰⢱⡏⠀⠀⢀⡰⢀⡞⠁
+⠀⢀⠟⢦⣈⠲⢌⣲⣿⠀⠀⢱⠀⠀⠜⠀⠁⣾⢒⣡⠔⢉⡴⠻⡄⠀
+⠀⢸⠀⠀⣈⣻⣞⡛⠛⢤⡀⠀⠀⠀⠀⢀⡠⠟⢛⣓⣟⣉⠀⠀⣧⠀
+⠀⢸⣶⢸⣍⡉⠉⠣⡀⠀⠈⢳⣠⣄⡜⠁⠀⢀⡴⠋⠉⠉⡏⢸⡿⠀
+⠀⠈⡏⢸⡜⣿⠑⢤⡘⠲⠤⠤⣿⣿⠤⠤⠔⠋⡠⠊⣿⣃⡆⢸⠁⠀
+⠀⢀⡿⠋⠙⠿⢷⣤⣹⣦⣀⣠⣼⣧⣄⣀⣠⣎⣤⡾⠿⠋⠙⢺⡄⠀
+⠀⠘⣷⠀⠀⢠⠆⠈⢙⡛⢯⣤⠀⠐⣤⡽⠛⠋⠁⠐⡄⠀⢀⣾⠇⠀
+⠀⠀⠘⣷⣀⡇⠀⢀⡀⣈⡆⢠⠀⠀⠀⢰⣇⡀⠀⠀⢸⣀⣼⠏⠀⠀
+⠀⠀⠀⣸⡿⣷⣞⠋⠉⢹⠁⢈⠀⠀⠀⠀⡏⠉⠙⣲⣾⢿⣇⠀⠀⠀{Fore.YELLOW}~ {Fore.WHITE}Ominis Osint {Fore.YELLOW}- {Fore.RED}[{Fore.WHITE}Query to web search{Fore.RED}]
+⠀⠀⠀⣿⡇⣿⣿⢿⣆⠈⠻⣆⢣⡴⢱⠟⠁⣰⡶⣿⣿⠘⣿⠀⠀⠀{Fore.RED}---------------------------------------
+⠀⠀⠀⠹⣆⢈⡿⢸⣿⣻⠦⣼⣦⣴⣯⠴⣞⣿⡇⢻⡇⢸⠏⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Developer{Fore.YELLOW}: {Fore.WHITE} AnonCatalyst {Fore.MAGENTA}<{Fore.RED}
+⠀⠀⠀⠀⠘⣞⣠⢾⣿⣿⣶⣿⣼⣧⣼⣶⣿⣿⡷⢌⢻⡋⠀⠀⠀ {Fore.RED}--------------------------------------- 
+⠀⠀⠀⠀⠘⠉⢿⡀⣹⣿⣿⣿⣿⣿⣿⣿⣿⢏⢁⡼⠋⠃⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Github{Fore.YELLOW}:{Fore.BLUE} https://github.com/AnonCatalyst{Fore.RED}
+⠀⠀⠀⠀⠀⠀⠈⢻⡟⢿⣿⣿⣿⣿⣿⣿⡿⢸⡟⠁⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠘⠳⢦⣬⠿⠿⣡⣤⠾⠃⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀""")
+    print("\n" + f"{Fore.RED}_" * 80 + "\n")
 
     global query
-    query = input(f"{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter your query{Fore.YELLOW}:{Fore.WHITE} ")
+    query = input(f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter your query{Fore.YELLOW}:{Fore.WHITE} ")
     num_results = get_num_results()
 
     retry_count = 0
@@ -91,7 +151,7 @@ def main():
             soup = BeautifulSoup(response.text, "html.parser")
             search_results = soup.find_all("div", class_="tF2Cxc")
 
-            for index, result in enumerate(search_results, start=1):
+            for index, result in enumerate(search_results, start=(page + 1)):
                 title = result.find("h3")
                 url = result.find("a")["href"] if result.find("a") else None
 
@@ -109,7 +169,7 @@ def main():
 
                     social_profiles = find_social_profiles(url)
                     if social_profiles:
-                        print(f"{Fore.RED}[{Fore.GREEN}>{Fore.RED}] {Fore.YELLOW}~ {Fore.GREEN}Social Profile(s) Found{Fore.YELLOW}!")
+                        #print(f"{Fore.RED}[{Fore.GREEN}>{Fore.RED}] {Fore.YELLOW}~ {Fore.GREEN}Social Profile(s) Found{Fore.YELLOW}!")
                         for profile in social_profiles:
                             if profile['profile_url'] not in all_unique_social_profiles:
                                 if profile['platform'] == 'Forum':
@@ -131,21 +191,51 @@ def main():
                 if retry_count < 3:
                     delay()
                     continue
+                else:
+                    # If Google search still fails after retries, switch to DuckDuckGo
+                    print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Switching to DuckDuckGo as an alternative search engine...\n")
+                    duckduckgo_results = duckduckgo_search(query, num_results)
+                    for index, result in enumerate(duckduckgo_results, start=1):
+                        url = result.get("href")
+                        print(f"{Fore.RED}_" * 80)
+                        print(f"{Fore.WHITE}{index}. {Fore.YELLOW}URL{Fore.YELLOW}:{Fore.WHITE} {url}")
 
-    # Print mention links
-    if all_mention_links:
-        print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.CYAN}'{query}'{Fore.WHITE} detected in Title{Fore.YELLOW}/{Fore.WHITE}Url{Fore.YELLOW}:")
-        for idx, mention_info in enumerate(all_mention_links, start=1):
+                        text_to_check = url
+                        mention_count = extract_mentions(text_to_check, query)
+
+                        if mention_count > 0:
+                            print(f"{Fore.YELLOW}~ {Fore.CYAN}'{query}' {Fore.WHITE}Detected in Url{Fore.YELLOW}: {Fore.MAGENTA}{url}")
+                            mention_links.append({"url": url, "count": mention_count})
+
+                        social_profiles = find_social_profiles(url)
+                        if social_profiles:
+                            print(f"{Fore.RED}[{Fore.GREEN}>{Fore.RED}] {Fore.YELLOW}~ {Fore.GREEN}Social Profile(s) Found{Fore.YELLOW}!")
+                            for profile in social_profiles:
+                                if profile['profile_url'] not in unique_social_profiles:
+                                    if profile['platform'] == 'Forum':
+                                        print(f"{Fore.YELLOW}~ {Fore.CYAN}{profile['platform']}{Fore.YELLOW}:{Fore.MAGENTA} {profile['profile_url']}")
+                                    else:
+                                        print(f"{Fore.YELLOW}~ {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
+                                    unique_social_profiles.add(profile['profile_url'])
+
+                            # Introduce a delay
+                            delay()
+
+    # Print mention links from DuckDuckGo
+    if mention_links:
+        print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.CYAN}'{query}'{Fore.WHITE} detected in Url{Fore.YELLOW}:")
+        for idx, mention_info in enumerate(mention_links, start=1):
             print(f"{Fore.YELLOW}~ {Fore.WHITE}{idx}. {mention_info['url']})")
 
-    # Print unique social profiles
-    if all_unique_social_profiles:
+    # Print unique social profiles from DuckDuckGo
+    if unique_social_profiles:
         print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Unique Social Profiles{Fore.YELLOW}:")
-        for idx, profile_url in enumerate(all_unique_social_profiles, start=1):
+        for idx, profile_url in enumerate(unique_social_profiles, start=1):
             print(f"{Fore.YELLOW}~ {Fore.WHITE}{idx}. {profile_url}")
 
 if __name__ == "__main__":
     main()
 
-print("")
+
+os.system(f"python3 serp.py {query}") # serp apii
 os.system(f"python3 usr.py {query}")  # username search
