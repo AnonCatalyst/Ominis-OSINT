@@ -28,7 +28,7 @@ Ominis OSINT is a powerful open-source information gathering tool designed for e
 
 - **Google Search Limitations:** Due to the nature of web scraping, users may encounter Google Search rate limits. The tool implements retries to mitigate this issue.
 
-- **Update 1.0 Releasing!**
+**Update 1.0 Releasing!**
 - includes >
 - Duckduckgo Engine Alternative uncase of error too many requests from google
 - banner & Touchups
