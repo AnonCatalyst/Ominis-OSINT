@@ -28,14 +28,14 @@ Ominis OSINT Tools is dedicated to delivering results that are not only targeted
 ## Installation
    ```
    git clone https://github.com/AnonCatalyst/Ominis-Osint
-   cd Ominis-Osint
    pip install -r requirements.txt
-   python3 Ominis.py
    ```
 >>## Usage
 
-1. Navigate to the script's directory: `cd Ominis-OSINT`
-2. Run the desired script: `python3 Ominis.py [options]`
+1. Navigate to the script's directory:
+   - `cd Ominis-OSINT`
+3. Run the desired script:
+   - `python3 Ominis.py [options]`
 
 > **|NOTE**
 ~ Place SerpAPI key in src/api_key.json file if you would like to make use of SerpAPI.
