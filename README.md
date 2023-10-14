@@ -1,5 +1,5 @@
 >>># Ominis OSINT Toolkit 🌐🕵️‍♂️
-![Ominis OSINT Tools](https://github.com/AnonCatalyst/Ominis-Osint/src/img/screenshot.png)
+![Ominis OSINT Tools](src/img/screenshot.png)
 
 >## Overview
 
@@ -15,7 +15,7 @@ Positioned as a robust solution for digital reconnaissance, Ominis OSINT Tools e
 ### Targeted and Actionable Results
 Ominis OSINT Tools is dedicated to delivering results that are not only targeted but also actionable. The emphasis is on providing users with information that is relevant to their investigations and capable of guiding informed decision-making.
 
-[![Watch the video](src/img/video.mp4)
+![Watch the video](src/img/video.mp4)
 
 ## Key Features
 
