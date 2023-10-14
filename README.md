@@ -1,5 +1,6 @@
->>># Ominis OSINT Toolkit 🌐🕵️‍♂️
-![Ominis OSINT Tools](src/img/screenshot.png)
+>># Ominis OSINT Toolkit 🌐🕵️‍♂️
+
+<img src="img/screenshot.png" alt="Ominis Osint Project - screenshot" width="500" height="400"/>
 
 >## Overview
 
