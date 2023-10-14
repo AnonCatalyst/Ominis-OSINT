@@ -1,5 +1,5 @@
 >>># Ominis OSINT Toolkit 🌐🕵️‍♂️
-![Ominis OSINT Tools](https://github.com/AnonCatalyst/Ominis-Osint/img/screenshot.png)
+![Ominis OSINT Tools](https://github.com/AnonCatalyst/Ominis-Osint/src/img/screenshot.png)
 
 >## Overview
 
@@ -15,6 +15,8 @@ Positioned as a robust solution for digital reconnaissance, Ominis OSINT Tools e
 ### Targeted and Actionable Results
 Ominis OSINT Tools is dedicated to delivering results that are not only targeted but also actionable. The emphasis is on providing users with information that is relevant to their investigations and capable of guiding informed decision-making.
 
+[![Watch the video](src/img/video.mp4)
+
 ## Key Features
 
 - **Three Specialized Scripts:** Choose from three distinct scripts, each catering to specific OSINT tasks.
@@ -23,17 +25,14 @@ Ominis OSINT Tools is dedicated to delivering results that are not only targeted
 - **Digital Reconnaissance Excellence:** Leverage the toolkit's strength in digital reconnaissance to uncover valuable insights.
 
 ## Installation
-
-1. Clone the repository: `git clone https://github.com/YourUsername/Ominis-OSINT`
-2. Install dependencies: `pip install -r requirements.txt`
-
+   ```
+   git clone https://github.com/AnonCatalyst/Ominis-Osint
+   cd Ominis-Osint
+   pip install -r requirements.txt
+   python3 Ominis.py
+   ```
 >>## Usage
 
 1. Navigate to the script's directory: `cd Ominis-OSINT`
 2. Run the desired script: `python3 Ominis.py [options]`
 
-## Examples
-
-```
-python3 Ominis.py
-```
