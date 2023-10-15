@@ -35,7 +35,7 @@ Ominis OSINT Tools is dedicated to delivering results that are not only targeted
 1. Navigate to the script's directory:
    - `cd Ominis-OSINT`
 3. Run the desired script:
-   - `python3 Ominis.py [options]`
+   - `python3 Ominis.py`
 
 > **|NOTE**
 ~ Place SerpAPI key in src/api_key.json file if you would like to make use of SerpAPI.
