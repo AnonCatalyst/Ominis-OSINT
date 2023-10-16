@@ -27,8 +27,6 @@ if len(sys.argv) != 2:
 # Get the username from the command-line argument
 username = sys.argv[1]
 
-# Assuming you have 'header' defined somewhere in your code
-
 # Username Search
 print(f" {Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{username}{Fore.RED} 〙\n")
 
