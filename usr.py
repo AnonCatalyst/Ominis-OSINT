@@ -19,8 +19,6 @@ headers = {
 # Set up the 'header' variable
 header = headers
 
-# Assuming you have colorama and other required modules imported properly
-
 # Check if the correct number of command-line arguments is provided
 if len(sys.argv) != 2:
     print("Usage: python3 search.py <username>")
