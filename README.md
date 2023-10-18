@@ -19,9 +19,6 @@ Ominis OSINT Tools is dedicated to delivering results that are not only targeted
 ![Watch the video](src/img/video.gif)
 
 ## Key Features
-
-- **Three Specialized Scripts:** Choose from three distinct scripts, each catering to specific OSINT tasks.
-- **Comprehensive Integration:** Seamlessly switch between scripts to enhance the breadth of your OSINT investigations.
 - **User-Friendly Interface:** Meticulously designed for ease of use, ensuring a smooth experience for both novice and experienced users.
 - **Digital Reconnaissance Excellence:** Leverage the toolkit's strength in digital reconnaissance to uncover valuable insights.
 
