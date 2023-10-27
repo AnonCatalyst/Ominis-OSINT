@@ -5,6 +5,7 @@ import urllib.parse
 import requests
 from colorama import Fore
 from fake_useragent import UserAgent
+from requests.exceptions import RequestException, ConnectionError, TooManyRedirects, SSLError
 
 # Initialize UserAgent object
 user_agent = UserAgent()
@@ -38,15 +39,14 @@ def username_search(username: str, url: str):
     try:
         s = requests.Session()
         s.headers.update(header)
-        response = s.get(urllib.parse.urljoin(url, username))
+        response = s.get(urllib.parse.urljoin(url, username), allow_redirects=False, timeout=5)
 
-        status_code = response.status_code
-        if status_code == 200:
+        if response.status_code == 200 and username.lower() in response.text.lower():
             print(
-                f"{Fore.CYAN}• {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✓{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.GREEN}{url}{Fore.WHITE} {status_code}"
+                f"{Fore.CYAN}• {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✓{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.GREEN}{url}{Fore.WHITE} {response.status_code}"
             )
-    except (requests.exceptions.ConnectionError, requests.exceptions.TooManyRedirects):
-        # Do nothing in case of connection error or too many redirects
+    except (ConnectionError, TooManyRedirects, RequestException, SSLError, TimeoutError):
+        # Ignore these specific exceptions
         pass
 
 
@@ -66,7 +66,8 @@ def main(username):
 if __name__ == "__main__":
     try:
         main(username)
-    except (urllib3.exceptions.MaxRetryError, requests.exceptions.RequestException):
-        pass
+    except RequestException as e:
+        print(f"Error: {e}")
 
 print("")
+

@@ -1,38 +1,14 @@
 import os
 import re
 import json
-import requests
+import httpx
+import urllib3
+import urllib.parse
+import asyncio
+import time
 from colorama import Fore
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-import urllib3
-import urllib.parse
-import time
-
-print(f"""{Fore.CYAN}
-⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣦⠀
-⢀⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡄
-⣜⢸⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⡏⢣
-⡿⡀⢿⣆⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⣰⣿⠀⣿
-⣇⠁⠘⡌⢷⣀⣠⣴⣾⣟⠉⠉⠉⠉⠉⠉⣻⣷⣦⣄⣀⡴⢫⠃⠈⣸
-⢻⡆⠀⠀⠀⠙⠻⣶⢝⢻⣧⡀⠀⠀⢀⣴⡿⡫⣶⠞⠛⠁⠀⠀⣰⡿
-⠀⠳⡀⠢⡀⠀⠀⠸⡇⢢⠹⡌⠀⠀⢉⠏⡰⢱⡏⠀⠀⢀⡰⢀⡞⠁
-⠀⢀⠟⢦⣈⠲⢌⣲⣿⠀⠀⢱⠀⠀⠜⠀⠁⣾⢒⣡⠔⢉⡴⠻⡄⠀
-⠀⢸⠀⠀⣈⣻⣞⡛⠛⢤⡀⠀⠀⠀⠀⢀⡠⠟⢛⣓⣟⣉⠀⠀⣧⠀
-⠀⢸⣶⢸⣍⡉⠉⠣⡀⠀⠈⢳⣠⣄⡜⠁⠀⢀⡴⠋⠉⠉⡏⢸⡿⠀
-⠀⠈⡏⢸⡜⣿⠑⢤⡘⠲⠤⠤⣿⣿⠤⠤⠔⠋⡠⠊⣿⣃⡆⢸⠁⠀
-⠀⢀⡿⠋⠙⠿⢷⣤⣹⣦⣀⣠⣼⣧⣄⣀⣠⣎⣤⡾⠿⠋⠙⢺⡄⠀
-⠀⠘⣷⠀⠀⢠⠆⠈⢙⡛⢯⣤⠀⠐⣤⡽⠛⠋⠁⠐⡄⠀⢀⣾⠇⠀
-⠀⠀⠘⣷⣀⡇⠀⢀⡀⣈⡆⢠⠀⠀⠀⢰⣇⡀⠀⠀⢸⣀⣼⠏⠀⠀
-⠀⠀⠀⣸⡿⣷⣞⠋⠉⢹⠁⢈⠀⠀⠀⠀⡏⠉⠙⣲⣾⢿⣇⠀⠀⠀
-⠀⠀⠀⣿⡇⣿⣿⢿⣆⠈⠻⣆⢣⡴⢱⠟⠁⣰⡶⣿⣿⠘⣿⠀⠀⠀
-⠀⠀⠀⠹⣆⢈⡿⢸⣿⣻⠦⣼⣦⣴⣯⠴⣞⣿⡇⢻⡇⢸⠏⠀⠀⠀
-⠀⠀⠀⠀⠘⣞⣠⢾⣿⣿⣶⣿⣼⣧⣼⣶⣿⣿⡷⢌⢻⡋⠀⠀⠀⠀
-⠀⠀⠀⠀⠘⠉⢿⡀⣹⣿⣿⣿⣿⣿⣿⣿⣿⢏⢁⡼⠋⠃⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠈⢻⡟⢿⣿⣿⣿⣿⣿⣿⡿⢸⡟⠁⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠘⠳⢦⣬⠿⠿⣡⣤⠾⠃⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀""")
 
 # Disable urllib3 warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -49,38 +25,33 @@ unique_social_profiles = set()
 mention_links = []
 mention_counts = {}
 
-def delay():
-    time.sleep(3)  # Adjust the delay time as needed
 
-# DuckDuckGo search function
-def duckduckgo_search(query, num_results):
-    search_results = []
-    try:
-        response = requests.get(f"https://duckduckgo.com/html/?q={query}&s={num_results}", headers=header, verify=False)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-        search_results = soup.find_all("a", class_="result__url")
-    except requests.exceptions.RequestException as e:
-        print(f"Error making request to DuckDuckGo: {e}")
-    return search_results
+def delay(seconds=3):
+    time.sleep(seconds)  # Adjust the delay time as needed
+
 
 # Function to clear the screen
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+
 # Function to handle user input for the number of results
 def get_num_results():
-    num_results = input(f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter the number of results (default is 10){Fore.YELLOW}:{Fore.WHITE} ")
+    num_results = input(
+        f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter the number of results (default is 10){Fore.YELLOW}:{Fore.WHITE} ")
     return int(num_results) if num_results.isdigit() else 10
 
-def make_request(url):
+
+async def make_request_async(url):
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            return response.text
+    except httpx.RequestError as e:
         print(f"Error making request to {url}: {e}")
         return None
+
 
 def find_social_profiles(url):
     profiles = []
@@ -96,10 +67,12 @@ def find_social_profiles(url):
 
     return profiles
 
+
 def extract_mentions(text, query):
     mention_pattern = rf"\b{re.escape(query)}\b"
     mentions = re.findall(mention_pattern, text, re.IGNORECASE)
     return len(mentions)
+
 
 def is_potential_forum(url):
     potential_forum_keywords = ["forum", "community", "discussion", "board", "chat", "hub"]
@@ -107,7 +80,8 @@ def is_potential_forum(url):
     path = url_parts.path.lower()
     return any(keyword in path for keyword in potential_forum_keywords)
 
-def main():
+
+async def main_async():
     clear_screen()
     print(f"""{Fore.RED}
 ⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣦⠀
@@ -144,97 +118,78 @@ def main():
     all_mention_links = []
     all_unique_social_profiles = set()
 
-    for page in range(0, num_results, 10):
-        try:
-            response = requests.get(f"https://www.google.com/search?q={query}&start={page}", headers=header, verify=False)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, "html.parser")
-            search_results = soup.find_all("div", class_="tF2Cxc")
+    async with httpx.AsyncClient(verify=False) as client:
+        while retry_count < 3:
+            try:
+                response = await client.get(f"https://www.google.com/search?q={query}", headers=header)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, "html.parser")
+                search_results = soup.find_all("div", class_="tF2Cxc")
 
-            for index, result in enumerate(search_results, start=(page + 1)):
-                title = result.find("h3")
-                url = result.find("a")["href"] if result.find("a") else None
+                if not search_results:
+                    print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}No results found for the query '{query}'{Fore.YELLOW}")
+                    break
 
-                if title and url:
-                    print(f"{Fore.RED}_" * 80)
-                    print(f"{Fore.WHITE}{index}. {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}")
-                    print(f"{Fore.YELLOW}~ {Fore.WHITE}URL{Fore.YELLOW}:{Fore.WHITE} {url}")
+                for index, result in enumerate(search_results, start=1):
+                    title = result.find("h3")
+                    url = result.find("a")["href"] if result.find("a") else None
 
-                    text_to_check = title.text + ' ' + url
-                    mention_count = extract_mentions(text_to_check, query)
-
-                    if mention_count > 0:
-                        print(f"{Fore.YELLOW}~ {Fore.CYAN}'{query}' {Fore.WHITE}Detected in Title{Fore.YELLOW}/{Fore.WHITE}Url{Fore.YELLOW}: {Fore.MAGENTA}{url}")
-                        all_mention_links.append({"url": url, "count": mention_count})
-
-                    social_profiles = find_social_profiles(url)
-                    if social_profiles:
-                        #print(f"{Fore.RED}[{Fore.GREEN}>{Fore.RED}] {Fore.YELLOW}~ {Fore.GREEN}Social Profile(s) Found{Fore.YELLOW}!")
-                        for profile in social_profiles:
-                            if profile['profile_url'] not in all_unique_social_profiles:
-                                if profile['platform'] == 'Forum':
-                                    print(f"{Fore.YELLOW}~ {Fore.CYAN}{profile['platform']}{Fore.YELLOW}:{Fore.MAGENTA} {profile['profile_url']}")
-                                else:
-                                    print(f"{Fore.YELLOW}~ {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
-                                all_unique_social_profiles.add(profile['profile_url'])
-
-                    # Introduce a delay
-                    delay()
-
-            # Introduce a delay
-            delay()
-
-        except requests.exceptions.HTTPError as google_error:
-            if google_error.response.status_code == 429:
-                retry_count += 1
-                print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Google Search rate limit reached (Retry: {retry_count}/3). Retrying...{Fore.YELLOW}")
-                if retry_count < 3:
-                    delay()
-                    continue
-                else:
-                    # If Google search still fails after retries, switch to DuckDuckGo
-                    print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Switching to DuckDuckGo as an alternative search engine...\n")
-                    duckduckgo_results = duckduckgo_search(query, num_results)
-                    for index, result in enumerate(duckduckgo_results, start=1):
-                        url = result.get("href")
+                    if title and url:
                         print(f"{Fore.RED}_" * 80)
-                        print(f"{Fore.WHITE}{index}. {Fore.YELLOW}URL{Fore.YELLOW}:{Fore.WHITE} {url}")
+                        print(f"{Fore.WHITE}{index}. {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}")
+                        print(f"{Fore.YELLOW}~ {Fore.WHITE}URL{Fore.YELLOW}:{Fore.WHITE} {url}")
 
-                        text_to_check = url
+                        text_to_check = title.text + ' ' + url
                         mention_count = extract_mentions(text_to_check, query)
 
                         if mention_count > 0:
-                            print(f"{Fore.YELLOW}~ {Fore.CYAN}'{query}' {Fore.WHITE}Detected in Url{Fore.YELLOW}: {Fore.MAGENTA}{url}")
-                            mention_links.append({"url": url, "count": mention_count})
+                            print(
+                                f"{Fore.YELLOW}~ {Fore.CYAN}'{query}' {Fore.WHITE}Detected in Title{Fore.YELLOW}/{Fore.WHITE}Url{Fore.YELLOW}: {Fore.MAGENTA}{url}")
+                            all_mention_links.append({"url": url, "count": mention_count})
 
                         social_profiles = find_social_profiles(url)
                         if social_profiles:
-                            print(f"{Fore.RED}[{Fore.GREEN}>{Fore.RED}] {Fore.YELLOW}~ {Fore.GREEN}Social Profile(s) Found{Fore.YELLOW}!")
                             for profile in social_profiles:
-                                if profile['profile_url'] not in unique_social_profiles:
+                                if profile['profile_url'] not in all_unique_social_profiles:
                                     if profile['platform'] == 'Forum':
-                                        print(f"{Fore.YELLOW}~ {Fore.CYAN}{profile['platform']}{Fore.YELLOW}:{Fore.MAGENTA} {profile['profile_url']}")
+                                        print(
+                                            f"{Fore.YELLOW}~ {Fore.CYAN}{profile['platform']}{Fore.YELLOW}:{Fore.MAGENTA} {profile['profile_url']}")
                                     else:
-                                        print(f"{Fore.YELLOW}~ {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
-                                    unique_social_profiles.add(profile['profile_url'])
+                                        print(
+                                            f"{Fore.YELLOW}~ {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
+                                    all_unique_social_profiles.add(profile['profile_url'])
 
-                            # Introduce a delay
-                            delay()
+                        # Introduce a delay
+                        await asyncio.sleep(3)
 
-    # Print mention links from DuckDuckGo
-    if mention_links:
-        print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.CYAN}'{query}'{Fore.WHITE} detected in Url{Fore.YELLOW}:")
-        for idx, mention_info in enumerate(mention_links, start=1):
-            print(f"{Fore.YELLOW}~ {Fore.WHITE}{idx}. {mention_info['url']})")
+                break  # Break out of the loop if successful
 
-    # Print unique social profiles from DuckDuckGo
-    if unique_social_profiles:
-        print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Unique Social Profiles{Fore.YELLOW}:")
-        for idx, profile_url in enumerate(unique_social_profiles, start=1):
+            except httpx.RequestError as google_error:
+                if google_error.response.status_code == 429:
+                    retry_count += 1
+                    print(
+                        f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Google Search rate limit reached (Retry: {retry_count}/3). Retrying in 30 seconds...{Fore.YELLOW}")
+                    await asyncio.sleep(30)
+                else:
+                    print(
+                        f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Error making request to Google: {google_error}. Retrying in 30 seconds...{Fore.YELLOW}")
+                    await asyncio.sleep(30)
+
+        # If Google search still fails after retries, tell the user and wait
+        if retry_count >= 3:
+            print(
+                f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Google Search failed after multiple retries. Please try again later.{Fore.YELLOW}")
+            await asyncio.sleep(60)
+
+    # Print all social profiles found during the Google search
+    if all_unique_social_profiles:
+        print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}All Social Profiles Found{Fore.YELLOW}:")
+        for idx, profile_url in enumerate(all_unique_social_profiles, start=1):
             print(f"{Fore.YELLOW}~ {Fore.WHITE}{idx}. {profile_url}")
 
+
 if __name__ == "__main__":
-    main()
+    asyncio.run(main_async())
 
 
 os.system(f"python3 serp.py {query}") # serp apii
