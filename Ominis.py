@@ -81,6 +81,7 @@ def is_potential_forum(url):
     return any(keyword in path for keyword in potential_forum_keywords)
 
 
+
 async def main_async():
     clear_screen()
     print(f"""{Fore.RED}
@@ -119,18 +120,23 @@ async def main_async():
     all_unique_social_profiles = set()
 
     async with httpx.AsyncClient(verify=False) as client:
-        while retry_count < 3:
+        total_results_to_fetch = min(100, num_results)  # Limit to 100 results to avoid Google limitations
+
+        # Loop to fetch multiple pages
+        for start_index in range(0, total_results_to_fetch, 10):
+            google_search_url = f"https://www.google.com/search?q={query}&start={start_index}"
+
             try:
-                response = await client.get(f"https://www.google.com/search?q={query}", headers=header)
+                response = await client.get(google_search_url, headers=header)
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, "html.parser")
                 search_results = soup.find_all("div", class_="tF2Cxc")
 
                 if not search_results:
-                    print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}No results found for the query '{query}'{Fore.YELLOW}")
+                    print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}No more results found for the query '{query}'{Fore.YELLOW}")
                     break
 
-                for index, result in enumerate(search_results, start=1):
+                for index, result in enumerate(search_results, start=start_index + 1):
                     title = result.find("h3")
                     url = result.find("a")["href"] if result.find("a") else None
 
@@ -162,8 +168,6 @@ async def main_async():
                         # Introduce a delay
                         await asyncio.sleep(3)
 
-                break  # Break out of the loop if successful
-
             except httpx.RequestError as google_error:
                 if google_error.response.status_code == 429:
                     retry_count += 1
@@ -191,6 +195,5 @@ async def main_async():
 if __name__ == "__main__":
     asyncio.run(main_async())
 
-
-os.system(f"python3 serp.py {query}") # serp apii
+os.system(f"python3 serp.py {query}")  # serp apii
 os.system(f"python3 usr.py {query}")  # username search
