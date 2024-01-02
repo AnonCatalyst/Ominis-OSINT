@@ -119,7 +119,7 @@ async def main_async():
     all_mention_links = []
     all_unique_social_profiles = set()
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with httpx.AsyncClient(verify=True) as client:
         total_results_to_fetch = min(300, num_results)  # Limit to 100 results to avoid Google limitations
 
         # Loop to fetch multiple pages
