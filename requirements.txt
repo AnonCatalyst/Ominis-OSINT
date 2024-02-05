@@ -4,3 +4,4 @@ fake_useragent
 requests
 serpapi
 google-search-results
+httpx
