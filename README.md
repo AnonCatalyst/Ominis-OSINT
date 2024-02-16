@@ -1,9 +1,13 @@
-># Ominis OSINT Toolkit 🌐🕵️‍♂️
+># Ominis OSINT Toolkit 🌐🕵️‍♂️©
 
 **Information Obtained**
     Discover online mentions of a query or username.
     Identify potential social profiles and forums.
     Enhance web searches with SerpApi for more accurate results.
+
+
+-- **NOTE:** `Hellow World 🌍 👋 - an update for Ominis-Osint is expected in the near future 😉`
+
 
 **Why Ominis?**
     Ominis offers a unified solution for multiple OSINT tasks.
