@@ -6,7 +6,7 @@
     Enhance web searches with SerpApi for more accurate results.
 
 
--- **NOTE:** `Hellow World 🌍 👋 - an update for Ominis-Osint is expected in the near future 😉`
+-- **NOTE:** `Hellow World 🌍 👋 - an update for Ominis-Osint is currently being worked on! 😉`
 
 
 **Why Ominis?**
