@@ -5,3 +5,4 @@ requests
 serpapi
 google-search-results
 httpx
+tenacity
