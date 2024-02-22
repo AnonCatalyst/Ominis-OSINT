@@ -175,20 +175,15 @@ async def fetch_google_results(query, proxies=None):
 
                 await asyncio.sleep(2)  # Introduce delay between requests
 
+        if all_mention_links:
+            logger.info(f"\n >| {Fore.RED}- {Fore.WHITE}Mentions{Fore.YELLOW}:{Fore.GREEN}")
+            for mention in all_mention_links:
+                logger.info(f"\n >| {Fore.RED}-{Fore.GREEN} {mention['url']}{Fore.WHITE}")
+
     if not all_mention_links:
         logger.info(f" {Fore.RED}Google search failed to find any mentions of {Fore.BLUE}'{query}'{Fore.RED}.{Fore.WHITE}")
     else:
-        logger.info(f"\n >| {Fore.RED}- {Fore.WHITE}Mentions{Fore.YELLOW}:{Fore.GREEN} {mention['count']}{Fore.WHITE}")
-        logger.info(f" >| {Fore.WHITE}All mentions found for{Fore.BLUE} '{query}'{Fore.YELLOW}:{Fore.GREEN}")
-        for mention in all_mention_links:
-            logger.info(f"\n >| {Fore.RED}-{Fore.GREEN} {mention['url']}{Fore.WHITE}")
-
-    if all_unique_social_profiles:
-        logger.info(f" >| {Fore.WHITE}Unique Social Profiles found{Fore.YELLOW}:{Fore.WHITE}")
-        for profile_url in all_unique_social_profiles:
-            logger.info(f" {Fore.GREEN}{profile_url}{Fore.WHITE}")
-
-    logger.info(f" \n{Fore.RED}/{Fore.GREEN} Process completed successfully.")
+        logger.info(f" {Fore.RED}/{Fore.GREEN} Process completed successfully.")
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
