@@ -1,88 +1,227 @@
+import random
+import asyncio
 import os
 import re
 import json
-import httpx
-import urllib3
+import logging
 import urllib.parse
-import asyncio
-import time
-from colorama import Fore
+import httpx
+import aiohttp
+from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
+from httpx import TimeoutException, RequestError
+from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-# Disable urllib3 warnings
+# Suppress InsecureRequestWarning
+import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Get a random user agent
-user_agent = UserAgent().random
-header = {"User-Agent": user_agent}
+# Logging configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+init(autoreset=True)  # Initialize colorama for colored output
+
+DEFAULT_NUM_RESULTS = 300
+MAX_RETRY_COUNT = 3
 
 # Load social platform patterns from a JSON file
 with open("src/social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
-unique_social_profiles = set()
-mention_links = []
-mention_counts = {}
+
+counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
+emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 
-def delay(seconds=3):
-    time.sleep(seconds)  # Adjust the delay time as needed
+async def scrape_proxies():
+    proxies = []
+    proxy_url = "https://www.proxy-list.download/HTTP"
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            response = await session.get(proxy_url)
+            if response.status == 200:
+                html = await response.text()
+                soup = BeautifulSoup(html, 'html.parser')
+                tbody = soup.find('tbody', id='tabli')
+                if tbody:
+                    for tr in tbody.find_all('tr'):
+                        tds = tr.find_all('td', limit=2)  # Limit the number of TDs to 2
+                        if len(tds) == 2:  # Ensure IP address and port are present
+                            ip_address = tds[0].get_text(strip=True)
+                            port = tds[1].get_text(strip=True)
+                            proxy = f"{ip_address}:{port}"
+                            proxies.append(proxy)
+                    logger.info(f"{Fore.RED} [{Fore.GREEN}+{Fore.RED}]{Fore.WHITE} Proxies scraped successfully{Fore.RED}. {Fore.BLUE}Total{Fore.YELLOW}:{Fore.GREEN} {len(proxies)}")
+                else:
+                    logger.error(f" Proxy list not found in the response.")
+            else:
+                logger.error(f" Failed to retrieve proxy list. Status code: {response.status}")
+
+        except Exception as e:
+            logger.error(f" Error scraping proxies: {e}")
+    if not proxies:
+        logger.error(f" No proxies scraped. Exiting...")
 
 
-# Function to clear the screen
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    # Filter out invalid characters from the proxy list
+    valid_proxies = []
+    for proxy in proxies:
+        try:
+            url = urllib.parse.urlparse(f"http://{proxy}")
+            valid_proxies.append(proxy)
+        except ValueError:
+            logger.warning(f" Invalid proxy: {proxy}")
+    return valid_proxies
 
 
-# Function to handle user input for the number of results
-def get_num_results():
-    num_results = input(
-        f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter the number of results (default is 10){Fore.YELLOW}:{Fore.WHITE} ")
-    return int(num_results) if num_results.isdigit() else 10
+async def make_request_async(url, proxies=None):
+    retry_count = 0
+    while retry_count < MAX_RETRY_COUNT:
+        try:
+            async with httpx.AsyncClient() as client:
+                if proxies:
+                    proxy = random.choice(proxies)
+                    logger.info(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Using proxy{Fore.YELLOW}:{Fore.CYAN} {proxy}{Fore.WHITE}")
+                    client.proxies = {"http://": proxy}
+                client.headers = {"User-Agent": UserAgent().random}
+                response = await client.get(url, timeout=5)
+                
+                # Handle redirect
+                if response.status_code == 302:
+                    redirect_location = response.headers.get('location')
+                    if redirect_location:
+                        logger.info(f" Redirecting to: {redirect_location}")
+                        return await make_request_async(redirect_location, proxies)
+                
+                response.raise_for_status()
+                return response.text
+            
+        except httpx.RequestError as e:
+            logger.error(f" Failed to make connection: {e}")
+                
+            retry_count += 1
+            logger.info(f" Retrying request {retry_count}/{MAX_RETRY_COUNT}...")
+            await asyncio.sleep(5 * retry_count)  # Increase delay with each retry
+
+    logger.info(f" Final retry using DuckDuckGo...")
+    return await fetch_ddg_results(url)
 
 
-async def make_request_async(url):
+async def fetch_ddg_results(query):
+    ddg_url = f"https://duckduckgo.com/html/?q={query}"
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url)
+            response = await client.get(ddg_url, timeout=10)
             response.raise_for_status()
             return response.text
     except httpx.RequestError as e:
-        print(f"Error making request to {url}: {e}")
+        logger.error(f" Failed to make connection using DuckDuckGo: {e}")
         return None
 
 
+async def fetch_google_results(query, proxies=None):
+    all_mention_links = []
+    all_unique_social_profiles = set()
+
+    for start_index in range(0, DEFAULT_NUM_RESULTS):
+        google_search_url = f"https://www.google.com/search?q={query}&start={start_index}"
+
+        response_text = await make_request_async(google_search_url, proxies)
+        if response_text is None:
+            logger.error(f" Google search failed.")
+            continue
+
+        # Check if Google detected too many requests (status code 429)
+        if "www.google.com/sorry/index?continue=" in response_text:
+            logger.warning(" Google detected too many requests. Retrying with DuckDuckGo...")
+            response_text = await fetch_ddg_results(query)
+            if response_text is None:
+                logger.error(" DuckDuckGo search failed.")
+                continue
+
+        soup = BeautifulSoup(response_text, "html.parser")
+        search_results = soup.find_all("div", class_="tF2Cxc")
+
+        if not search_results:
+            logger.info(f" {Fore.RED}x No more results found for the query {Fore.BLUE}'{query}'{Fore.WHITE}")
+            break
+
+        for index, result in enumerate(search_results, start=start_index + 1):
+            title = result.find("h3")
+            url = result.find("a")["href"] if result.find("a") else None
+
+            if title and url:
+                emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
+                logger.info(Style.BRIGHT + f"{Fore.WHITE}_" * 80)
+                logger.info(f" {emoji} {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}{Fore.WHITE}")
+                logger.info(f" {emoji} {Fore.BLUE}URL{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {url}{Fore.WHITE}")
+
+                text_to_check = title.text + ' ' + url
+                mention_count = extract_mentions(text_to_check, query)
+
+                for q, count in mention_count.items():
+                    if count > 0:
+                        logger.info(f" {emoji} {Fore.YELLOW}'{q}' {Fore.CYAN}Detected in {Fore.MAGENTA}Title{Fore.RED}/{Fore.MAGENTA}Url{Fore.YELLOW}:{Fore.GREEN} {url}{Fore.WHITE}")
+                        all_mention_links.append({"url": url, "count": count})
+
+                social_profiles = find_social_profiles(url)
+                if social_profiles:
+                    for profile in social_profiles:
+                        logger.info(f" {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
+                        all_unique_social_profiles.add(profile['profile_url'])
+
+                await asyncio.sleep(2)  # Introduce delay between requests
+
+    if not all_mention_links:
+        logger.info(f" {Fore.RED}Google search failed to find any mentions of {Fore.BLUE}'{query}'{Fore.RED}.{Fore.WHITE}")
+    else:
+        logger.info(f"\n >| {Fore.RED}- {Fore.WHITE}Mentions{Fore.YELLOW}:{Fore.GREEN} {mention['count']}{Fore.WHITE}")
+        logger.info(f" >| {Fore.WHITE}All mentions found for{Fore.BLUE} '{query}'{Fore.YELLOW}:{Fore.GREEN}")
+        for mention in all_mention_links:
+            logger.info(f"\n >| {Fore.RED}-{Fore.GREEN} {mention['url']}{Fore.WHITE}")
+
+    if all_unique_social_profiles:
+        logger.info(f" >| {Fore.WHITE}Unique Social Profiles found{Fore.YELLOW}:{Fore.WHITE}")
+        for profile_url in all_unique_social_profiles:
+            logger.info(f" {Fore.GREEN}{profile_url}{Fore.WHITE}")
+
+    logger.info(f" \n{Fore.RED}/{Fore.GREEN} Process completed successfully.")
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
 def find_social_profiles(url):
+    if not isinstance(url, str):
+        raise ValueError(" URL must be a string")
+
     profiles = []
+
     for platform, pattern in social_platforms.items():
         match = re.search(pattern, url)
         if match:
             profile_url = match.group(0)
             profiles.append({"platform": platform, "profile_url": profile_url})
 
-    # Check if the URL contains forum keywords
     if is_potential_forum(url):
         profiles.append({"platform": "Forum", "profile_url": url})
 
     return profiles
-
-
 def extract_mentions(text, query):
-    mention_pattern = rf"\b{re.escape(query)}\b"
-    mentions = re.findall(mention_pattern, text, re.IGNORECASE)
-    return len(mentions)
+    if not isinstance(text, str) or not text:
+        raise ValueError(" Input 'text' must be a non-empty string.")
+    
+    if isinstance(query, str):
+        query = [query]
+    elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
+        raise ValueError(" Input 'query' must be a string or a list of strings.")
 
+    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
+    return mention_count
 
-def is_potential_forum(url):
-    potential_forum_keywords = ["forum", "community", "discussion", "board", "chat", "hub"]
-    url_parts = urllib.parse.urlparse(url)
-    path = url_parts.path.lower()
-    return any(keyword in path for keyword in potential_forum_keywords)
-
-
-
-async def main_async():
+async def main():
     clear_screen()
     print(f"""{Fore.RED}
 ⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣦⠀
@@ -99,101 +238,79 @@ async def main_async():
 ⠀⢀⡿⠋⠙⠿⢷⣤⣹⣦⣀⣠⣼⣧⣄⣀⣠⣎⣤⡾⠿⠋⠙⢺⡄⠀
 ⠀⠘⣷⠀⠀⢠⠆⠈⢙⡛⢯⣤⠀⠐⣤⡽⠛⠋⠁⠐⡄⠀⢀⣾⠇⠀
 ⠀⠀⠘⣷⣀⡇⠀⢀⡀⣈⡆⢠⠀⠀⠀⢰⣇⡀⠀⠀⢸⣀⣼⠏⠀⠀
-⠀⠀⠀⣸⡿⣷⣞⠋⠉⢹⠁⢈⠀⠀⠀⠀⡏⠉⠙⣲⣾⢿⣇⠀⠀⠀{Fore.YELLOW}~ {Fore.WHITE}Ominis Osint {Fore.YELLOW}- {Fore.RED}[{Fore.WHITE}Query to web search{Fore.RED}]
+⠀⠀⠀⣸⡿⣷⣞⠋⠉⢹⠁⢈⠀⠀⠀⠀⡏⠉⠙⣲⣾⢿⣇⠀⠀⠀{Fore.YELLOW}~ {Fore.WHITE}Ominis Osint {Fore.YELLOW}- {Fore.RED}[{Fore.WHITE}Secure Web-history Search{Fore.RED}]
 ⠀⠀⠀⣿⡇⣿⣿⢿⣆⠈⠻⣆⢣⡴⢱⠟⠁⣰⡶⣿⣿⠘⣿⠀⠀⠀{Fore.RED}---------------------------------------
 ⠀⠀⠀⠹⣆⢈⡿⢸⣿⣻⠦⣼⣦⣴⣯⠴⣞⣿⡇⢻⡇⢸⠏⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Developer{Fore.YELLOW}: {Fore.WHITE} AnonCatalyst {Fore.MAGENTA}<{Fore.RED}
 ⠀⠀⠀⠀⠘⣞⣠⢾⣿⣿⣶⣿⣼⣧⣼⣶⣿⣿⡷⢌⢻⡋⠀⠀⠀ {Fore.RED}--------------------------------------- 
-⠀⠀⠀⠀⠘⠉⢿⡀⣹⣿⣿⣿⣿⣿⣿⣿⣿⢏⢁⡼⠋⠃⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Github{Fore.YELLOW}:{Fore.BLUE} https://github.com/AnonCatalyst{Fore.RED}
-⠀⠀⠀⠀⠀⠀⠈⢻⡟⢿⣿⣿⣿⣿⣿⣿⡿⢸⡟⠁⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠘⠉⢿⡀⣹⣿⣿⣿⣿⣿⣿⣿⣿⢏⢁⡼⠋⠃⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Github{Fore.YELLOW}:{Fore.BLUE} https://github.com/AnonCatalyst/{Fore.RED}
+⠀⠀⠀⠀⠀⠀⠈⢻⡟⢿⣿⣿⣿⣿⣿⣿⡿⢸⡟⠁⠀⠀⠀⠀⠀⠀{Fore.RED}--------------------------------------- 
+⠀⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Instagram{Fore.YELLOW}:{Fore.BLUE} https://www.instagram.com/istoleyourbutter/{Fore.RED}
 ⠀⠀⠀⠀⠀⠀⠀⠀⠘⠳⢦⣬⠿⠿⣡⣤⠾⠃⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀""")
     print("\n" + f"{Fore.RED}_" * 80 + "\n")
+    
+    proxies = await scrape_proxies()
+    if not proxies:
+        logger.error(f" {Fore.RED}No proxies scraped. Exiting...")
+        return
+    else:
+        logger.info(f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}]{Fore.WHITE} Beginning proxy validation for proxy rotation{Fore.RED}.{Fore.WHITE}\n")
+    
+    valid_proxies = await validate_proxies(proxies)
+    if not valid_proxies:
+        logger.error(f" {Fore.RED}No valid proxies found. Exiting...{Fore.WHITE}")
+        return
+    else:
+        logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
+    
+    query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
+    await fetch_google_results(query, valid_proxies)
+    
+    count = 0  # Initialize count
+    count = await fetch_google_results(query, valid_proxies, count=count)
+    await asyncio.sleep(3)  # Introduce delay between requests
 
-    global query
-    query = input(f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Enter your query{Fore.YELLOW}:{Fore.WHITE} ")
-    num_results = get_num_results()
+def is_potential_forum(url):
+    potential_forum_keywords = ["forum", "community", "discussion", "board", "chat", "hub"]
+    url_parts = urllib.parse.urlparse(url)
+    path = url_parts.path.lower()
+    return any(keyword in path for keyword in potential_forum_keywords)
 
-    retry_count = 0
-    all_results = []
-    all_mention_links = []
-    all_unique_social_profiles = set()
-
-    async with httpx.AsyncClient(verify=True) as client:
-        total_results_to_fetch = min(300, num_results)  # Limit to 100 results to avoid Google limitations
-
-        # Loop to fetch multiple pages
-        for start_index in range(0, total_results_to_fetch, 10):
-            google_search_url = f"https://www.google.com/search?q={query}&start={start_index}"
-
-            try:
-                response = await client.get(google_search_url, headers=header)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, "html.parser")
-                search_results = soup.find_all("div", class_="tF2Cxc")
-
-                if not search_results:
-                    print(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}No more results found for the query '{query}'{Fore.YELLOW}")
-                    break
-
-                for index, result in enumerate(search_results, start=start_index + 1):
-                    title = result.find("h3")
-                    url = result.find("a")["href"] if result.find("a") else None
-
-                    if title and url:
-                        print(f"{Fore.RED}_" * 80)
-                        print(f"{Fore.WHITE}{index}. {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}")
-                        print(f"{Fore.YELLOW}~ {Fore.WHITE}URL{Fore.YELLOW}:{Fore.WHITE} {url}")
-
-                        text_to_check = title.text + ' ' + url
-                        mention_count = extract_mentions(text_to_check, query)
-
-                        if mention_count > 0:
-                            print(
-                                f"{Fore.YELLOW}~ {Fore.CYAN}'{query}' {Fore.WHITE}Detected in Title{Fore.YELLOW}/{Fore.WHITE}Url{Fore.YELLOW}: {Fore.MAGENTA}{url}")
-                            all_mention_links.append({"url": url, "count": mention_count})
-
-                        social_profiles = find_social_profiles(url)
-                        if social_profiles:
-                            for profile in social_profiles:
-                                if profile['profile_url'] not in all_unique_social_profiles:
-                                    if profile['platform'] == 'Forum':
-                                        print(
-                                            f"{Fore.YELLOW}~ {Fore.CYAN}{profile['platform']}{Fore.YELLOW}:{Fore.MAGENTA} {profile['profile_url']}")
-                                    else:
-                                        print(
-                                            f"{Fore.YELLOW}~ {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
-                                    all_unique_social_profiles.add(profile['profile_url'])
-
-                        # Introduce a delay
-                        await asyncio.sleep(3)
-
-            except httpx.RequestError as google_error:
-                if google_error.response.status_code == 429:
-                    retry_count += 1
-                    print(
-                        f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Google Search rate limit reached (Retry: {retry_count}/3). Retrying in 30 seconds...{Fore.YELLOW}")
-                    await asyncio.sleep(30)
+async def validate_proxies(proxies, timeout=10, retry_attempts=3, retry_statuses={429, 500, 502, 503, 504}, 
+                           backoff_factor=2, max_backoff=60, jitter=0.5):
+    valid_proxies = []
+    logger = logging.getLogger(__name__)
+    
+    def retry_predicate(exception):
+        return isinstance(exception, (TimeoutException, RequestError))
+    
+    retry_policy = Retrying(
+        stop=stop_after_attempt(retry_attempts),
+        wait=wait_exponential(multiplier=backoff_factor, max=max_backoff),
+        retry=retry_if_exception_type(retry_predicate)
+    )
+    
+    for proxy in proxies:
+        proxy_with_scheme = proxy if proxy.startswith("http") else f"http://{proxy}"
+        try:
+            logger.info(f" {Fore.WHITE}Validating proxy{Fore.YELLOW}: {Fore.CYAN}{proxy_with_scheme}{Fore.WHITE}")  # Add color to the log message
+            async with httpx.AsyncClient(proxies={proxy_with_scheme: None}, timeout=timeout) as client:
+                response = await client.get("https://www.google.com", timeout=timeout)
+                if response.status_code == 200:
+                    valid_proxies.append(proxy_with_scheme)
+                    logger.info(f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}]{Fore.GREEN} Proxy {Fore.CYAN}{proxy_with_scheme} {Fore.GREEN}is valid{Fore.RED}.{Fore.WHITE}")
                 else:
-                    print(
-                        f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Error making request to Google: {google_error}. Retrying in 30 seconds...{Fore.YELLOW}")
-                    await asyncio.sleep(30)
-
-        # If Google search still fails after retries, tell the user and wait
-        if retry_count >= 3:
-            print(
-                f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.YELLOW}~ {Fore.RED}Google Search failed after multiple retries. Please try again later.{Fore.YELLOW}")
-            await asyncio.sleep(60)
-
-    # Print all social profiles found during the Google search
-    if all_unique_social_profiles:
-        print(f"\n{Fore.RED}[{Fore.GREEN}+{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}All Social Profiles Found{Fore.YELLOW}:")
-        for idx, profile_url in enumerate(all_unique_social_profiles, start=1):
-            print(f"{Fore.YELLOW}~ {Fore.WHITE}{idx}. {profile_url}")
-
+                    logger.error(f" {Fore.RED}Proxy {proxy_with_scheme} returned status code {response.status_code}.")
+        except (TimeoutException, RequestError) as e:
+            logger.error(f" {Fore.RED}Error occurred while testing proxy {proxy_with_scheme}: {e}")
+        finally:
+            # Introduce a random delay before the next request to avoid overwhelming the server
+            await asyncio.sleep(random.uniform(1, 3))  # Adjust the range as needed
+    
+    return valid_proxies
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
+    asyncio.run(main())
 
 os.system(f"python3 serp.py {query}")  # serp apii
 os.system(f"python3 usr.py {query}")  # username search
