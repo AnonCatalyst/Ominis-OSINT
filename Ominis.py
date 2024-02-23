@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 init(autoreset=True)  # Initialize colorama for colored output
 
-DEFAULT_NUM_RESULTS = 300
+DEFAULT_NUM_RESULTS = 500
 MAX_RETRY_COUNT = 3
 
 # Load social platform patterns from a JSON file
@@ -62,19 +62,12 @@ async def scrape_proxies():
 
         except Exception as e:
             logger.error(f" Error scraping proxies: {e}")
+            
     if not proxies:
         logger.error(f" No proxies scraped. Exiting...")
+        
+    return proxies
 
-
-    # Filter out invalid characters from the proxy list
-    valid_proxies = []
-    for proxy in proxies:
-        try:
-            url = urllib.parse.urlparse(f"http://{proxy}")
-            valid_proxies.append(proxy)
-        except ValueError:
-            logger.warning(f" Invalid proxy: {proxy}")
-    return valid_proxies
 
 
 async def make_request_async(url, proxies=None):
@@ -125,65 +118,81 @@ async def fetch_ddg_results(query):
 async def fetch_google_results(query, proxies=None):
     all_mention_links = []
     all_unique_social_profiles = set()
+    unique_urls = set()  # Set to store unique URLs
+    total_results = 0
+    max_unique_results = 500  # Maximum number of unique results to retrieve
+    consecutive_failures = 0
+    last_successful_page = 0
+    page_number = 1
+    start_index = 0
 
-    for start_index in range(0, DEFAULT_NUM_RESULTS):
+    while page_number <= 500 and len(unique_urls) < max_unique_results:
         google_search_url = f"https://www.google.com/search?q={query}&start={start_index}"
 
-        response_text = await make_request_async(google_search_url, proxies)
-        if response_text is None:
-            logger.error(f" Google search failed.")
-            continue
-
-        # Check if Google detected too many requests (status code 429)
-        if "www.google.com/sorry/index?continue=" in response_text:
-            logger.warning(" Google detected too many requests. Retrying with DuckDuckGo...")
-            response_text = await fetch_ddg_results(query)
+        try:
+            response_text = await make_request_async(google_search_url, proxies)
             if response_text is None:
-                logger.error(" DuckDuckGo search failed.")
+                consecutive_failures += 1
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                    logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.")
+                    proxies.pop(0)  # Remove the failed proxy
+                    consecutive_failures = 0  # Reset consecutive failures counter
+                    last_successful_page = page_number - 1  # Update last successful page
                 continue
+            else:
+                consecutive_failures = 0  # Reset consecutive failures counter
 
-        soup = BeautifulSoup(response_text, "html.parser")
-        search_results = soup.find_all("div", class_="tF2Cxc")
+            soup = BeautifulSoup(response_text, "html.parser")
+            search_results = soup.find_all("div", class_="tF2Cxc")
 
-        if not search_results:
-            logger.info(f" {Fore.RED}x No more results found for the query {Fore.BLUE}'{query}'{Fore.WHITE}")
-            break
+            if not search_results:
+                logger.info(f"{Fore.RED}x No more results found for the query {Fore.BLUE}'{query}'{Fore.WHITE}")
+                break
 
-        for index, result in enumerate(search_results, start=start_index + 1):
-            title = result.find("h3")
-            url = result.find("a")["href"] if result.find("a") else None
+            for result in search_results:
+                title = result.find("h3")
+                url = result.find("a", href=True)["href"] if result.find("a", href=True) else None
 
-            if title and url:
-                emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
-                logger.info(Style.BRIGHT + f"{Fore.WHITE}_" * 80)
-                logger.info(f" {emoji} {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}{Fore.WHITE}")
-                logger.info(f" {emoji} {Fore.BLUE}URL{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {url}{Fore.WHITE}")
+                if not url or url.startswith('/'):
+                    continue  # Skip invalid URLs
 
-                text_to_check = title.text + ' ' + url
-                mention_count = extract_mentions(text_to_check, query)
+                if url in unique_urls:  # Check if URL is already processed
+                    continue
 
-                for q, count in mention_count.items():
-                    if count > 0:
-                        logger.info(f" {emoji} {Fore.YELLOW}'{q}' {Fore.CYAN}Detected in {Fore.MAGENTA}Title{Fore.RED}/{Fore.MAGENTA}Url{Fore.YELLOW}:{Fore.GREEN} {url}{Fore.WHITE}")
-                        all_mention_links.append({"url": url, "count": count})
+                unique_urls.add(url)  # Add URL to set of unique URLs
 
-                social_profiles = find_social_profiles(url)
-                if social_profiles:
-                    for profile in social_profiles:
-                        logger.info(f" {Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
-                        all_unique_social_profiles.add(profile['profile_url'])
+                if title and url:
+                    logger.info(Style.BRIGHT + f"{Fore.WHITE}{'_' * 80}")
+                    logger.info(f"{random.choice(counter_emojis)} {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}")
+                    logger.info(f"{random.choice(counter_emojis)} {Fore.BLUE}URL{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {url}")
 
-                await asyncio.sleep(2)  # Introduce delay between requests
+                    text_to_check = title.text + ' ' + url
+                    mention_count = extract_mentions(text_to_check, query)
 
-        if all_mention_links:
-            logger.info(f"\n >| {Fore.RED}- {Fore.WHITE}Mentions{Fore.YELLOW}:{Fore.GREEN}")
-            for mention in all_mention_links:
-                logger.info(f"\n >| {Fore.RED}-{Fore.GREEN} {mention['url']}{Fore.WHITE}")
+                    for q, count in mention_count.items():
+                        if count > 0:
+                            logger.info(f"{random.choice(counter_emojis)} {Fore.YELLOW}'{q}' {Fore.CYAN}Detected in {Fore.MAGENTA}Title{Fore.RED}/{Fore.MAGENTA}Url{Fore.YELLOW}:{Fore.GREEN} {url}")
+                            all_mention_links.append({"url": url, "count": count})
 
-    if not all_mention_links:
-        logger.info(f" {Fore.RED}Google search failed to find any mentions of {Fore.BLUE}'{query}'{Fore.RED}.{Fore.WHITE}")
-    else:
-        logger.info(f" {Fore.RED}/{Fore.GREEN} Process completed successfully.")
+                    social_profiles = find_social_profiles(url)
+                    if social_profiles:
+                        for profile in social_profiles:
+                            logger.info(f"{Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}")
+                            all_unique_social_profiles.add(profile['profile_url'])
+
+                    total_results += 1  # Increment total result count
+
+                    await asyncio.sleep(2)  # Introduce delay between requests
+
+            start_index += 10
+            page_number += 1
+
+        except Exception as e:
+            logger.error(f"An error occurred during search: {e}")
+            # Handle the error gracefully, e.g., retry with a different proxy or log the error for investigation
+
+    return total_results, start_index, page_number, consecutive_failures, last_successful_page
+      
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -257,12 +266,10 @@ async def main():
         return
     else:
         logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
-    
+
+    global query
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
     await fetch_google_results(query, valid_proxies)
-    
-    count = 0  # Initialize count
-    count = await fetch_google_results(query, valid_proxies, count=count)
     await asyncio.sleep(3)  # Introduce delay between requests
 
 def is_potential_forum(url):
@@ -271,20 +278,10 @@ def is_potential_forum(url):
     path = url_parts.path.lower()
     return any(keyword in path for keyword in potential_forum_keywords)
 
-async def validate_proxies(proxies, timeout=10, retry_attempts=3, retry_statuses={429, 500, 502, 503, 504}, 
-                           backoff_factor=2, max_backoff=60, jitter=0.5):
+async def validate_proxies(proxies, timeout=10):
     valid_proxies = []
     logger = logging.getLogger(__name__)
-    
-    def retry_predicate(exception):
-        return isinstance(exception, (TimeoutException, RequestError))
-    
-    retry_policy = Retrying(
-        stop=stop_after_attempt(retry_attempts),
-        wait=wait_exponential(multiplier=backoff_factor, max=max_backoff),
-        retry=retry_if_exception_type(retry_predicate)
-    )
-    
+
     for proxy in proxies:
         proxy_with_scheme = proxy if proxy.startswith("http") else f"http://{proxy}"
         try:
@@ -298,11 +295,9 @@ async def validate_proxies(proxies, timeout=10, retry_attempts=3, retry_statuses
                     logger.error(f" {Fore.RED}Proxy {proxy_with_scheme} returned status code {response.status_code}.")
         except (TimeoutException, RequestError) as e:
             logger.error(f" {Fore.RED}Error occurred while testing proxy {proxy_with_scheme}: {e}")
-        finally:
-            # Introduce a random delay before the next request to avoid overwhelming the server
-            await asyncio.sleep(random.uniform(1, 3))  # Adjust the range as needed
-    
+            
     return valid_proxies
+
 
 if __name__ == "__main__":
     asyncio.run(main())
