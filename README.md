@@ -9,10 +9,9 @@
 -- **NOTE:** `Hellow World 🌍 👋 - an update for Ominis-Osint is currently being worked on so expect faulty runs with thee script until official release! 😉`
 
 
-**Why Ominis?**
-    Ominis offers a unified solution for multiple OSINT tasks.
-    Threading improves efficiency for username searches.
-    SerpApi integration enhances web search capabilities.
+## Compatibility and Future Releases
+
+📱 **Mobile Compatibility:** Please note that Ominis OSINT Toolkit is primarily designed for use on PC platforms and may not work on mobile environments such as Termux. However, a mobile release is being considered for future development to extend the toolkit's accessibility to mobile users. Stay tuned for updates!
 
 **Contributing**
 Contributions are welcome! Fork the repository, make changes, and submit a pull request.
@@ -28,10 +27,17 @@ Ominis OSINT Tool is a powerful open-source tool designed for OSINT (Open-Source
 
 ## Features
 
-- **Web Search (Google):**
-  - Search the web for a given query.
-  - Extracts information from search results.
-  - Detects mentions in titles and URLs.
+🚀 **Enhanced User Interface:** Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
+
+🔎 **Expanded Digital Reconnaissance:** Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
+
+💡 **Threading Optimization:** Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
+
+🔍 **Advanced SerpApi Integration:** Utilize the power of SerpApi for lightning-fast and accurate web searches, enhancing speed and reliability while maintaining anonymity.
+
+📊 **Detailed Results:** Gain comprehensive insights from search results, including detailed information extracted from various sources such as social profiles, mentions, and potential forum links.
+
+⚙️ **Improved Configuration:** Customize settings effortlessly, including options to configure username search URLs and integrate SerpApi with your API key, providing flexibility and control over your investigations.
 
 - **Username Search:**
   - Searches a list of URLs for a specific username.
