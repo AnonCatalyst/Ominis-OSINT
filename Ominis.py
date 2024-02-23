@@ -34,6 +34,7 @@ with open("src/social_platforms.json", "r") as json_file:
 counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
+query = None
 
 async def scrape_proxies():
     proxies = []
