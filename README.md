@@ -60,28 +60,28 @@ Moreover, Ominis OSINT Tools goes beyond mere data retrieval, providing sophisti
 In essence, Ominis OSINT Tools redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision."
 
 ### Targeted and Actionable Results
-``Targetable and actionable results from Ominis OSINT Tools encompass a wide range of insights and intelligence gleaned from the digital landscape. Here are some examples of the types of results users can expect:
-
-    Identifying Potential Threats: Ominis helps users pinpoint potential threats by monitoring online chatter, identifying mentions of security breaches, cyberattacks, or malicious activities across various platforms. These insights enable proactive measures to mitigate risks and safeguard assets.
-
-    Monitoring Competitors: By tracking competitors' online presence, social media activities, product launches, and customer feedback, Ominis provides valuable competitive intelligence. Users can identify market trends, assess competitor strategies, and capitalize on opportunities in real-time.
-
-    Gathering Human Intelligence: Ominis facilitates the collection of human intelligence by monitoring forums, discussion boards, and social media platforms for conversations related to specific topics, organizations, or individuals. This helps users stay abreast of emerging trends, sentiment analysis, and public opinion.
-
-    Detecting Brand Mentions: Ominis tracks brand mentions, reviews, and sentiment across social media, review sites, and news articles. Users can analyze customer feedback, identify brand advocates, address customer concerns promptly, and manage their online reputation effectively.
-
-    Investigating Individuals: Ominis enables users to conduct background checks, investigate individuals, and gather information from publicly available sources such as social media profiles, online publications, and public records. This includes identifying relationships, affiliations, employment history, and online activities.
-
-    Uncovering Financial Insights: Ominis provides financial intelligence by monitoring business news, financial reports, and regulatory filings. Users can track market trends, assess the financial health of organizations, identify investment opportunities, and detect potential fraud or financial irregularities.
-
-    Mapping Digital Footprints: Ominis helps users map digital footprints by aggregating information from multiple sources to create comprehensive profiles of individuals, organizations, or events. This includes geolocation data, online activities, social connections, and historical data points.
-
-    Tracking Online Campaigns: Ominis monitors online campaigns, social media trends, and digital marketing efforts to assess their effectiveness, reach, and impact. Users can analyze engagement metrics, identify influencers, and optimize their marketing strategies for maximum impact.
-
-    Monitoring Regulatory Compliance: Ominis assists organizations in monitoring regulatory compliance by tracking industry regulations, legal developments, and enforcement actions. Users can stay informed about compliance requirements, assess risks, and implement proactive measures to ensure adherence to relevant laws and regulations.
-
-    Forecasting Emerging Risks: Ominis leverages predictive analytics and data modeling to forecast emerging risks, anticipate market shifts, and identify potential vulnerabilities. Users can proactively address threats, capitalize on opportunities, and stay ahead of the curve in a rapidly evolving digital landscape.
-
+``Targetable and actionable results from Ominis OSINT Toolkit encompass a wide range of insights and intelligence gleaned from the digital landscape. Here are some examples of the types of results users can expect:
+    Identifying Potential Threats:
+    Ominis helps users pinpoint potential threats by monitoring online chatter, identifying mentions of security breaches, cyberattacks, or malicious activities across various platforms. These insights enable proactive measures to mitigate risks and safeguard assets.
+    Monitoring Competitors:
+    By tracking competitors' online presence, social media activities, product launches, and customer feedback, Ominis provides valuable competitive intelligence. Users can identify market trends, assess competitor strategies, and capitalize on opportunities in real-time.
+    Gathering Human Intelligence:
+    Ominis facilitates the collection of human intelligence by monitoring forums, discussion boards, and social media platforms for conversations related to specific topics, organizations, or individuals. This helps users stay abreast of emerging trends, sentiment analysis, and public opinion.
+    Detecting Brand Mentions:
+    Ominis tracks brand mentions, reviews, and sentiment across social media, review sites, and news articles. Users can analyze customer feedback, identify brand advocates, address customer concerns promptly, and manage their online reputation effectively.
+    Investigating Individuals:
+    Ominis enables users to conduct background checks, investigate individuals, and gather information from publicly available sources such as social media profiles, online publications, and public records. This includes identifying relationships, affiliations, employment history, and online activities.
+    Uncovering Financial Insights:
+    Ominis provides financial intelligence by monitoring business news, financial reports, and regulatory filings. Users can track market trends, assess the financial health of organizations, identify investment opportunities, and detect potential fraud or financial irregularities.
+    Mapping Digital Footprints:
+    Ominis helps users map digital footprints by aggregating information from multiple sources to create comprehensive profiles of individuals, organizations, or events. This includes geolocation data, online activities, social connections, and historical data points.
+    Tracking Online Campaigns:
+    Ominis monitors online campaigns, social media trends, and digital marketing efforts to assess their effectiveness, reach, and impact. Users can analyze engagement metrics, identify influencers, and optimize their marketing strategies for maximum impact.
+    Monitoring Regulatory Compliance:
+    Ominis assists organizations in monitoring regulatory compliance by tracking industry regulations, legal developments, and enforcement actions. Users can stay informed about compliance requirements, assess risks, and implement proactive measures to ensure adherence to relevant laws and regulations.
+    Forecasting Emerging Risks:
+    Ominis leverages predictive analytics and data modeling to forecast emerging risks, anticipate market shifts, and identify potential vulnerabilities. Users can proactively address threats, capitalize on opportunities, and stay ahead of the curve in a rapidly evolving digital landscape.
+    
 Overall, Ominis OSINT Tools delivers actionable insights that empower users to make informed decisions, mitigate risks, and seize opportunities in an increasingly complex and dynamic digital environment.``
 
 ![Watch the video](src/img/video.gif)
