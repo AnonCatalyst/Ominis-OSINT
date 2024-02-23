@@ -31,7 +31,7 @@ username = sys.argv[1]
 init()
 
 # Username Search
-print(f" {Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{username}{Fore.RED} 〙\n")
+print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{username}{Fore.RED} 〙\n")
 
 with open("src/urls.txt", "r") as f:
     url_list = [x.strip() for x in f.readlines()]
