@@ -23,7 +23,7 @@ def get_user_api_key():
     return input("Enter your SerpApi API key: ")
 
 def confirm_continue():
-    user_input = input(f"\n{Fore.RED}[{Fore.CYAN}?{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Do you want to continue the search with {Fore.RED}({Fore.BLUE}SerpAPI{Fore.RED}){Fore.YELLOW}? {Fore.RED}({Fore.WHITE}Y{Fore.YELLOW}/{Fore.WHITE}n{Fore.RED}){Fore.YELLOW}:{Fore.GREEN} ").lower()
+    user_input = input(f"{Fore.RED}[{Fore.CYAN}?{Fore.RED}] {Fore.YELLOW}~ {Fore.WHITE}Do you want to continue the search with {Fore.RED}({Fore.BLUE}SerpAPI{Fore.RED}){Fore.YELLOW}? {Fore.RED}({Fore.WHITE}Y{Fore.YELLOW}/{Fore.WHITE}n{Fore.RED}){Fore.YELLOW}:{Fore.GREEN} ").lower()
     return user_input == 'yes', 'Y', 'y'
     print("")
 
