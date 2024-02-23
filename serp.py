@@ -86,9 +86,9 @@ def main():
     # Print the first 5 results on the screen
     for i, result in enumerate(results.get('organic_results', [])[:5]):
         print_colored_result(i, result)
-
-    # Inform the user that the rest of the results were printed to the file
-    print(f"{Fore.YELLOW}The rest of the results were saved to 'serpapi_results.txt'.{Style.RESET_ALL}\n")
+        
+        # Inform the user that the rest of the results were printed to the file
+        print(f"{Fore.YELLOW}The rest of the results were saved to 'serpapi_results.txt'.{Style.RESET_ALL}\n")
 
 if __name__ == "__main__":
     main()
