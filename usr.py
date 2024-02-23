@@ -3,9 +3,8 @@ import threading
 import time
 import urllib.parse
 import requests
-from colorama import Fore
+from colorama import Fore, init
 from fake_useragent import UserAgent
-from requests.exceptions import RequestException, ConnectionError, TooManyRedirects, SSLError
 
 # Initialize UserAgent object
 user_agent = UserAgent()
@@ -28,6 +27,9 @@ if len(sys.argv) != 2:
 # Get the username from the command-line argument
 username = sys.argv[1]
 
+# Initialize colorama
+init()
+
 # Username Search
 print(f" {Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{username}{Fore.RED} 〙\n")
 
@@ -45,7 +47,7 @@ def username_search(username: str, url: str):
             print(
                 f"{Fore.CYAN}• {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✓{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.GREEN}{url}{Fore.WHITE} {response.status_code}"
             )
-    except (ConnectionError, TooManyRedirects, RequestException, SSLError, TimeoutError):
+    except (requests.exceptions.ConnectionError, requests.exceptions.TooManyRedirects, requests.exceptions.RequestException, requests.exceptions.SSLError, requests.exceptions.Timeout):
         # Ignore these specific exceptions
         pass
 
@@ -54,7 +56,6 @@ def username_search(username: str, url: str):
 def main(username):
     threads = []
     for url in url_list:
-        url = urllib.parse.urljoin(url, username)
         t = threading.Thread(target=username_search, args=(username, url))
         t.start()
         threads.append(t)
@@ -66,8 +67,7 @@ def main(username):
 if __name__ == "__main__":
     try:
         main(username)
-    except RequestException as e:
+    except requests.exceptions.RequestException as e:
         print(f"Error: {e}")
 
 print("")
-
