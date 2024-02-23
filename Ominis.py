@@ -273,6 +273,10 @@ async def main():
     await fetch_google_results(query, valid_proxies)
     await asyncio.sleep(3)  # Introduce delay between requests
 
+    os.system(f"python3 serp.py {query}")  # serp api
+    os.system(f"python3 usr.py {query}")  # username search
+
+
 def is_potential_forum(url):
     potential_forum_keywords = ["forum", "community", "discussion", "board", "chat", "hub"]
     url_parts = urllib.parse.urlparse(url)
@@ -303,5 +307,3 @@ async def validate_proxies(proxies, timeout=10):
 if __name__ == "__main__":
     asyncio.run(main())
 
-os.system(f"python3 serp.py {query}")  # serp apii
-os.system(f"python3 usr.py {query}")  # username search
