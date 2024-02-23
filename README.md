@@ -27,17 +27,34 @@ Ominis OSINT Tool is a powerful open-source tool designed for OSINT (Open-Source
 
 ## Features
 
-🚀 **Enhanced User Interface:** Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
+🚀 Enhanced User Interface
 
-🔎 **Expanded Digital Reconnaissance:** Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
+Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
+🔎 Expanded Digital Reconnaissance
 
-💡 **Threading Optimization:** Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
+Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
+💡 Threading Optimization
 
-🔍 **Advanced SerpApi Integration:** Utilize the power of SerpApi for lightning-fast and accurate web searches, enhancing speed and reliability while maintaining anonymity.
+Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
+🔍 Advanced SerpApi Integration
 
-📊 **Detailed Results:** Gain comprehensive insights from search results, including detailed information extracted from various sources such as social profiles, mentions, and potential forum links.
+Utilize the power of SerpApi for lightning-fast and accurate web searches, enhancing speed and reliability while maintaining anonymity.
+📊 Detailed Results
 
-⚙️ **Improved Configuration:** Customize settings effortlessly, including options to configure username search URLs and integrate SerpApi with your API key, providing flexibility and control over your investigations.
+Gain comprehensive insights from search results, including detailed information extracted from various sources such as social profiles, mentions, and potential forum links.
+
+Upon running the script, you will be prompted to enter a search query. After entering the query, the tool will scrape Google search results for relevant information, including titles, URLs, and social media profiles. The results will be displayed in the terminal, providing insights into web mentions and associated social profiles.
+⚙️ Proxy Validation
+
+The tool validates proxies for secure and efficient web requests, ensuring anonymity and privacy during the search process. This feature enhances the reliability of the search results by utilizing a pool of validated proxies, mitigating the risk of IP blocking and ensuring seamless execution of the search queries.
+🕵️‍♂️ Human-like Behavior Mimicking
+
+To mimic human-like behavior and avoid detection by anti-bot mechanisms, the tool randomizes user agents for each request. This helps in making the requests appear more natural and reduces the likelihood of being flagged as automated activity.
+🛡️ Randomized Proxy Agents
+
+In addition to proxy validation, the tool utilizes randomized proxy agents for each request, further enhancing user anonymity. By rotating through a pool of proxies, the tool reduces the chances of being tracked or identified by websites, thus safeguarding user privacy throughout the reconnaissance process.
+
+These measures collectively contribute to ensuring user anonymity and privacy, providing a secure environment for conducting digital reconnaissance activities.
 
 - **Username Search:**
   - Searches a list of URLs for a specific username.
