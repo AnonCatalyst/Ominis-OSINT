@@ -125,9 +125,6 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 
 ![Watch the video](src/img/video.gif)
 
-## Key Features
-- **User-Friendly Interface:** Meticulously designed for ease of use, ensuring a smooth experience for both novice and experienced users.
-- **Digital Reconnaissance Excellence:** Leverage the toolkit's strength in digital reconnaissance to uncover valuable insights.
 
 - **Results:**
    - Results are displayed in the terminal with detailed information.
