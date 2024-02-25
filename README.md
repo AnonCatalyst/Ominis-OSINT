@@ -125,11 +125,6 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 
 ![Watch the video](src/img/video.gif)
 
-
-- **Results:**
-   - Results are displayed in the terminal with detailed information.
-   - Social profiles, mentions, and potential forum links are extracted.
-
 ## Configuration
 
 - Web search uses Google by default.
