@@ -6,3 +6,4 @@ serpapi
 google-search-results
 httpx
 tenacity
+requests_html
