@@ -1,73 +1,119 @@
 import sys
-import threading
-import time
-import urllib.parse
-import requests
+import concurrent.futures
+import logging
 from colorama import Fore, init
-from fake_useragent import UserAgent
-
-# Initialize UserAgent object
-user_agent = UserAgent()
-
-# Define headers with a fake user agent
-headers = {
-    'User-Agent': user_agent.random,
-    'Accept-Language': 'en-US,en;q=0.5',
-    # Add any other headers you may need
-}
-
-# Set up the 'header' variable
-header = headers
-
-# Check if the correct number of command-line arguments is provided
-if len(sys.argv) != 2:
-    print("Usage: python3 search.py <username>")
-    sys.exit(1)
-
-# Get the username from the command-line argument
-username = sys.argv[1]
+from requests_html import HTMLSession
+from bs4 import BeautifulSoup
 
 # Initialize colorama
-init()
+init(autoreset=True)
 
-# Username Search
-print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{username}{Fore.RED} 〙\n")
+# Set up logging
+logging.basicConfig(filename='src/username_search.log', level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 
-with open("src/urls.txt", "r") as f:
-    url_list = [x.strip() for x in f.readlines()]
+# Keep track of visited URLs to prevent duplicates
+visited_urls = set()
+visited_html_content = set()
 
-
-def username_search(username: str, url: str):
+# Function to search for username on a single URL
+def search_username_on_url(username: str, url: str):
+    global visited_urls, visited_html_content
     try:
-        s = requests.Session()
-        s.headers.update(header)
-        response = s.get(urllib.parse.urljoin(url, username), allow_redirects=False, timeout=5)
-
-        if response.status_code == 200 and username.lower() in response.text.lower():
+        if username.lower() not in url.lower():
+            if url.endswith('/'):
+                url += username
+            else:
+                url += '/' + username
+        
+        if url in visited_urls:
+            print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate URL: {Fore.WHITE}{url}")
+            return
+        
+        visited_urls.add(url)
+        
+        session = HTMLSession()
+        response = session.get(url)
+        if response.status_code == 200:
+            if response.html.raw_html in visited_html_content:
+                print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate HTML content for URL: {Fore.WHITE}{url}")
+                return
+            
+            visited_html_content.add(response.html.raw_html)
+            
             print(
-                f"{Fore.CYAN}• {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✓{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.GREEN}{url}{Fore.WHITE} {response.status_code}"
+                f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code}"
             )
-    except (requests.exceptions.ConnectionError, requests.exceptions.TooManyRedirects, requests.exceptions.RequestException, requests.exceptions.SSLError, requests.exceptions.Timeout):
-        # Ignore these specific exceptions
-        pass
+            # Print HTML content with organized formatting if it's not empty
+            html_content = response.html.raw_html
+            if html_content:
+                print_html(html_content, url)
+            else:
+                print(f"{Fore.YELLOW}HTML Content: {Fore.RED}Empty")
+        elif response.status_code != 200 and response.status_code != 404:  # Skip printing for 404
+            print(
+                f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.RED}❌{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTBLACK_EX}{url}{Fore.WHITE} {response.status_code}"
+            )
+    except Exception as e:
+        logging.error(f"Error occurred while searching for {username} on {url}: {e}")
+
+def print_html(html_content, url):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    if soup:
+        title_tags = soup.find_all("title")
+        unique_titles = {}
+        for title in title_tags:
+            title_text = title.get_text(strip=True)
+            # Exclude titles that are too short or common
+            if len(title_text) > 10 and title_text.lower() not in ["404 not found", "page not found"]:
+                unique_titles[title_text] = unique_titles.get(title_text, 0) + 1
+        
+        titles_to_print = []
+        for title_text, count in unique_titles.items():
+            if count == 1:
+                titles_to_print.append(f"{Fore.WHITE}{title_text}")
+            else:
+                titles_to_print.append(f"{Fore.WHITE}{title_text} ({count})")
+        
+        if titles_to_print:
+            print(f"{Fore.YELLOW}🔸 TITLE: {', '.join(titles_to_print)}")
+        
+        meta_description = soup.find("meta", attrs={"name": "description"})
+        if meta_description:
+            print(f"{Fore.YELLOW}🔸 DESCRIPTION: {Fore.WHITE}{meta_description['content']}")
+        
+        # Print a snippet of the HTML content
+        snippet_length = 200  # Adjust as needed
+        html_snippet = html_content[:snippet_length] + "..." if len(html_content) > snippet_length else html_content
+        print(f"{Fore.YELLOW}🔸 HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW}\n{html_snippet}")
+
+        #print(f"{Fore.YELLOW}🔸 URL: {Fore.LIGHTBLACK_EX}{url}")
+    else:
+        print(f"{Fore.YELLOW}HTML Content: {Fore.RED}Empty")
 
 
-# Threading
+
+
+# Function to perform username search on multiple URLs concurrently
 def main(username):
-    threads = []
-    for url in url_list:
-        t = threading.Thread(target=username_search, args=(username, url))
-        t.start()
-        threads.append(t)
-    for thread in threads:
-        thread.join()
-        time.sleep(0.3)
+    with open("src/urls.txt", "r") as f:
+        url_list = [x.strip() for x in f.readlines()]
 
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(search_username_on_url, username, url) for url in url_list]
+        concurrent.futures.wait(futures)
 
 if __name__ == "__main__":
     try:
-        main(username)
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
+        if len(sys.argv) != 2:
+            print("❌ Error: Invalid number of arguments.")
+            sys.exit(1)
 
-print("")
+        input_text = sys.argv[1]
+
+        print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{input_text}{Fore.RED} 〙\n")
+
+        main(input_text)
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        print(f"❌ An unexpected error occurred. Please check the logs for details.")
