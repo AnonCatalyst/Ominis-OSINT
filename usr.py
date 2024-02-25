@@ -1,6 +1,8 @@
 import sys
 import concurrent.futures
 import logging
+import random
+import time
 from colorama import Fore, init
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
@@ -33,6 +35,7 @@ def search_username_on_url(username: str, url: str):
         visited_urls.add(url)
         
         session = HTMLSession()
+        time.sleep(random.uniform(1, 3))  # Introduce a random delay to mimic human behavior
         response = session.get(url)
         if response.status_code == 200:
             if response.html.raw_html in visited_html_content:
