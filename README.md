@@ -1,4 +1,4 @@
-># Ominis OSINT: Secure Web-history Search 🌐🕵️‍♂️©
+># Ominis OSINT: Secure Web-Search 🌐🕵️‍♂️©
 
 **Information Obtained**
     Discover online mentions of a query or username.
