@@ -6,7 +6,7 @@
     Enhance web searches with SerpApi for more accurate results.
 
 
--- **NOTE:** `Hellow World 🌍 👋 - an update for Ominis-Osint Secure Web-Search has been released! 😉`
+-- **NOTE:** `Hello World 🌍 👋 - an update for Ominis-Osint Secure Web-Search has been released! 😉`
 
 
 ## Compatibility and Future Releases
