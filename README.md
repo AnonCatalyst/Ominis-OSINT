@@ -6,7 +6,7 @@
     Enhance web searches with SerpApi for more accurate results.
 
 
--- **NOTE:** `Hello World 🌍 👋 - an update for Ominis-Osint Secure Web-Search has been released! 😉`
+-- **NOTE:** `Hello World 🌍 👋 - a bug was found in the usr.py file that handles the username searches. The patch should release today 3/10/24 😉`
 
 
 ## Compatibility and Future Releases
