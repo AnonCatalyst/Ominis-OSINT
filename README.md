@@ -146,8 +146,7 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
    pip install -r requirements.txt
    ```
 - Run the following command at your own risk if your having installation issues when using pip 
- `` 
-
+`` 
 pip install -r requirements.txt --break-system-packages``
     
 >>## Usage
