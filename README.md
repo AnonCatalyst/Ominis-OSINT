@@ -6,7 +6,7 @@
     Enhance web searches with SerpApi for more accurate results.
 
 
--- **NOTE:** `Hello World 🌍 👋 - a bug was found in the usr.py file that handles the username searches. The patch should release today 3/10/24 but could be delayed 😉`
+-- **NOTE:** `Hello World 🌍 👋 - a bug was found in the usr.py file that handles the username searches. The patch should release 3/13/24 or sooner 😉`
 
 
 ## Compatibility and Future Releases
