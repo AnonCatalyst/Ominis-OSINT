@@ -101,7 +101,7 @@ def print_html(html_content, url):
 
 
 def main(username):
-    with open("urls.txt", "r") as f:
+    with open("src/urls.txt", "r") as f:
         url_list = [x.strip() for x in f.readlines()]
 
     if username is None:
