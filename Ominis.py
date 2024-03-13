@@ -3,7 +3,7 @@ import logging
 import os
 import random
 import urllib.parse
-
+import subprocess
 import httpx
 from colorama import Fore, Style, init
 from fake_useragent import UserAgent
@@ -30,6 +30,22 @@ counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫',
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 query = None
+
+async def run_command(command):
+    process = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    # Wait for the subprocess to complete.
+    stdout, stderr = await process.communicate()
+
+    # Handle output or errors if needed.
+    if stdout:
+        print(f'[stdout]\n{stdout.decode()}')
+    if stderr:
+        print(f'[stderr]\n{stderr.decode()}')
+
 
 async def main():
     clear_screen()
@@ -77,6 +93,7 @@ async def main():
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
     await fetch_google_results(query, valid_proxies)
     await asyncio.sleep(3)  # Introduce delay between requests
+    await run_command(f"python3 usr.py {query}")
 
 
 def clear_screen():
@@ -87,5 +104,3 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-
-os.system(f"python3 src/usr.py {query}")  # username search

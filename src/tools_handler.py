@@ -106,7 +106,7 @@ async def fetch_google_results(query, proxies=None):
             if response_text is None:
                 consecutive_failures += 1
                 if consecutive_failures >= MAX_RETRY_COUNT:
-                    logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.")
+                    logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.{Style.RESET_ALL}")
                     if proxies:
                         proxies.pop(0)  
                     consecutive_failures = 0  
@@ -119,7 +119,8 @@ async def fetch_google_results(query, proxies=None):
             search_results = soup.find_all("div", class_="tF2Cxc")
 
             if not search_results:
-                logger.info(f"{Fore.RED}No more results found for the query '{query}'.")
+                logger.info(f"{Fore.RED}No more results found for the query '{query}'.{Style.RESET_ALL}")
+                logger.info(f"{Fore.RED}Launching Username Search! Warning: This can take time depending on your network speed.   {Fore.WHITE}please wait...{Style.RESET_ALL}")
                 break
 
             for result in search_results:
