@@ -23,20 +23,17 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 <img src="src/img/screenshot.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
 
-Ominis OSINT Tool is a powerful open-source tool designed for OSINT (Open-Source Intelligence) investigations. It combines three scripts to perform web searches, username searches, and gather information using the SerpApi service.
-
 ## Features
 
     Enhanced User Interface: 🚀 Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
     Expanded Digital Reconnaissance: 🔎 Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
     Threading Optimization: 💡 Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
-    Advanced SerpApi Integration: 🔍 Utilize the power of SerpApi for lightning-fast and accurate web searches, enhancing speed and reliability while maintaining anonymity.
     Detailed Results: 📊 Gain comprehensive insights from search results, including detailed information extracted from various sources such as social profiles, mentions, and potential forum links.
     Proxy Validation: ⚙️ The tool validates proxies for secure and efficient web requests, ensuring anonymity and privacy during the search process. This feature enhances the reliability of the search results by utilizing a pool of validated proxies, mitigating the risk of IP blocking and ensuring seamless execution of the search queries.
     Human-like Behavior Mimicking: 🕵️‍♂️ To mimic human-like behavior and avoid detection by anti-bot mechanisms, the tool randomizes user agents for each request. This helps in making the requests appear more natural and reduces the likelihood of being flagged as automated activity.
     Randomized Proxy Agents: 🛡️ In addition to proxy validation, the tool utilizes randomized proxy agents for each request, further enhancing user anonymity. By rotating through a pool of proxies, the tool reduces the chances of being tracked or identified by websites, thus safeguarding user privacy throughout the reconnaissance process.
     Username Search: 🔍 Searches a list of URLs for a specific username. Utilizes threading for parallel execution. Provides detailed results with URL and HTTP status code.
-    SerpApi Integration: 📊 Utilizes SerpApi for enhanced web searches. Retrieves Google search results programmatically. Option to use SerpApi with your API key (optional).
+
 
 These measures collectively contribute to ensuring user anonymity and privacy, providing a secure environment for conducting digital reconnaissance activities.
 
@@ -44,11 +41,6 @@ These measures collectively contribute to ensuring user anonymity and privacy, p
   - Searches a list of URLs for a specific username.
   - Utilizes threading for parallel execution.
   - Provides detailed results with URL and HTTP status code.
-
-- **SerpApi Integration:**
-  - Utilizes SerpApi for enhanced web searches.
-  - Retrieves Google search results programmatically.
-  - Option to use SerpApi with your API key (optional).
 
 🌐 Premier Digital Reconnaissance Solution
 
@@ -157,7 +149,3 @@ pip install -r requirements.txt --break-system-packages
 3. Run the desired script:
    - `python3 Ominis.py`
 
-## SerpApi Integration (Optional)
-
-- To use SerpApi for web searches, obtain an API key from the [SerpApi Dashboard](https://serpapi.com/dashboard).
-- Save the API key in `src/api_key.json` file.
