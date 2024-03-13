@@ -6,7 +6,7 @@
     Enhance web searches with SerpApi for more accurate results.
 
 
--- **NOTE:** `Hello World 🌍 👋 - an update was just released 3/13/2024, Come check it out! 😉`
+-- **NOTE:** `Hello World 🌍 👋 - an update was just released 3/13/2024, Come check it out, please wait a moment! 😉`
 
 
 ## Compatibility and Future Releases
