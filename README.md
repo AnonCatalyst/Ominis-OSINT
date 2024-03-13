@@ -3,7 +3,6 @@
 **Information Obtained**
     Discover online mentions of a query or username.
     Identify potential social profiles and forums.
-    Enhance web searches with SerpApi for more accurate results.
 
 
 -- **NOTE:** `Hello World 🌍 👋 - an update was just released 3/13/2024, Come check it out! 😉`
