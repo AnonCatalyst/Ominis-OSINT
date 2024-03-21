@@ -71,8 +71,7 @@ async def main():
     ⠀⠀⠀⠀⠈⢞⡛⠛⢤⡀⠉⠉⠉⠉⠉⠉⣷⣯⠏⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Github{Fore.YELLOW}:{Fore.BLUE} https://github.com/AnonCatalyst/{Fore.RED}
     ⠀⠀⠀⠀⠀⠈⠳⢦⣬⠿⠿⣡⣤⠤⠤⠔⠋⡠⠊⢀⡞⠁⠀⠀⠀⠀{Fore.RED}--------------------------------------- 
     ⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Instagram{Fore.YELLOW}:{Fore.BLUE} https://www.instagram.com/istoleyourbutter/{Fore.RED}
-    ⠀⠀⠀⠀⠀⠀⠀⠘⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"""
-    )
+    ⠀⠀⠀⠀⠀⠀⠀⠘⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀""")
     print("\n" + f"{Fore.RED}_" * 80 + "\n")
 
     proxies = await scrape_proxies()
