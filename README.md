@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - updates have momentarily paused due to technical issues! Development will continue as soon as possible `⏳️
+-- **NOTE:** `Hello World 🌍 👋 - A bug fix update and some touchups are expected to be in a coming update! `⏳️
 
 
 ## Compatibility and Future Releases
