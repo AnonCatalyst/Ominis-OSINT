@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - A bug fix update and some touchups are expected to be in a coming update! `⏳️
+-- **NOTE:** `Hello World 🌍 👋 - Bug fixes and some touchups are expected to be in a coming update! `⏳️
 
 
 ## Compatibility and Future Releases
