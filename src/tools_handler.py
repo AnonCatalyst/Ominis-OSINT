@@ -17,6 +17,13 @@ from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_ex
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# Set up error logger for tool errors
+error_logger = logging.getLogger('gfetcherror')
+error_logger.setLevel(logging.ERROR)
+error_handler = logging.FileHandler('src/gfetcherror.log')
+error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+error_logger.addHandler(error_handler)
+
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,7 +50,7 @@ async def make_request_async(url, proxies=None):
                     client.proxies = {"http://": proxy}
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
                 response = await client.get(url, timeout=5)
-                
+
                 if response.status_code == 302:
                     redirect_location = response.headers.get('location')
                     if redirect_location:
@@ -54,10 +61,10 @@ async def make_request_async(url, proxies=None):
                         else:
                             logger.error("Exceeded maximum number of redirects.")
                             return None
-                
+
                 response.raise_for_status()
                 return response.text
-            
+
         except httpx.RequestError as e:
             logger.error(f"Failed to make connection: {e}")
             retry_count += 1
@@ -88,7 +95,7 @@ async def fetch_ddg_results(query):
             raise
 
 async def follow_redirects_async(url):
-    MAX_REDIRECTS = 10  # Define the maximum number of redirects to prevent infinite loops
+    MAX_REDIRECTS = 5  # Define the maximum number of redirects to prevent infinite loops
     redirect_count = 0
     while redirect_count < MAX_REDIRECTS:
         async with httpx.AsyncClient() as client:
@@ -115,36 +122,34 @@ async def fetch_google_results(query, proxies=None):
     all_unique_social_profiles = set()
     unique_urls = set()
     total_results = 0
-    max_unique_results = 500
-    consecutive_failures = 0
-    last_successful_page = 0
-    page_number = 1
-    start_index = 0
+    retries = 0
+    consistent_duplicates_count = 0
+    previous_unique_count = 0
 
-    while page_number <= 500:  # Iterate until 500 pages are processed
-        google_search_url = f"https://www.google.com/search?q={query}&start={start_index}"
+    while True:  # Infinite loop for continuous search
+        google_search_url = f"https://www.google.com/search?q={query}&start={total_results}"
 
         try:
             response_text = await make_request_async(google_search_url, proxies)
             if response_text is None:
-                consecutive_failures += 1
-                if consecutive_failures >= MAX_RETRY_COUNT:
-                    logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.{Style.RESET_ALL}")
-                    if proxies:
-                        proxies.pop(0)
-                    consecutive_failures = 0
-                    last_successful_page = page_number - 1
+                retries += 1
+                logger.error(f"No response received from Google. Retrying ({retries})...")
+                await asyncio.sleep(5 * retries)  # Exponential backoff
                 continue
-            else:
-                consecutive_failures = 0
 
             soup = BeautifulSoup(response_text, "html.parser")
             search_results = soup.find_all("div", class_="tF2Cxc")
 
             if not search_results:
-                logger.info(f"{Fore.RED}No more results found for the query '{query}'.{Style.RESET_ALL}")
-                logger.info(f"{Fore.RED}Stopping search.{Style.RESET_ALL}")
-                break
+                if len(unique_urls) == previous_unique_count:
+                    consistent_duplicates_count += 1
+                    if consistent_duplicates_count >= 3:
+                        logger.info("Consistent duplicates detected. Stopping search.")
+                        break
+                else:
+                    consistent_duplicates_count = 0
+                previous_unique_count = len(unique_urls)
+                continue
 
             for result in search_results:
                 title = result.find("h3")
@@ -159,7 +164,7 @@ async def fetch_google_results(query, proxies=None):
                 unique_urls.add(url)
 
                 if title and url:
-                    logger.info(Style.BRIGHT + f"{Fore.WHITE}{'_' * 80}")
+                    logger.info(Style.BRIGHT + f"{'_' * 80}")
                     logger.info(f"{random.choice(counter_emojis)} {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}")
                     logger.info(f"{random.choice(counter_emojis)} {Fore.BLUE}URL{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {url}{Style.RESET_ALL}")
 
@@ -181,29 +186,20 @@ async def fetch_google_results(query, proxies=None):
 
                     await asyncio.sleep(2)
 
-            start_index += 1
-            page_number += 1
-
         except Exception as e:
-            logger.error(f"An error occurred during search: {e}")
-            # Handle the error gracefully, e.g., retry with a different proxy or log the error for investigation
-            consecutive_failures += 1
-            if consecutive_failures >= MAX_RETRY_COUNT:
-                logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.")
-                if proxies:
-                    proxies.pop(0)
-                consecutive_failures = 0
-                last_successful_page = page_number - 1
+            error_logger.error(f"An error occurred during search: {e}")
 
-    if total_results == 0:
-        logger.info(f"No results found on Google. Trying DuckDuckGo as a fallback...")
-        return await fetch_ddg_results(query)
 
-    return total_results, start_index, page_number, consecutive_failures, last_successful_page
+    if total_results == 0 and consistent_duplicates_count < 3:
+        logger.info(f"No more results found for the query '{query}'.")
+    elif total_results == 0 and consistent_duplicates_count >= 3:
+        logger.info("No more new results found after consistent duplicates.")
+        logger.info("Stopping search.")
+
+    return total_results, all_mention_links, all_unique_social_profiles
 
 
 
-      
 
 def find_social_profiles(url):
     if not isinstance(url, str):
@@ -225,7 +221,7 @@ def find_social_profiles(url):
 def extract_mentions(text, query):
     if not isinstance(text, str) or not text:
         raise ValueError(" Input 'text' must be a non-empty string.")
-    
+
     if isinstance(query, str):
         query = [query]
     elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
@@ -236,7 +232,7 @@ def extract_mentions(text, query):
 
 def is_potential_forum(url):
     forum_keywords = [
-        r"forum[s]?", 
+        r"forum[s]?",
         r"community",
         r"discussion[s]?",
         r"board[s]?",
