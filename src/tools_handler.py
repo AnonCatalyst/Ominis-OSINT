@@ -69,15 +69,16 @@ async def make_request_async(url, proxies=None):
 
 
 async def fetch_ddg_results(query):
-    ddg_search_url = f"https://duckduckgo.com/html/?q={query}"
+    ddg_search_url = f"https://html.duckduckgo.com/html/?q={query}"
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(ddg_search_url)
             response.raise_for_status()
             if response.is_redirect:
                 redirected_url = response.headers['location']
-                response = await client.get(redirected_url)
-                response.raise_for_status()
+                logger.info(f"Redirecting to: {redirected_url}")
+                # Follow redirects until a final response is obtained
+                return await follow_redirects_async(redirected_url)
             return response.text
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error occurred during DuckDuckGo search: {e}")
@@ -86,19 +87,41 @@ async def fetch_ddg_results(query):
             logger.error(f"Request error occurred during DuckDuckGo search: {e}")
             raise
 
+async def follow_redirects_async(url):
+    MAX_REDIRECTS = 5  # Define the maximum number of redirects to prevent infinite loops
+    redirect_count = 0
+    while redirect_count < MAX_REDIRECTS:
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(url)
+                response.raise_for_status()
+                if not response.is_redirect:
+                    return response.text
+                redirected_url = response.headers['location']
+                logger.info(f"Redirecting to: {redirected_url}")
+                url = redirected_url
+                redirect_count += 1
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error occurred during redirect: {e}")
+                raise
+            except httpx.RequestError as e:
+                logger.error(f"Request error occurred during redirect: {e}")
+                raise
+    logger.error("Exceeded maximum number of redirects.")
+    return None
 
 async def fetch_google_results(query, proxies=None):
     all_mention_links = []
     all_unique_social_profiles = set()
-    unique_urls = set()  
+    unique_urls = set()
     total_results = 0
-    max_unique_results = 500  
+    max_unique_results = 500
     consecutive_failures = 0
     last_successful_page = 0
     page_number = 1
     start_index = 0
 
-    while len(unique_urls) < max_unique_results:  # Remove the condition page_number <= 500
+    while page_number <= 500:  # Iterate until 500 pages are processed
         google_search_url = f"https://www.google.com/search?q={query}&start={start_index}"
 
         try:
@@ -108,19 +131,19 @@ async def fetch_google_results(query, proxies=None):
                 if consecutive_failures >= MAX_RETRY_COUNT:
                     logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.{Style.RESET_ALL}")
                     if proxies:
-                        proxies.pop(0)  
-                    consecutive_failures = 0  
-                    last_successful_page = page_number - 1  
+                        proxies.pop(0)
+                    consecutive_failures = 0
+                    last_successful_page = page_number - 1
                 continue
             else:
-                consecutive_failures = 0  
+                consecutive_failures = 0
 
             soup = BeautifulSoup(response_text, "html.parser")
             search_results = soup.find_all("div", class_="tF2Cxc")
 
             if not search_results:
                 logger.info(f"{Fore.RED}No more results found for the query '{query}'.{Style.RESET_ALL}")
-                logger.info(f"{Fore.RED}Launching Username Search! Warning: This can take time depending on your network speed.   {Fore.WHITE}please wait...{Style.RESET_ALL}")
+                logger.info(f"{Fore.RED}Stopping search.{Style.RESET_ALL}")
                 break
 
             for result in search_results:
@@ -128,12 +151,12 @@ async def fetch_google_results(query, proxies=None):
                 url = result.find("a", href=True)["href"] if result.find("a", href=True) else None
 
                 if not url or url.startswith('/'):
-                    continue  
+                    continue
 
-                if url in unique_urls:  
-                    continue  
+                if url in unique_urls:
+                    continue
 
-                unique_urls.add(url)  
+                unique_urls.add(url)
 
                 if title and url:
                     logger.info(Style.BRIGHT + f"{Fore.WHITE}{'_' * 80}")
@@ -154,9 +177,9 @@ async def fetch_google_results(query, proxies=None):
                             logger.info(f"{Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}{Style.RESET_ALL}")
                             all_unique_social_profiles.add(profile['profile_url'])
 
-                    total_results += 1  
+                    total_results += 1
 
-                    await asyncio.sleep(2)  
+                    await asyncio.sleep(2)
 
             start_index += 10
             page_number += 1
@@ -168,15 +191,17 @@ async def fetch_google_results(query, proxies=None):
             if consecutive_failures >= MAX_RETRY_COUNT:
                 logger.error(f"{Fore.RED}Exceeded maximum consecutive failures. Changing proxy.")
                 if proxies:
-                    proxies.pop(0)  
-                consecutive_failures = 0  
-                last_successful_page = page_number - 1  
+                    proxies.pop(0)
+                consecutive_failures = 0
+                last_successful_page = page_number - 1
 
     if total_results == 0:
         logger.info(f"No results found on Google. Trying DuckDuckGo as a fallback...")
         return await fetch_ddg_results(query)
 
     return total_results, start_index, page_number, consecutive_failures, last_successful_page
+
+
 
       
 
