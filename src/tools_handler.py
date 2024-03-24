@@ -30,7 +30,7 @@ with open("src/social_platforms.json", "r") as json_file:
 counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
-MAX_RETRY_COUNT = 3  # Define the maximum number of retry attempts
+MAX_RETRY_COUNT = 5  # Define the maximum number of retry attempts
 
 async def make_request_async(url, proxies=None):
     retry_count = 0
@@ -88,7 +88,7 @@ async def fetch_ddg_results(query):
             raise
 
 async def follow_redirects_async(url):
-    MAX_REDIRECTS = 5  # Define the maximum number of redirects to prevent infinite loops
+    MAX_REDIRECTS = 10  # Define the maximum number of redirects to prevent infinite loops
     redirect_count = 0
     while redirect_count < MAX_REDIRECTS:
         async with httpx.AsyncClient() as client:
@@ -181,7 +181,7 @@ async def fetch_google_results(query, proxies=None):
 
                     await asyncio.sleep(2)
 
-            start_index += 10
+            start_index += 1
             page_number += 1
 
         except Exception as e:
