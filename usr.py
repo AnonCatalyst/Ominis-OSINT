@@ -14,8 +14,6 @@ init(autoreset=True)
 logging.basicConfig(filename='src/username_search.log', level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 
-init(autoreset=True)  # Initialize colorama for colored output
-
 # Keep track of visited URLs to prevent duplicates
 visited_urls = set()
 visited_html_content = set()
