@@ -12,9 +12,10 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from httpx import TimeoutException, RequestError
 from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_exception_type
-
-# Suppress InsecureRequestWarning
+from requests.exceptions import RequestException, HTTPError
 import urllib3
+
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Set up error logger for tool errors
@@ -29,6 +30,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 init(autoreset=True)  # Initialize colorama for colored output
+
+# Set to store visited URLs
+visited_urls = set()
 
 # Load social platform patterns from a JSON file
 with open("src/social_platforms.json", "r") as json_file:
@@ -46,30 +50,28 @@ async def make_request_async(url, proxies=None):
             async with httpx.AsyncClient() as client:
                 if proxies:
                     proxy = random.choice(proxies)
-                    logger.info(f"Using proxy: {proxy}")
                     client.proxies = {"http://": proxy}
+
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
                 response = await client.get(url, timeout=5)
 
                 if response.status_code == 302:
                     redirect_location = response.headers.get('location')
                     if redirect_location:
-                        logger.info(f"Redirecting to: {redirect_location}")
-                        # Limit maximum number of redirects to prevent stack overflow
                         if retry_count < MAX_REDIRECTS:
                             return await make_request_async(redirect_location, proxies)
                         else:
-                            logger.error("Exceeded maximum number of redirects.")
-                            return None
+                            raise RuntimeError("Exceeded maximum number of redirects.")
 
                 response.raise_for_status()
                 return response.text
 
         except httpx.RequestError as e:
-            logger.error(f"Failed to make connection: {e}")
             retry_count += 1
-            logger.info(f"Retrying request {retry_count}/{MAX_RETRY_COUNT}...")
-            await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
+            if retry_count < MAX_RETRY_COUNT:
+                await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
+            else:
+                raise RuntimeError(f"Failed to make connection after {MAX_RETRY_COUNT} retries: {e}")
 
     logger.info("Final retry using DuckDuckGo...")
     return await fetch_ddg_results(url)
@@ -117,95 +119,137 @@ async def follow_redirects_async(url):
     logger.error("Exceeded maximum number of redirects.")
     return None
 
+
+
 async def fetch_google_results(query, proxies=None):
     all_mention_links = []
     all_unique_social_profiles = set()
-    unique_urls = set()
+    processed_urls = set()  # Keep track of processed URLs
     total_results = 0
     retries = 0
     consistent_duplicates_count = 0
     previous_unique_count = 0
+    max_retries = 5  # Define maximum retry attempts
+    retry_interval = 5  # Initial retry interval in seconds
 
-    while True:  # Infinite loop for continuous search
-        google_search_url = f"https://www.google.com/search?q={query}&start={total_results}"
+    output_file = f"Results/{query}_built-in-search_results.txt"
+    with open(output_file, 'w') as file:  # Open file for writing
+        while True:  # Infinite loop for continuous search
+            google_search_url = f"https://www.google.com/search?q={query}&start={total_results}"
 
-        try:
-            response_text = await make_request_async(google_search_url, proxies)
-            if response_text is None:
-                retries += 1
-                logger.error(f"No response received from Google. Retrying ({retries})...")
-                await asyncio.sleep(5 * retries)  # Exponential backoff
-                continue
-
-            soup = BeautifulSoup(response_text, "html.parser")
-            search_results = soup.find_all("div", class_="tF2Cxc")
-
-            if not search_results:
-                if len(unique_urls) == previous_unique_count:
-                    consistent_duplicates_count += 1
-                    if consistent_duplicates_count >= 3:
-                        logger.info("Consistent duplicates detected. Stopping search.")
+            try:
+                response_text = await make_request_async(google_search_url, proxies)
+                if response_text is None:
+                    retries += 1
+                    if retries >= max_retries:
+                        print(Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
                         break
+                    print(Fore.RED + f"No response received from Google. Retrying ({retries})..." + Style.RESET_ALL)
+                    await asyncio.sleep(retry_interval * retries)  # Exponential backoff
+                    continue
+
+                soup = BeautifulSoup(response_text, "html.parser")
+                search_results = soup.find_all("div", class_="tF2Cxc")
+
+                if not search_results:
+                    if len(processed_urls) == previous_unique_count:
+                        consistent_duplicates_count += 1
+                        if consistent_duplicates_count >= 3:
+                            print(Fore.YELLOW + "Consistent duplicates detected. Stopping search." + Style.RESET_ALL)
+                            break
+                    else:
+                        consistent_duplicates_count = 0
+                    previous_unique_count = len(processed_urls)
+                    continue
+
+                for result in search_results:
+                    title = result.find("h3")
+                    url = result.find("a", href=True)["href"] if result.find("a", href=True) else None
+
+                    if not url or url.startswith('/'):
+                        continue
+
+                    if url in processed_urls:
+                        continue
+
+                    processed_urls.add(url)  # Mark URL as processed
+
+                    if title and url:
+                        # Write result to file
+                        file.write(f"Title: {title.text.strip()}\n")
+                        file.write(f"URL: {url}\n")
+
+                        print('_' * 80)
+                        print(random.choice(counter_emojis), Fore.BLUE + f"Title: {title.text.strip()}" + Style.RESET_ALL)
+                        print(random.choice(counter_emojis), Fore.LIGHTBLACK_EX + f"URL: {url}" + Style.RESET_ALL)
+
+                        text_to_check = title.text + ' ' + url
+                        mention_count = extract_mentions(text_to_check, query)
+
+                        for q, count in mention_count.items():
+                            if count > 0:
+                                print(random.choice(counter_emojis), Fore.YELLOW + f"'{q}' Detected in Title/Url: {url}" + Style.RESET_ALL)
+                                all_mention_links.append({"url": url, "count": count})
+
+                        social_profiles = find_social_profiles(url)
+                        if social_profiles:
+                            for profile in social_profiles:
+                                print(random.choice(counter_emojis), Fore.GREEN + f"{profile['platform']}: {profile['profile_url']}" + Style.RESET_ALL)
+                                all_unique_social_profiles.add(profile['profile_url'])
+
+                        total_results += 1
+
+                        await asyncio.sleep(2)
+
+            except RequestException as e:
+                print(random.choice(counter_emojis), Fore.RED + f"Request error occurred during search: {e}" + Style.RESET_ALL)
+                # Retry for connection errors or other transient issues
+                retries += 1
+                if retries >= max_retries:
+                    print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
+                    break
+                print(random.choice(counter_emojis), Fore.RED + f"Retrying request after error ({retries})..." + Style.RESET_ALL)
+                await asyncio.sleep(retry_interval * retries)  # Exponential backoff
+            except HTTPError as e:
+                # Retry for certain HTTP status codes
+                if e.response.status_code in [500, 502, 503, 504, 429]:
+                    retries += 1
+                    if retries >= max_retries:
+                        print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
+                        break
+                    print(random.choice(counter_emojis), Fore.RED + f"Retrying request after HTTP error ({e.response.status_code}) ({retries})..." + Style.RESET_ALL)
+                    await asyncio.sleep(retry_interval * retries)  # Exponential backoff
                 else:
-                    consistent_duplicates_count = 0
-                previous_unique_count = len(unique_urls)
-                continue
-
-            for result in search_results:
-                title = result.find("h3")
-                url = result.find("a", href=True)["href"] if result.find("a", href=True) else None
-
-                if not url or url.startswith('/'):
-                    continue
-
-                if url in unique_urls:
-                    continue
-
-                unique_urls.add(url)
-
-                if title and url:
-                    logger.info(Style.BRIGHT + f"{'_' * 80}")
-                    logger.info(f"{random.choice(counter_emojis)} {Fore.BLUE}Title{Fore.YELLOW}:{Fore.WHITE} {title.text.strip()}")
-                    logger.info(f"{random.choice(counter_emojis)} {Fore.BLUE}URL{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {url}{Style.RESET_ALL}")
-
-                    text_to_check = title.text + ' ' + url
-                    mention_count = extract_mentions(text_to_check, query)
-
-                    for q, count in mention_count.items():
-                        if count > 0:
-                            logger.info(f"{random.choice(counter_emojis)} {Fore.YELLOW}'{q}' {Fore.CYAN}Detected in {Fore.MAGENTA}Title{Fore.RED}/{Fore.MAGENTA}Url{Fore.YELLOW}:{Fore.GREEN} {url}")
-                            all_mention_links.append({"url": url, "count": count})
-
-                    social_profiles = find_social_profiles(url)
-                    if social_profiles:
-                        for profile in social_profiles:
-                            logger.info(f"{Fore.BLUE}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}{Style.RESET_ALL}")
-                            all_unique_social_profiles.add(profile['profile_url'])
-
-                    total_results += 1
-
-                    await asyncio.sleep(2)
-
-        except Exception as e:
-            error_logger.error(f"An error occurred during search: {e}")
-
+                    print(random.choice(counter_emojis), Fore.RED + f"HTTP error occurred during search: {e}" + Style.RESET_ALL)
+            except Exception as e:
+                print(random.choice(counter_emojis), Fore.RED + f"An error occurred during search: {e}" + Style.RESET_ALL)
+                # Retry for generic errors
+                retries += 1
+                if retries >= max_retries:
+                    print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
+                    break
+                print(random.choice(counter_emojis), Fore.RED + f"Retrying request after error ({retries})..." + Style.RESET_ALL)
+                await asyncio.sleep(retry_interval * retries)  # Exponential backoff
 
     if total_results == 0 and consistent_duplicates_count < 3:
-        logger.info(f"No more results found for the query '{query}'.")
+        print(random.choice(counter_emojis), Fore.YELLOW + f"No more results found for the query '{query}'." + Style.RESET_ALL)
     elif total_results == 0 and consistent_duplicates_count >= 3:
-        logger.info("No more new results found after consistent duplicates.")
-        logger.info("Stopping search.")
+        print(random.choice(counter_emojis), Fore.YELLOW + "No more new results found after consistent duplicates." + Style.RESET_ALL)
+        print(random.choice(counter_emojis), Fore.YELLOW + "Stopping search." + Style.RESET_ALL)
 
     return total_results, all_mention_links, all_unique_social_profiles
 
 
-
-
+# Define the find_social_profiles function
 def find_social_profiles(url):
     if not isinstance(url, str):
-        raise ValueError(" URL must be a string")
+        raise ValueError("URL must be a string")
 
     profiles = []
+
+    # Check if URL has been visited before
+    if url in visited_urls:
+        return profiles
 
     for platform, pattern in social_platforms.items():
         match = re.search(pattern, url)
@@ -216,20 +260,12 @@ def find_social_profiles(url):
     if is_potential_forum(url):
         profiles.append({"platform": "Forum", "profile_url": url})
 
+    # Add URL to visited set
+    visited_urls.add(url)
+
     return profiles
 
-def extract_mentions(text, query):
-    if not isinstance(text, str) or not text:
-        raise ValueError(" Input 'text' must be a non-empty string.")
-
-    if isinstance(query, str):
-        query = [query]
-    elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
-        raise ValueError(" Input 'query' must be a string or a list of strings.")
-
-    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
-    return mention_count
-
+# Define the is_potential_forum function
 def is_potential_forum(url):
     forum_keywords = [
         r"forum[s]?",
@@ -245,3 +281,16 @@ def is_potential_forum(url):
     path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
     subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
     return path_keywords or subdomain_keywords
+
+# Define the extract_mentions function
+def extract_mentions(text, query):
+    if not isinstance(text, str) or not text:
+        raise ValueError("Input 'text' must be a non-empty string.")
+
+    if isinstance(query, str):
+        query = [query]
+    elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
+        raise ValueError("Input 'query' must be a string or a list of strings.")
+
+    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
+    return mention_count

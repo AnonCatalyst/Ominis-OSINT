@@ -67,9 +67,9 @@ async def main():
     ⠀⠀⣸⡿⣷⣞⠋⠉⢹⠁⢈⠀⠀⠀⠀⡏⠉⠙⣲⣾⢿⣇⠀⠀⠀{Fore.YELLOW}~ {Fore.WHITE}Ominis Osint {Fore.YELLOW}- {Fore.RED}[{Fore.WHITE}Secure Web-history Search{Fore.RED}]
     ⠀⠀⣿⡇⣿⣿⢿⣆⠈⠻⣆⢣⡴⢱⠟⠁⣰⡶⣿⣿⠘⣿⠀⠀⠀{Fore.RED}---------------------------------------
     ⠀⠀⠹⣆⢈⡿⢸⣿⣻⠦⣼⣦⣴⣯⠴⣞⣿⡇⢻⡇⢸⠏⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Developer{Fore.YELLOW}: {Fore.WHITE} AnonCatalyst {Fore.MAGENTA}<{Fore.RED}
-    ⠀⠀⠀⠈⠞⣠⢾⣿⣿⣶⣿⣼⣧⣼⣶⣿⣿⡷⢌⢻⡋⠀⠀⠀ {Fore.RED}--------------------------------------- 
+    ⠀⠀⠀⠈⠞⣠⢾⣿⣿⣶⣿⣼⣧⣼⣶⣿⣿⡷⢌⢻⡋⠀⠀⠀ {Fore.RED}---------------------------------------
     ⠀⠀⠀⠀⠈⢞⡛⠛⢤⡀⠉⠉⠉⠉⠉⠉⣷⣯⠏⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Github{Fore.YELLOW}:{Fore.BLUE} https://github.com/AnonCatalyst/{Fore.RED}
-    ⠀⠀⠀⠀⠀⠈⠳⢦⣬⠿⠿⣡⣤⠤⠤⠔⠋⡠⠊⢀⡞⠁⠀⠀⠀⠀{Fore.RED}--------------------------------------- 
+    ⠀⠀⠀⠀⠀⠈⠳⢦⣬⠿⠿⣡⣤⠤⠤⠔⠋⡠⠊⢀⡞⠁⠀⠀⠀⠀{Fore.RED}---------------------------------------
     ⠀⠀⠀⠀⠀⠀⠀⢿⡈⢿⣿⣿⣿⣽⡿⠁⣿⠀⠀⠀⠀⠀⠀⠀⠀{Fore.YELLOW}~ {Fore.CYAN}Instagram{Fore.YELLOW}:{Fore.BLUE} https://www.instagram.com/istoleyourbutter/{Fore.RED}
     ⠀⠀⠀⠀⠀⠀⠀⠘⠳⠦⠴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀""")
     print("\n" + f"{Fore.RED}_" * 80 + "\n")
@@ -92,7 +92,8 @@ async def main():
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
     await fetch_google_results(query, valid_proxies)
     await asyncio.sleep(3)  # Introduce delay between requests
-    await run_command(f"python3 usr.py {query}")
+
+    subprocess.run(["python3", "-m", "src.usr", query])
 
 
 def clear_screen():
