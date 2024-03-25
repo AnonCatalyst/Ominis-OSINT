@@ -5,17 +5,8 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Bug fixes and some touchups were made as of 3/24/2024! in update 3.7 results will save to text files.`
+-- **NOTE:** `Hello World 🌍 👋 - Update 3.7 - 3/24/2024!`
 
--- **BUGS:**
-
-#1, 
-
-`Also if Google search returns no results please retry the search by re-running the tool, because the tool tends to be blocked with some search attempts. Serpapi is planned to be introduced as an optional choice if you'd like to not use the built in search.`⏳️
-
-#2,
-
-`The username search (usr.py) is supposed to show in color but isn't.`
 
 ## Compatibility and Future Releases
 
