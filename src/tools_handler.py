@@ -50,6 +50,7 @@ async def make_request_async(url, proxies=None):
             async with httpx.AsyncClient() as client:
                 if proxies:
                     proxy = random.choice(proxies)
+                    logger.info(f"Using proxy: {proxy}")
                     client.proxies = {"http://": proxy}
 
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
@@ -57,6 +58,7 @@ async def make_request_async(url, proxies=None):
 
                 if response.status_code == 302:
                     redirect_location = response.headers.get('location')
+                    logger.info(f"Redirecting to: {redirect_location}")
                     if redirect_location:
                         if retry_count < MAX_REDIRECTS:
                             return await make_request_async(redirect_location, proxies)
@@ -67,7 +69,10 @@ async def make_request_async(url, proxies=None):
                 return response.text
 
         except httpx.RequestError as e:
+            logger.error(f"Failed to make connection: {e}")
             retry_count += 1
+            logger.info(f"Retrying request {retry_count}/{MAX_RETRY_COUNT}...")
+            await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
             if retry_count < MAX_RETRY_COUNT:
                 await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
             else:
