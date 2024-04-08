@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Update 3.7 - 3/24/2024!`
+-- **NOTE:** `Hello World 🌍 👋 - Update 3.8 is coming and mainly to fix bugs.`
 
 
 ## Compatibility and Future Releases
