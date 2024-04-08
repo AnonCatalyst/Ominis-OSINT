@@ -10,3 +10,5 @@ requests_html
 aiohttp
 urllib3
 asyncio
+lxml_html_clean
+html_clean
