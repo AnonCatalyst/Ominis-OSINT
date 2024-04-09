@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Update 3.8 is coming and mainly to fix bugs.`
+-- **NOTE:** `Hello World 🌍 👋 - Update 3.8 is in the works, a complete rebuild of Ominis-Osint!.`
 
 
 ## Compatibility and Future Releases
