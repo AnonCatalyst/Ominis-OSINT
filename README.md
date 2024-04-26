@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Update 3.8 is in the works, a complete rebuild of Ominis-Osint!.`
+-- **NOTE:** `Hello World 🌍 👋 - Filtering may be added in a future update because ominis tends to the include information from an older time frame's.`
 
 
 ## Compatibility and Future Releases
