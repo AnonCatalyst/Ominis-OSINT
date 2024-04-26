@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Filtering may be added in a future update because ominis tends to the include information from an older time frame's.`
+-- **NOTE:** `Hello World 🌍 👋 - Beautify Update is coming.`
 
 
 ## Compatibility and Future Releases
