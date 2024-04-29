@@ -1,14 +1,25 @@
-beautifulsoup4
-colorama
-fake_useragent
-requests
-serpapi
-google-search-results
-httpx
-tenacity
-requests_html
-aiohttp
-urllib3
-asyncio
-lxml_html_clean
-html_clean
+import requests
+import lxml.html as lxml_html_clean
+import html.unescape as html_clean
+import tenacity
+from tenacity.before_sleep import retry_if_exception_type
+from bs4 import BeautifulSoup
+from colorama import Fore, Back, Style
+from fake_useragent import UserAgent
+from serpapi import GoogleSearch
+from urllib3.exceptions import MaxRetryError
+import asyncio
+import aiohttp
+import httpx
+from httpx import Timeout, Limits
+
+# Monkey-patch httpx to retry on 5xx errors
+@retry_if_exception_type(MaxRetryError)
+async def httpx_retry(coroutine):
+    return await httpx.async_retry(coroutine, retries=3, exceptions=httpx.HTTPStatusError)
+
+# Set up a custom UserAgent
+user_agent = UserAgent()
+
+# Set up the GoogleSearch instance
+google_search = GoogleSearch({"engine": "google", "api_key": "<your_serpapi_api_key>"})
