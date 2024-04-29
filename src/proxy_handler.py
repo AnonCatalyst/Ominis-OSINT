@@ -7,8 +7,9 @@ from bs4 import BeautifulSoup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def scrape_proxies(proxy_url="https://www.proxy-list.download/HTTP"):
+async def scrape_proxies():
     proxies = []
+    proxy_url = "https://www.proxy-list.download/HTTP"
 
     async with httpx.AsyncClient() as session:
         try:
@@ -33,33 +34,27 @@ async def scrape_proxies(proxy_url="https://www.proxy-list.download/HTTP"):
                 logger.error(f"🧟 Failed to retrieve proxy list. Status code: {response.status_code}")
         except Exception as e:
             logger.error(f"👻 Error scraping proxies: {e}")
-
+            
+    if not proxies:
+        logger.error("👻 No proxies scraped.")
+        
     return proxies
 
-def validate_proxies(proxies, timeout=10):
+async def validate_proxies(proxies, timeout=10):
     valid_proxies = []
 
-    async def validate_proxy(proxy):
+    for proxy in proxies:
         proxy_with_scheme = proxy if proxy.startswith("http") else f"http://{proxy}"
         try:
             logger.info(f"🔍 Validating proxy: {proxy_with_scheme}")
             async with httpx.AsyncClient(proxies={proxy_with_scheme: None}, timeout=timeout) as client:
                 response = await client.get("https://www.google.com", timeout=timeout)
                 if response.status_code == 200:
-                    return proxy_with_scheme
+                    valid_proxies.append(proxy_with_scheme)
                     logger.info(f"✅ Proxy {proxy_with_scheme} is valid.")
                 else:
                     logger.error(f"❌ Proxy {proxy_with_scheme} returned status code {response.status_code}.")
         except (httpx.TimeoutException, httpx.RequestError) as e:
             logger.error(f"👻 Error occurred while testing proxy {proxy_with_scheme}: {e}")
-
-    loop = asyncio.get_event_loop()
-    valid_proxies = loop.run_until_complete([validate_proxy(proxy) for proxy in proxies])
-    valid_proxies = [proxy for proxy in valid_proxies if proxy is not None]
-
+            
     return valid_proxies
-
-if __name__ == "__main__":
-    proxies = asyncio.run(scrape_proxies())
-    valid_proxies = validate_proxies(proxies)
-    print(valid_proxies)

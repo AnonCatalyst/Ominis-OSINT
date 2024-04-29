@@ -6,13 +6,17 @@ import json
 import logging
 import urllib.parse
 import httpx
+import aiohttp
 from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from httpx import TimeoutException, RequestError
 from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_exception_type
+from requests.exceptions import RequestException, HTTPError
+import urllib3
 
-init(autoreset=True)  # Initialize colorama for colored output
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Set up error logger for tool errors
 error_logger = logging.getLogger('gfetcherror')
@@ -24,6 +28,8 @@ error_logger.addHandler(error_handler)
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+init(autoreset=True)  # Initialize colorama for colored output
 
 # Set to store visited URLs
 visited_urls = set()
@@ -37,27 +43,87 @@ emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 MAX_RETRY_COUNT = 5  # Define the maximum number of retry attempts
 
-@retry_if_exception_type(RequestError, TimeoutException)
-@wait_exponential(multiplier=1, min=1, max=5)
-@stop_after_attempt(MAX_RETRY_COUNT)
 async def make_request_async(url, proxies=None):
+    retry_count = 0
+    while retry_count < MAX_RETRY_COUNT:
+        try:
+            async with httpx.AsyncClient() as client:
+                if proxies:
+                    proxy = random.choice(proxies)
+                    logger.info(f"Using proxy: {proxy}")
+                    client.proxies = {"http://": proxy}
+
+                client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
+                response = await client.get(url, timeout=5)
+
+                if response.status_code == 302:
+                    redirect_location = response.headers.get('location')
+                    logger.info(f"Redirecting to: {redirect_location}")
+                    if redirect_location:
+                        if retry_count < MAX_REDIRECTS:
+                            return await make_request_async(redirect_location, proxies)
+                        else:
+                            raise RuntimeError("Exceeded maximum number of redirects.")
+
+                response.raise_for_status()
+                return response.text
+
+        except httpx.RequestError as e:
+            logger.error(f"Failed to make connection: {e}")
+            retry_count += 1
+            logger.info(f"Retrying request {retry_count}/{MAX_RETRY_COUNT}...")
+            await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
+            if retry_count < MAX_RETRY_COUNT:
+                await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
+            else:
+                raise RuntimeError(f"Failed to make connection after {MAX_RETRY_COUNT} retries: {e}")
+
+    logger.info("Final retry using DuckDuckGo...")
+    return await fetch_ddg_results(url)
+
+
+async def fetch_ddg_results(query):
+    ddg_search_url = f"https://html.duckduckgo.com/html/?q={query}"
     async with httpx.AsyncClient() as client:
-        if proxies:
-            proxy = random.choice(proxies)
-            logger.info(f"Using proxy: {proxy}")
-            client.proxies = {"http://": proxy}
+        try:
+            response = await client.get(ddg_search_url)
+            response.raise_for_status()
+            if response.is_redirect:
+                redirected_url = response.headers['location']
+                logger.info(f"Redirecting to: {redirected_url}")
+                # Follow redirects until a final response is obtained
+                return await follow_redirects_async(redirected_url)
+            return response.text
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error occurred during DuckDuckGo search: {e}")
+            raise
+        except httpx.RequestError as e:
+            logger.error(f"Request error occurred during DuckDuckGo search: {e}")
+            raise
 
-        client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
-        response = await client.get(url)
+async def follow_redirects_async(url):
+    MAX_REDIRECTS = 5  # Define the maximum number of redirects to prevent infinite loops
+    redirect_count = 0
+    while redirect_count < MAX_REDIRECTS:
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(url)
+                response.raise_for_status()
+                if not response.is_redirect:
+                    return response.text
+                redirected_url = response.headers['location']
+                logger.info(f"Redirecting to: {redirected_url}")
+                url = redirected_url
+                redirect_count += 1
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error occurred during redirect: {e}")
+                raise
+            except httpx.RequestError as e:
+                logger.error(f"Request error occurred during redirect: {e}")
+                raise
+    logger.error("Exceeded maximum number of redirects.")
+    return None
 
-        if response.status_code == 302:
-            redirect_location = response.headers.get('location')
-            logger.info(f"Redirecting to: {redirect_location}")
-            if redirect_location:
-                return await make_request_async(redirect_location, proxies)
-
-        response.raise_for_status()
-        return response.text
 
 
 async def fetch_google_results(query, proxies=None):
@@ -178,7 +244,58 @@ async def fetch_google_results(query, proxies=None):
 
     return total_results, all_mention_links, all_unique_social_profiles
 
-# ... (rest of the code remains the same)
 
+# Define the find_social_profiles function
+def find_social_profiles(url):
+    if not isinstance(url, str):
+        raise ValueError("URL must be a string")
 
-pip install tenacity
+    profiles = []
+
+    # Check if URL has been visited before
+    if url in visited_urls:
+        return profiles
+
+    for platform, pattern in social_platforms.items():
+        match = re.search(pattern, url)
+        if match:
+            profile_url = match.group(0)
+            profiles.append({"platform": platform, "profile_url": profile_url})
+
+    if is_potential_forum(url):
+        profiles.append({"platform": "Forum", "profile_url": url})
+
+    # Add URL to visited set
+    visited_urls.add(url)
+
+    return profiles
+
+# Define the is_potential_forum function
+def is_potential_forum(url):
+    forum_keywords = [
+        r"forum[s]?",
+        r"community",
+        r"discussion[s]?",
+        r"board[s]?",
+        r"chat",
+        r"hub"
+    ]
+    url_parts = urllib.parse.urlparse(url)
+    path = url_parts.path.lower()
+    subdomain = url_parts.hostname.split('.')[0].lower()  # Extract subdomain
+    path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
+    subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
+    return path_keywords or subdomain_keywords
+
+# Define the extract_mentions function
+def extract_mentions(text, query):
+    if not isinstance(text, str) or not text:
+        raise ValueError("Input 'text' must be a non-empty string.")
+
+    if isinstance(query, str):
+        query = [query]
+    elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
+        raise ValueError("Input 'query' must be a string or a list of strings.")
+
+    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
+    return mention_count
