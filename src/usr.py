@@ -3,12 +3,13 @@ import concurrent.futures
 import logging
 import random
 import time
+import re
 from colorama import Fore, init
-from requests_html import HTMLSession
 from bs4 import BeautifulSoup
+from requests_html import HTMLSession
+
 print(""" src/usr.py ~ Please wait as the username search is running
   and could take a moment dependng on your network speed...""")
-
 
 # Initialize colorama
 init(autoreset=True)
@@ -23,7 +24,6 @@ results_file = open("Results/username-search_results.txt", "w")
 # Keep track of visited URLs to prevent duplicates
 visited_urls = set()
 visited_html_content = set()
-
 
 # Function to search for username on a single URL
 def search_username_on_url(username: str, url: str):
@@ -130,14 +130,16 @@ def print_html(html_content, url):
     except Exception as e:
         print(f"{Fore.RED}Error occurred while parsing HTML content for URL {Fore.WHITE}{url}:{Fore.RED} {str(e)}")
 
-
 def main(username):
-    with open("src/urls.txt", "r") as f:
-        url_list = [x.strip() for x in f.readlines()]
+    url_list = [
+        # Add URLs to the list
+    ]
 
     if not username:
         print("❌ Error: Username cannot be empty.")
         return
+
+    print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{username}{Fore.RED} 〙\n")
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(search_username_on_url, username, url) for url in url_list]
@@ -149,9 +151,7 @@ if __name__ == "__main__":
             print("❌ Error: Invalid number of arguments.")
             sys.exit(1)
 
-        input_text = sys.argv[1]
-
-        print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{input_text}{Fore.RED} 〙\n")
+        input_text = re.sub(r'\W+', '', sys.argv[1])  # Remove non-alphanumeric characters
 
         main(input_text)
     except Exception as e:
