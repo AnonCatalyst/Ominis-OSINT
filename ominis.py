@@ -2,13 +2,11 @@ import asyncio
 import logging
 import os
 import random
-import urllib.parse
 import subprocess
-import httpx
+import urllib.parse
 from colorama import Fore, Style, init
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
-
 from src.proxy_handler import scrape_proxies, validate_proxies
 from src.tools_handler import fetch_google_results
 
@@ -29,18 +27,14 @@ MAX_RETRY_COUNT = 5
 counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
-query = None
-
 async def run_command(command):
     process = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
 
-    # Wait for the subprocess to complete.
     stdout, stderr = await process.communicate()
 
-    # Handle output or errors if needed.
     if stdout:
         print(f'[stdout]\n{stdout.decode()}')
     if stderr:
@@ -87,7 +81,7 @@ async def main():
         logger.error(f" {Fore.RED}No valid proxies found. Exiting...{Fore.WHITE}")
         return
     else:
-        logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
+        logger.info(f" {Fore.RED}>|{Fore.WHITE} {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
 
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
     await fetch_google_results(query, valid_proxies)
@@ -102,5 +96,3 @@ def clear_screen():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
