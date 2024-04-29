@@ -1,1 +1,13 @@
-your safe to delete this file
+# This is a comment - any text after the '#' symbol is ignored by the interpreter
+
+# Safe to delete a file
+import os
+
+file_path = "/path/to/your/file" # replace with the actual file path
+
+if os.path.isfile(file_path):
+    os.remove(file_path)
+    print(f"Successfully deleted file: {file_path}")
+else:
+    print(f"File not found: {file_path}")
+
