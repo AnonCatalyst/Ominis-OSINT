@@ -5,8 +5,8 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Beautify Update is coming. 
-⚠️ PIP changes have caused installation issues when installing packages using pip`
+-- **NOTE:** `Hello World 🌍 👋 - Beautify Update is coming. 😉
+`
 
 
 ## Compatibility and Future Releases
