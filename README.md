@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Beautify Update is coming. 😉
+-- **NOTE:** `Hello World 🌍 👋 - Beautify Update is coming along with filter features. 😉
 `
 
 
