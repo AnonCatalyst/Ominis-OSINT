@@ -126,15 +126,6 @@ async def follow_redirects_async(url):
     return None
 
 
-from urllib.parse import urlencode, quote_plus
-from requests.exceptions import RequestException, HTTPError
-from bs4 import BeautifulSoup
-import asyncio
-import random
-import os
-import subprocess
-from colorama import Fore, Style
-
 async def fetch_google_results(query, language=None, country=None, date_range=None, proxies=None):
     all_mention_links = []
     all_unique_social_profiles = set()
@@ -158,8 +149,6 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
     if date_range:
         params['tbs'] = f'cdr:1,cd_min:{date_range[0]},cd_max:{date_range[1]}'  # Date range parameter (e.g., 'cdr:1,cd_min:01/01/2023,cd_max:12/31/2023')
 
-    google_search_url = f"https://www.google.com/search?{urlencode(params)}"
-
     output_file = f"Results/{query}_built-in-search_results.txt"
     with open(output_file, 'w') as file:  # Open file for writing
         print(f"Search Query: {query}")
@@ -173,6 +162,10 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
 
         while True:  # Infinite loop for continuous search
             try:
+                # Construct the Google search URL with pagination
+                params['start'] = total_results  # Update the 'start' parameter for pagination
+                google_search_url = f"https://www.google.com/search?{urlencode(params)}"
+
                 response_text = await make_request_async(google_search_url, proxies)
                 if response_text is None:
                     retries += 1
