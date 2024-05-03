@@ -89,8 +89,18 @@ async def main():
     else:
         logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
 
+
+
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
-    await fetch_google_results(query, valid_proxies)
+    language = input("Enter the language code (e.g., 'lang_en' for English): ")
+    country = input("Enter the country code (e.g., 'countryUS' for United States): ")
+    start_date = input("Enter the start date for the date range (MM/DD/YYYY): ")
+    end_date = input("Enter the end date for the date range (MM/DD/YYYY): ")
+    date_range = (start_date, end_date)
+
+
+
+    await fetch_google_results(query, language, country, date_range, valid_proxies)
     await asyncio.sleep(3)  # Introduce delay between requests
 
     subprocess.run(["python3", "-m", "src.usr", query])

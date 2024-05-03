@@ -13,6 +13,7 @@ from fake_useragent import UserAgent
 from httpx import TimeoutException, RequestError
 from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_exception_type
 from requests.exceptions import RequestException, HTTPError
+from urllib.parse import urlencode, quote_plus
 import urllib3
 
 
@@ -125,8 +126,7 @@ async def follow_redirects_async(url):
     return None
 
 
-
-async def fetch_google_results(query, proxies=None):
+async def fetch_google_results(query, language=None, country=None, date_range=None, proxies=None):
     all_mention_links = []
     all_unique_social_profiles = set()
     processed_urls = set()  # Keep track of processed URLs
@@ -137,11 +137,32 @@ async def fetch_google_results(query, proxies=None):
     max_retries = 5  # Define maximum retry attempts
     retry_interval = 5  # Initial retry interval in seconds
 
+    # Encode the query
+    encoded_query = quote_plus(query)
+
+    # Construct the Google search URL with filtering options
+    params = {'q': encoded_query, 'start': total_results}
+    if language:
+        params['lr'] = language  # Language parameter (e.g., 'lang_en' for English)
+    if country:
+        params['cr'] = country   # Country parameter (e.g., 'countryUS' for United States)
+    if date_range:
+        params['tbs'] = f'cdr:1,cd_min:{date_range[0]},cd_max:{date_range[1]}'  # Date range parameter (e.g., 'cdr:1,cd_min:01/01/2023,cd_max:12/31/2023')
+
+    google_search_url = f"https://www.google.com/search?{urlencode(params)}"
+
     output_file = f"Results/{query}_built-in-search_results.txt"
     with open(output_file, 'w') as file:  # Open file for writing
-        while True:  # Infinite loop for continuous search
-            google_search_url = f"https://www.google.com/search?q={query}&start={total_results}"
+        print(f"Search Query: {query}")
+        if language:
+            print(f"Chosen Language: {language}")
+        if country:
+            print(f"Chosen Country: {country}")
+        if date_range:
+            print(f"Chosen Date Range: {date_range[0]} - {date_range[1]}")
+        print("_" * 80)
 
+        while True:  # Infinite loop for continuous search
             try:
                 response_text = await make_request_async(google_search_url, proxies)
                 if response_text is None:
@@ -234,7 +255,7 @@ async def fetch_google_results(query, proxies=None):
                     print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
                     break
                 print(random.choice(counter_emojis), Fore.RED + f"Retrying request after error ({retries})..." + Style.RESET_ALL)
-                await asyncio.sleep(retry_interval * retries)  # Exponential backoff
+                await asyncio.sleep(retry_interval * retries)
 
     if total_results == 0 and consistent_duplicates_count < 3:
         print(random.choice(counter_emojis), Fore.YELLOW + f"No more results found for the query '{query}'." + Style.RESET_ALL)
@@ -243,6 +264,9 @@ async def fetch_google_results(query, proxies=None):
         print(random.choice(counter_emojis), Fore.YELLOW + "Stopping search." + Style.RESET_ALL)
 
     return total_results, all_mention_links, all_unique_social_profiles
+
+
+
 
 
 # Define the find_social_profiles function
