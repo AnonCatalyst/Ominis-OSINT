@@ -126,6 +126,15 @@ async def follow_redirects_async(url):
     return None
 
 
+from urllib.parse import urlencode, quote_plus
+from requests.exceptions import RequestException, HTTPError
+from bs4 import BeautifulSoup
+import asyncio
+import random
+import os
+import subprocess
+from colorama import Fore, Style
+
 async def fetch_google_results(query, language=None, country=None, date_range=None, proxies=None):
     all_mention_links = []
     all_unique_social_profiles = set()
@@ -140,7 +149,7 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
     # Encode the query
     encoded_query = quote_plus(query)
 
-    # Construct the Google search URL with filtering options
+    # Construct the Google search URL with filtering options if provided
     params = {'q': encoded_query, 'start': total_results}
     if language:
         params['lr'] = language  # Language parameter (e.g., 'lang_en' for English)
