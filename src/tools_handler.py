@@ -26,6 +26,9 @@ error_handler = logging.FileHandler('src/gfetcherror.log')
 error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 error_logger.addHandler(error_handler)
 
+# Disable httpx INFO logging
+logging.getLogger('httpx').setLevel(logging.WARNING)
+
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,7 +54,7 @@ async def make_request_async(url, proxies=None):
             async with httpx.AsyncClient() as client:
                 if proxies:
                     proxy = random.choice(proxies)
-                    logger.info(f"Using proxy: {proxy}")
+                    #logger.info(f"Using proxy: {proxy}")
                     client.proxies = {"http://": proxy}
 
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
