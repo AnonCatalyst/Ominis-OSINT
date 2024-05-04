@@ -146,7 +146,7 @@ pip install -r requirements.txt --break-system-packages
 > **Usage**
 
 1. Navigate to the script's directory:
-   - `cd Ominis-OSINT`
+   - `cd Ominis-Osint`
 3. Run the desired script:
    - `python3 Ominis.py`
 
