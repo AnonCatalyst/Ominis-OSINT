@@ -92,10 +92,10 @@ async def main():
 
 
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
-    language = input("Enter the language code (e.g., 'lang_en' for English): ")
-    country = input("Enter the country code (e.g., 'countryUS' for United States): ")
-    start_date = input("Enter the start date for the date range (MM/DD/YYYY): ")
-    end_date = input("Enter the end date for the date range (MM/DD/YYYY): ")
+    language = input(" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the language code (e.g., 'lang_en' for English){Fore.YELLOW}: {Fore.WHITE} ")
+    country = input(" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the country code (e.g., 'countryUS' for United States){Fore.YELLOW}: {Fore.WHITE} ")
+    start_date = input(" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the start date for the date range (MM/DD/YYYY){Fore.YELLOW}: {Fore.WHITE} ")
+    end_date = input(" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the end date for the date range (MM/DD/YYYY){Fore.YELLOW}: {Fore.WHITE} ")
     date_range = (start_date, end_date)
 
 
