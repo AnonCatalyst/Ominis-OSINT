@@ -120,14 +120,14 @@ def main(username):
         print("❌ Error: Username cannot be empty.")
         return
 
-    run_script = input(" src/usr.py[ Do you want to run a username search? (y/n): ").lower()
+    run_script = input(" Do you want to run a username search? (y/n): ").lower()
     if run_script != 'y':
         print("Skipping the script.")
         return
 
-    include_titles = input("Include titles? (y/n): ").lower() == 'y'
-    include_descriptions = input("Include descriptions? (y/n): ").lower() == 'y'
-    include_html_content = input("Include HTML content? (y/n): ").lower() == 'y'
+    include_titles = input(" Include titles? (y/n): ").lower() == 'y'
+    include_descriptions = input(" Include descriptions? (y/n): ").lower() == 'y'
+    include_html_content = input(" Include HTML content? (y/n): ").lower() == 'y'
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(search_username_on_url, username, url, include_titles, include_descriptions, include_html_content) for url in url_list]
