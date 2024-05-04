@@ -120,7 +120,7 @@ def main(username):
         print("❌ Error: Username cannot be empty.")
         return
 
-    run_script = input(" Do you want to run a username search? (y/n): ").lower()
+    run_script = input("\n Do you want to run a username search? (y/n): ").lower()
     if run_script != 'y':
         print("Skipping the script.")
         return
@@ -144,9 +144,9 @@ if __name__ == "__main__":
             print(" - src/usr.py[ Skipping the username search...")
             sys.exit(0)
 
-        input_text = sys.argv[1]
 
-        print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{input_text}{Fore.RED} 〙\n")
+        input_text = sys.argv[1]
+       # print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{input_text}{Fore.RED} 〙\n")
 
         main(input_text)
     except Exception as e:
