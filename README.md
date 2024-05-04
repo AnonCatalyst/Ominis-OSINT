@@ -1,4 +1,4 @@
-># Ominis OSINT: Secure Web-Dork 🌐🕵️‍♂️
+># Ominis OSINT: Secure Web-Search 🌐🕵️‍♂️
 
 **Information Obtained**
     Discover online mentions of a query or username.
