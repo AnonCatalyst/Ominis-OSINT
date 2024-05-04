@@ -6,9 +6,6 @@ import time
 from colorama import Fore, init
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
-print(""" src/usr.py ~ Please wait as the username search is running
-  and could take a moment dependng on your network speed...""")
-
 
 # Initialize colorama
 init(autoreset=True)
@@ -26,7 +23,7 @@ visited_html_content = set()
 
 
 # Function to search for username on a single URL
-def search_username_on_url(username: str, url: str):
+def search_username_on_url(username: str, url: str, include_titles=True, include_descriptions=True, include_html_content=True):
     global visited_urls, visited_html_content
     try:
         if username.lower() not in url.lower():
@@ -50,10 +47,13 @@ def search_username_on_url(username: str, url: str):
             visited_html_content.add(response.html.raw_html)
 
             print(f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code}")
-            # Print HTML content with organized formatting if it's not empty
-            print_html(response.html.raw_html, url)
+
+            if include_titles or include_descriptions or include_html_content:
+                # Print HTML content with organized formatting if requested
+                print_html(response.html.raw_html, url, include_titles, include_descriptions, include_html_content)
+
             # Write results to file
-            write_to_file(username, url, response.status_code, response.html.raw_html)
+            write_to_file(username, url, response.status_code, response.html.raw_html, include_titles, include_descriptions, include_html_content)
         else:
             # Skip processing for non-200 status codes
             return
@@ -62,45 +62,26 @@ def search_username_on_url(username: str, url: str):
     except Exception as e:
         logging.error(f"Error occurred while searching for {username} on {url}: {e}")
 
-def write_to_file(username, url, status_code, html_content):
+
+def write_to_file(username, url, status_code, html_content, include_titles=True, include_descriptions=True, include_html_content=True):
     try:
         results_file.write(f"Username: {username}\n")
         results_file.write(f"URL: {url}\n")
         results_file.write(f"Status Code: {status_code}\n")
-        results_file.write("HTML Content:\n")
-        write_html_snippet_to_file(html_content)
-        results_file.write("\n\n")
+        if include_titles or include_descriptions or include_html_content:
+            results_file.write("Details:\n")
+            if include_titles:
+                results_file.write("Title: ...\n")  # Placeholder, will be replaced if available
+            if include_descriptions:
+                results_file.write("Description: ...\n")  # Placeholder, will be replaced if available
+            if include_html_content:
+                results_file.write("HTML Content: ...\n")  # Placeholder, will be replaced if available
+        results_file.write("\n")
     except Exception as e:
         logging.error(f"Error occurred while writing to file for {username} on {url}: {e}")
 
-def write_html_snippet_to_file(html_content):
-    try:
-        if not html_content:
-            results_file.write("HTML Content: Empty\n")
-            return
 
-        soup = BeautifulSoup(html_content, 'html.parser')
-        if soup:
-            title = soup.title.get_text(strip=True) if soup.title else "No title found"
-            meta_description = soup.find("meta", attrs={"name": "description"})
-            description = meta_description['content'] if meta_description else "No meta description found"
-
-            results_file.write(f"Title: {title}\n")
-            results_file.write(f"Description: {description}\n")
-            results_file.write("HTML Content:\n")
-            # Decode bytes to string
-            html_content_str = html_content.decode('utf-8')
-            # Write a snippet of the HTML content to file
-            snippet_length = 200  # Adjust as needed
-            html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
-            results_file.write(html_snippet)
-            results_file.write("\n")
-        else:
-            results_file.write("HTML Content: Empty\n")
-    except Exception as e:
-        logging.error(f"Error occurred while writing HTML snippet to file: {e}")
-
-def print_html(html_content, url):
+def print_html(html_content, url, include_titles=True, include_descriptions=True, include_html_content=True):
     try:
         if not html_content:
             print(f"{Fore.YELLOW}HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW} Empty")
@@ -108,22 +89,22 @@ def print_html(html_content, url):
 
         soup = BeautifulSoup(html_content, 'html.parser')
         if soup:
-            title = soup.title.get_text(strip=True) if soup.title else "No title found"
-            meta_description = soup.find("meta", attrs={"name": "description"})
-            description = meta_description['content'] if meta_description else "No meta description found"
+            if include_titles:
+                title = soup.title.get_text(strip=True) if soup.title else "No title found"
+                print(f"{Fore.YELLOW}🔸 TITLE: {Fore.WHITE}{title}")
+            if include_descriptions:
+                meta_description = soup.find("meta", attrs={"name": "description"})
+                description = meta_description['content'] if meta_description else "No meta description found"
+                print(f"{Fore.YELLOW}🔸 DESCRIPTION: {Fore.WHITE}{description}")
 
-            print(f"{Fore.YELLOW}{'─' * 40}")
-            print(f"{Fore.YELLOW}🔸 TITLE: {Fore.WHITE}{title}")
-            print(f"{Fore.YELLOW}🔸 DESCRIPTION: {Fore.WHITE}{description}")
-            print(f"{Fore.YELLOW}🔸 HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW}")
-
-            # Decode bytes to string
-            html_content_str = html_content.decode('utf-8')
-            # Print a snippet of the HTML content with line breaks for better readability
-            snippet_length = 200  # Adjust as needed
-            html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
-            print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
-            print(f"{Fore.YELLOW}{'─' * 40}")
+            if include_html_content:
+                print(f"{Fore.YELLOW}🔸 HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW}")
+                # Decode bytes to string
+                html_content_str = html_content.decode('utf-8')
+                # Print a snippet of the HTML content with line breaks for better readability
+                snippet_length = 200  # Adjust as needed
+                html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
+                print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
 
         else:
             print(f"{Fore.YELLOW}HTML Content for URL {Fore.WHITE}{url}:{Fore.RED} Empty")
@@ -139,15 +120,29 @@ def main(username):
         print("❌ Error: Username cannot be empty.")
         return
 
+    run_script = input(" src/usr.py[ Do you want to run a username search? (y/n): ").lower()
+    if run_script != 'y':
+        print("Skipping the script.")
+        return
+
+    include_titles = input("Include titles? (y/n): ").lower() == 'y'
+    include_descriptions = input("Include descriptions? (y/n): ").lower() == 'y'
+    include_html_content = input("Include HTML content? (y/n): ").lower() == 'y'
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(search_username_on_url, username, url) for url in url_list]
+        futures = [executor.submit(search_username_on_url, username, url, include_titles, include_descriptions, include_html_content) for url in url_list]
         concurrent.futures.wait(futures)
+
 
 if __name__ == "__main__":
     try:
         if len(sys.argv) != 2:
             print("❌ Error: Invalid number of arguments.")
             sys.exit(1)
+
+        if sys.argv[1] == '--skip':
+            print(" - src/usr.py[ Skipping the username search...")
+            sys.exit(0)
 
         input_text = sys.argv[1]
 
