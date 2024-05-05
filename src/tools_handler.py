@@ -161,7 +161,7 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
             print(f"Chosen Country: {country}")
         if date_range:
             print(f"Chosen Date Range: {date_range[0]} - {date_range[1]}")
-        print("_" * 80)
+        #print("_" * 80)
 
         while True:  # Infinite loop for continuous search
             try:

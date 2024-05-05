@@ -120,14 +120,14 @@ def main(username):
         print("❌ Error: Username cannot be empty.")
         return
 
-    run_script = input("\n Do you want to run a username search? (y/n): ").lower()
+    run_script = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Do you want to run a username search? (y/n):{Style.RESET_ALL} ").lower()
     if run_script != 'y':
-        print("Skipping the script.")
+        print(f"{fore.RED}- {Fore.LIGHTBLACK_EX}Skipping the script.{Style.RESET_ALL}")
         return
 
-    include_titles = input(" Include titles? (y/n): ").lower() == 'y'
-    include_descriptions = input(" Include descriptions? (y/n): ").lower() == 'y'
-    include_html_content = input(" Include HTML content? (y/n): ").lower() == 'y'
+    include_titles = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include titles? (y/n): {Style.RESET_ALL}").lower() == 'y'
+    include_descriptions = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include descriptions? (y/n):{Style.RESET_ALL} ").lower() == 'y'
+    include_html_content = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include HTML content? (y/n):{Style.RESET_ALL} ").lower() == 'y'
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(search_username_on_url, username, url, include_titles, include_descriptions, include_html_content) for url in url_list]
