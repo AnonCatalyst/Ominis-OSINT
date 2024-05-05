@@ -3,7 +3,7 @@ import concurrent.futures
 import logging
 import random
 import time
-from colorama import Fore, init
+from colorama import Fore, Style, init
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 
