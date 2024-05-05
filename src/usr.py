@@ -125,9 +125,11 @@ def main(username):
         print(f"{fore.RED}- {Fore.LIGHTBLACK_EX}Skipping the script.{Style.RESET_ALL}")
         return
 
+    print(f"{Fore.RED}_" * 80 + "\n")
     include_titles = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include titles? (y/n): {Style.RESET_ALL}").lower() == 'y'
     include_descriptions = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include descriptions? (y/n):{Style.RESET_ALL} ").lower() == 'y'
     include_html_content = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include HTML content? (y/n):{Style.RESET_ALL} ").lower() == 'y'
+    print(f"{Fore.RED}_" * 80 + "\n")
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(search_username_on_url, username, url, include_titles, include_descriptions, include_html_content) for url in url_list]
