@@ -90,14 +90,14 @@ async def main():
         logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
 
 
-
+    print(f"{Fore.RED}_" * 80 + "\n")
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
     language = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the language code (e.g., 'lang_en' for English){Fore.YELLOW}: {Fore.WHITE} ")
     country = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the country code (e.g., 'countryUS' for United States){Fore.YELLOW}: {Fore.WHITE} ")
     start_date = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the start date for the date range (MM/DD/YYYY){Fore.YELLOW}: {Fore.WHITE} ")
     end_date = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the end date for the date range (MM/DD/YYYY){Fore.YELLOW}: {Fore.WHITE} ")
     date_range = (start_date, end_date)
-
+    print(f"{Fore.RED}_" * 80 + "\n")
 
 
     await fetch_google_results(query, language, country, date_range, valid_proxies)
