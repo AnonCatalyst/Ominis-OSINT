@@ -123,6 +123,9 @@ Ominis OSINT Tools provides a wealth of targetable and actionable results, empow
    - Leveraging predictive analytics to forecast emerging risks and market shifts.
    - Anticipating vulnerabilities, seizing opportunities, and staying ahead of the curve.
 
+### 11. Google Search Filtering 🖇
+   - Adjust your search by using the filtering features (Language, Country, and Date-range).
+
 Ominis OSINT Tools delivers actionable insights that enable users to make informed decisions, mitigate risks, and capitalize on opportunities in a rapidly evolving digital landscape.
 
 
