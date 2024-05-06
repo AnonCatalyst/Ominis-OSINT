@@ -5,7 +5,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Beautify Update Finished!. 😉
+-- **NOTE:** `Hello World 🌍 👋 - Happy OSINTing!. 😉
 `
 
 
