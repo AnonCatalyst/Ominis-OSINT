@@ -46,7 +46,7 @@ counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫',
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 MAX_RETRY_COUNT = 5  # Define the maximum number of retry attempts
-MAX_REDIRECTS = 5
+#MAX_REDIRECTS = 5
 
 async def make_request_async(url, proxies=None):
     retry_count = 0
