@@ -28,10 +28,10 @@ error_logger.addHandler(error_handler)
 
 # Disable httpx INFO logging
 logging.getLogger('httpx').setLevel(logging.WARNING)
-
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# Configure logging to save to a file
 
 init(autoreset=True)  # Initialize colorama for colored output
 
@@ -45,7 +45,7 @@ with open("src/social_platforms.json", "r") as json_file:
 counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
-MAX_RETRY_COUNT = 5  # Define the maximum number of retry attempts
+MAX_RETRY_COUNT = 20  # Define the maximum number of retry attempts
 #MAX_REDIRECTS = 5
 
 async def make_request_async(url, proxies=None):
@@ -55,15 +55,15 @@ async def make_request_async(url, proxies=None):
             async with httpx.AsyncClient() as client:
                 if proxies:
                     proxy = random.choice(proxies)
-                    #logger.info(f"Using proxy: {proxy}")
+                    print(f"  {Fore.LIGHTBLACK_EX}Rotated to Proxy: {proxy} Avoiding detection! {Style.RESET_ALL}")
                     client.proxies = {"http://": proxy}
 
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
-                response = await client.get(url, timeout=5)
+                response = await client.get(url, timeout=7)
 
                 if response.status_code == 302:
                     redirect_location = response.headers.get('location')
-                    logger.info(f"Redirecting to: {redirect_location}")
+                    logger.info(f" ? Redirecting to: {redirect_location}")
                     if redirect_location:
                         if retry_count < MAX_REDIRECTS:
                             return await make_request_async(redirect_location, proxies)
@@ -77,9 +77,9 @@ async def make_request_async(url, proxies=None):
             logger.error(f"Failed to make connection: {e}")
             retry_count += 1
             logger.info(f"Retrying request {retry_count}/{MAX_RETRY_COUNT}...")
-            await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
+            await asyncio.sleep(7 * retry_count)  # Exponential backoff for retries
             if retry_count < MAX_RETRY_COUNT:
-                await asyncio.sleep(5 * retry_count)  # Exponential backoff for retries
+                await asyncio.sleep(6 * retry_count)  # Exponential backoff for retries
             else:
                 raise RuntimeError(f"Failed to make connection after {MAX_RETRY_COUNT} retries: {e}")
 
@@ -107,7 +107,7 @@ async def fetch_ddg_results(query):
             raise
 
 async def follow_redirects_async(url):
-    MAX_REDIRECTS = 5  # Define the maximum number of redirects to prevent infinite loops
+    MAX_REDIRECTS = 4  # Define the maximum number of redirects to prevent infinite loops
     redirect_count = 0
     while redirect_count < MAX_REDIRECTS:
         async with httpx.AsyncClient() as client:
@@ -138,8 +138,8 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
     retries = 0
     consistent_duplicates_count = 0
     previous_unique_count = 0
-    max_retries = 5  # Define maximum retry attempts
-    retry_interval = 5  # Initial retry interval in seconds
+    max_retries = 10  # Define maximum retry attempts
+    retry_interval = 10  # Initial retry interval in seconds
 
     # Encode the query
     encoded_query = quote_plus(query)
