@@ -102,7 +102,7 @@ def print_html(html_content, url, include_titles=True, include_descriptions=True
                 # Decode bytes to string
                 html_content_str = html_content.decode('utf-8')
                 # Print a snippet of the HTML content with line breaks for better readability
-                snippet_length = 200  # Adjust as needed
+                snippet_length = 220  # Adjust as needed
                 html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
                 print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         main(input_text)
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
-        print(f"❌ Exited.")
+        print(f"❌ - src/usr.py[ Skipping the username search...")
 
 # Close the results file
 results_file.close()
