@@ -95,7 +95,7 @@ async def make_request_async(url, proxies=None):
     return await fetch_ddg_results(url)
 
 async def ask_to_show_message():
-    print('_' * 80 + "\n")
+    print(f'{Fore.RED}_' * 80 + "\n")
     response = await asyncio.get_event_loop().run_in_executor(None, input, f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}):{Style.RESET_ALL} ")
     return response.lower() == "y"
 
