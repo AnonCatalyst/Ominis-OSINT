@@ -1,4 +1,4 @@
-># Ominis OSINT: Secure Web-Search 🌐🕵️‍♂️
+># Ominis-Osint: Web Hunter 🌐🕵️‍♂️
 
 **Information Obtained**
     Discover online mentions of a query or username.
@@ -45,7 +45,7 @@ These measures collectively contribute to ensuring user anonymity and privacy, p
 
 🌐 Premier Digital Reconnaissance Solution
 
-Ominis OSINT Secure Web-history Search stands as a premier solution for digital reconnaissance, offering unparalleled capabilities in gathering, analyzing, and interpreting publicly available information sourced from diverse online platforms. With its comprehensive suite of features, Ominis equips users to navigate through the expansive digital landscape with precision and efficiency, enabling the extraction of valuable insights from a myriad of sources.
+Ominis OSINT Secure Web-Hunter stands as a premier solution for digital reconnaissance, offering unparalleled capabilities in gathering, analyzing, and interpreting publicly available information sourced from diverse online platforms. With its comprehensive suite of features, Ominis equips users to navigate through the expansive digital landscape with precision and efficiency, enabling the extraction of valuable insights from a myriad of sources.
 
 🔍 Comprehensive Data Gathering
 
