@@ -120,7 +120,7 @@ def main(username):
         print("❌ Error: Username cannot be empty.")
         return
 
-    run_script = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Do you want to run a username search? (y/n):{Style.RESET_ALL} ").lower()
+    run_script = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Do you want to run a username search? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}):{Style.RESET_ALL} ").lower()
     if run_script != 'y':
         print(f"{fore.RED}- {Fore.LIGHTBLACK_EX}Skipping the script.{Style.RESET_ALL}")
         return
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         main(input_text)
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
-        print(f"❌ - src/usr.py[ Skipping the username search...")
+        print(f"❌ {Fore.LIGHTBLACK_EX}- src/usr.py[ Skipping the username search{Fore.RED}...{Style.RESET_ALL}")
 
 # Close the results file
 results_file.close()
