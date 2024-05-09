@@ -153,7 +153,7 @@ if __name__ == "__main__":
         main(input_text)
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
-        print(f"❌ An unexpected error occurred. Please check the logs for details.")
+        print(f"❌ Exited.")
 
 # Close the results file
 results_file.close()
