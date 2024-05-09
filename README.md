@@ -11,7 +11,7 @@
 
 ## Compatibility and Future Releases
 
-📱 **Mobile Compatibility:** Please note that Ominis OSINT Toolkit is primarily designed for use on PC platforms and may not work on mobile environments such as Termux. However, a mobile release is being considered for future development to extend the toolkit's accessibility to mobile users. Stay tuned for updates!
+📱 **Mobile Compatibility:** Please note that Ominis OSINT is primarily designed for use on PC platforms and may not work on mobile environments such as Termux. However, a mobile release is being considered for future development to extend the toolkit's accessibility to mobile users. Stay tuned for updates!
 
 **Contributing**
 Contributions are welcome! Fork the repository, make changes, and submit a pull request.
@@ -49,15 +49,15 @@ Ominis OSINT Secure Web-history Search stands as a premier solution for digital 
 
 🔍 Comprehensive Data Gathering
 
-From scouring social media platforms and forums to parsing through web pages and search engine results, Ominis OSINT Tools leaves no stone unturned in the quest for relevant data. Its robust functionality encompasses advanced techniques for data collection, including scraping proxies, asynchronous HTTP requests, and intelligent pattern matching. This ensures that users can access a wealth of information while adhering to the highest standards of data integrity and security.
+From scouring social media platforms and forums to parsing through web pages and search engine results, Ominis OSINT leaves no stone unturned in the quest for relevant data. Its robust functionality encompasses advanced techniques for data collection, including scraping proxies, asynchronous HTTP requests, and intelligent pattern matching. This ensures that users can access a wealth of information while adhering to the highest standards of data integrity and security.
 
 📊 Sophisticated Analysis Capabilities
 
-Moreover, Ominis OSINT Tools goes beyond mere data retrieval, providing sophisticated analysis tools to uncover hidden connections, identify emerging trends, and discern actionable intelligence from vast troves of digital content. Whether it's investigating potential threats, conducting due diligence, or gathering competitive intelligence, Ominis empowers users with the insights they need to make informed decisions and stay ahead in an increasingly complex digital landscape.
+Moreover, Ominis OSINT goes beyond mere data retrieval, providing sophisticated analysis tools to uncover hidden connections, identify emerging trends, and discern actionable intelligence from vast troves of digital content. Whether it's investigating potential threats, conducting due diligence, or gathering competitive intelligence, Ominis empowers users with the insights they need to make informed decisions and stay ahead in an increasingly complex digital landscape.
 
 🛠️ Cutting-edge Technology
 
-In essence, Ominis OSINT Tools redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision.
+In essence, Ominis OSINT redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision.
 
 Updated Features in usr.py:
 
@@ -71,7 +71,7 @@ Updated Features in usr.py:
 
 ## Targetable and Actionable Results 🎯
 
-Ominis OSINT Tools provides a wealth of targetable and actionable results, empowering users with valuable insights and intelligence from the digital landscape. Here are some key areas where Ominis excels:
+Ominis OSINT provides a wealth of targetable and actionable results, empowering users with valuable insights and intelligence from the digital landscape. Here are some key areas where Ominis excels:
 
 ### 1. Identifying Potential Threats 🚨
 
