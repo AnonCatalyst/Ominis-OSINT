@@ -38,4 +38,4 @@ if [ -n "$ZSH_VERSION" ]; then
     echo "Added Ominis-Osint directory to PATH in ~/.zshrc"
 fi
 
-echo "Installation complete. You can now run scripts from the folder in $destination_dir from anywhere."
+echo "Installation complete. You can now run ominis from anywhere in the terminal"
