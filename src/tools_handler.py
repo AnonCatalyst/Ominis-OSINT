@@ -47,7 +47,7 @@ counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫',
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 MAX_RETRY_COUNT = 20  # Define the maximum number of retry attempts
-#MAX_REDIRECTS = 5
+MAX_REDIRECTS = 5
 
 # Global variable to store user's response
 show_message = None
