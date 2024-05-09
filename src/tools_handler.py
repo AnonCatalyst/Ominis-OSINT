@@ -17,7 +17,8 @@ from urllib.parse import urlencode, quote_plus
 import urllib3
 
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+#urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import logging
 
 # Set up error logger for tool errors
 error_logger = logging.getLogger('gfetcherror')
@@ -28,10 +29,10 @@ error_logger.addHandler(error_handler)
 
 # Disable httpx INFO logging
 logging.getLogger('httpx').setLevel(logging.WARNING)
-# Logging configuration
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 # Configure logging to save to a file
+logging.basicConfig(level=logging.INFO, filename='src/gfetcherror.log', format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 init(autoreset=True)  # Initialize colorama for colored output
 
@@ -138,8 +139,8 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
     retries = 0
     consistent_duplicates_count = 0
     previous_unique_count = 0
-    max_retries = 10  # Define maximum retry attempts
-    retry_interval = 10  # Initial retry interval in seconds
+    max_retries = 15  # Define maximum retry attempts
+    retry_interval = 13  # Initial retry interval in seconds
 
     # Encode the query
     encoded_query = quote_plus(query)
@@ -186,7 +187,7 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
                 if not search_results:
                     if len(processed_urls) == previous_unique_count:
                         consistent_duplicates_count += 1
-                        if consistent_duplicates_count >= 3:
+                        if consistent_duplicates_count >= 4:
                             print(Fore.YELLOW + "Consistent duplicates detected. Stopping search." + Style.RESET_ALL)
                             break
                     else:
