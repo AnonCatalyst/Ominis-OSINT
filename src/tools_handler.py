@@ -49,14 +49,21 @@ emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 MAX_RETRY_COUNT = 20  # Define the maximum number of retry attempts
 #MAX_REDIRECTS = 5
 
+# Global variable to store user's response
+show_message = None
+
 async def make_request_async(url, proxies=None):
     retry_count = 0
+    global show_message  # Using global variable for caching user's response
     while retry_count < MAX_RETRY_COUNT:
         try:
             async with httpx.AsyncClient() as client:
                 if proxies:
                     proxy = random.choice(proxies)
-                    print(f"  {Fore.LIGHTBLACK_EX}Rotated to Proxy: {proxy} Avoiding detection! {Style.RESET_ALL}")
+                    if show_message is None:
+                        show_message = await ask_to_show_message()
+                    if show_message:
+                        print(f"  {Fore.LIGHTBLACK_EX}Rotated to Proxy: {proxy} Avoiding detection! {Style.RESET_ALL}")
                     client.proxies = {"http://": proxy}
 
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
@@ -86,6 +93,14 @@ async def make_request_async(url, proxies=None):
 
     logger.info("Final retry using DuckDuckGo...")
     return await fetch_ddg_results(url)
+
+async def ask_to_show_message():
+    print('_' * 80)
+    response = await asyncio.get_event_loop().run_in_executor(None, input, " Enable proxy rotation display? (y/n): ")
+    return response.lower() == "y"
+
+
+
 
 
 async def fetch_ddg_results(query):
