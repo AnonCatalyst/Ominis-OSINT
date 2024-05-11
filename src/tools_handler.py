@@ -63,7 +63,7 @@ async def make_request_async(url, proxies=None):
                     if show_message is None:
                         show_message = await ask_to_show_message()
                     if show_message:
-                        print(f"  {Fore.LIGHTBLACK_EX}Rotated to Proxy: {proxy} Avoiding detection! {Style.RESET_ALL}")
+                        print(f"  {Fore.LIGHTBLACK_EX}Rotated to Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {proxy} Avoiding detection{Fore.RED}! {Style.RESET_ALL}")
                     client.proxies = {"http://": proxy}
 
                 client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
@@ -71,7 +71,7 @@ async def make_request_async(url, proxies=None):
 
                 if response.status_code == 302:
                     redirect_location = response.headers.get('location')
-                    logger.info(f" ? Redirecting to: {redirect_location}")
+                    logger.info(f"{Fore.LIGHTBLACK_EX} ? Redirecting to: {redirect_location}{Style.RESET_ALL}")
                     if redirect_location:
                         if retry_count < MAX_REDIRECTS:
                             return await make_request_async(redirect_location, proxies)
@@ -84,19 +84,19 @@ async def make_request_async(url, proxies=None):
         except httpx.RequestError as e:
             logger.error(f"Failed to make connection: {e}")
             retry_count += 1
-            logger.info(f"Retrying request {retry_count}/{MAX_RETRY_COUNT}...")
+            logger.info(f"{Fore.LIGHTBLACK_EX} Retrying request {retry_count}{Fore.LIGHTBLACK_EX}/{MAX_RETRY_COUNT}{Fore.RED}...{Style.RESET_ALL}")
             await asyncio.sleep(7 * retry_count)  # Exponential backoff for retries
             if retry_count < MAX_RETRY_COUNT:
                 await asyncio.sleep(6 * retry_count)  # Exponential backoff for retries
             else:
-                raise RuntimeError(f"Failed to make connection after {MAX_RETRY_COUNT} retries: {e}")
+                raise RuntimeError(f"Failed to make connection after {MAX_RETRY_COUNT} retries{Fore.YELLOW}: {e}{Style.RESET_ALL}")
 
     logger.info("Final retry using DuckDuckGo...")
     return await fetch_ddg_results(url)
 
 async def ask_to_show_message():
     print(f'{Fore.RED}_' * 80 + "\n")
-    response = await asyncio.get_event_loop().run_in_executor(None, input, f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}):{Style.RESET_ALL} ")
+    response = await asyncio.get_event_loop().run_in_executor(None, input, f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}:{Style.RESET_ALL} ")
     return response.lower() == "y"
 
 
@@ -111,7 +111,7 @@ async def fetch_ddg_results(query):
             response.raise_for_status()
             if response.is_redirect:
                 redirected_url = response.headers['location']
-                logger.info(f"Redirecting to: {redirected_url}")
+                logger.info(f"Redirecting to{Fore.RED}:{Fore.LIGHTBLACK_EX} {redirected_url}{Style.RESET_ALL}")
                 # Follow redirects until a final response is obtained
                 return await follow_redirects_async(redirected_url)
             return response.text
@@ -203,7 +203,7 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
                     if len(processed_urls) == previous_unique_count:
                         consistent_duplicates_count += 1
                         if consistent_duplicates_count >= 4:
-                            print(Fore.YELLOW + "Consistent duplicates detected. Stopping search." + Style.RESET_ALL)
+                            print(f" {Fore.LIGHTBLACK_EX}Consistent duplicates detected{Fore.RED}. {Fore.WHITE}Stopping search{Fore.RED}..." + Style.RESET_ALL)
                             break
                     else:
                         consistent_duplicates_count = 0
@@ -228,21 +228,21 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
                         file.write(f"URL: {url}\n")
 
                         print('_' * 80)
-                        print(random.choice(counter_emojis), Fore.BLUE + f"Title: {title.text.strip()}" + Style.RESET_ALL)
-                        print(random.choice(counter_emojis), Fore.LIGHTBLACK_EX + f"URL: {url}" + Style.RESET_ALL)
+                        print(random.choice(counter_emojis), f"Title{Fore.YELLOW}: {Fore.BLUE}{title.text.strip()}" + Style.RESET_ALL)
+                        print(random.choice(counter_emojis), f"URL{Fore.YELLOW}: {Fore.LIGHTBLACK_EX}{url}" + Style.RESET_ALL)
 
                         text_to_check = title.text + ' ' + url
                         mention_count = extract_mentions(text_to_check, query)
 
                         for q, count in mention_count.items():
                             if count > 0:
-                                print(random.choice(counter_emojis), Fore.YELLOW + f"'{q}': Detected in Title/Url" + Style.RESET_ALL)
+                                print(random.choice(counter_emojis), f"{Fore.BLUE}'{q}'{Fore.YELLOW}: {Fore.WHITE}Detected in Title{Fore.RED}-{Fore.WHITE}&or{Fore.RED}-{Fore.WHITE}Url{Fore.RED}..." + Style.RESET_ALL)
                                 all_mention_links.append({"url": url, "count": count})
 
                         social_profiles = find_social_profiles(url)
                         if social_profiles:
                             for profile in social_profiles:
-                                print(random.choice(counter_emojis), Fore.GREEN + f"{profile['platform']}: {profile['profile_url']}" + Style.RESET_ALL)
+                                print(random.choice(counter_emojis), Fore.GREEN + f"{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}" + Style.RESET_ALL)
                                 all_unique_social_profiles.add(profile['profile_url'])
 
                         total_results += 1
