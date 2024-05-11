@@ -48,11 +48,16 @@ def search_username_on_url(username: str, url: str, include_titles=True, include
 
             print(f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code}")
 
-            # Always check for query in URL, description, and HTML content
+            # Always check for query in URL, title, description, and HTML content
             print_query_detection(username, url, response.html.raw_html)
 
             # Write results to file
             write_to_file(username, url, response.status_code, response.html.raw_html, include_titles, include_descriptions, include_html_content)
+
+            # Print HTML content with organized formatting if requested
+            if include_titles or include_descriptions or include_html_content:
+                print_html(response.html.raw_html, url, username, include_titles, include_descriptions, include_html_content)
+
         else:
             # Skip processing for non-200 status codes
             return
@@ -161,10 +166,6 @@ def main(username):
         print("❌ Error: Username cannot be empty.")
         return
 
-    run_script = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Do you want to run a username search? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}):{Style.RESET_ALL} ").lower()
-    if run_script != 'y':
-        print(f"{fore.RED}- {Fore.LIGHTBLACK_EX}Skipping the script.{Style.RESET_ALL}")
-        return
 
     print(f"{Fore.RED}_" * 80 + "\n")
     include_titles = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include titles? (y/n): {Style.RESET_ALL}").lower() == 'y'
