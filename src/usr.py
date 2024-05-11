@@ -48,9 +48,8 @@ def search_username_on_url(username: str, url: str, include_titles=True, include
 
             print(f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code}")
 
-            if include_titles or include_descriptions or include_html_content:
-                # Print HTML content with organized formatting if requested
-                print_html(response.html.raw_html, url, include_titles, include_descriptions, include_html_content)
+            # Always check for query in URL, description, and HTML content
+            print_query_detection(username, url, response.html.raw_html)
 
             # Write results to file
             write_to_file(username, url, response.status_code, response.html.raw_html, include_titles, include_descriptions, include_html_content)
@@ -61,6 +60,33 @@ def search_username_on_url(username: str, url: str, include_titles=True, include
         logging.error(f"UnicodeEncodeError occurred while printing to console for {username} on {url}")
     except Exception as e:
         logging.error(f"Error occurred while searching for {username} on {url}: {e}")
+
+def print_query_detection(username, url, html_content):
+    query_detected = False
+    try:
+        # Check if username is detected in URL
+        if username.lower() in url.lower():
+            #print(f"{Fore.YELLOW}🔸 Query detected in URL: {Fore.WHITE}{url}")
+            query_detected = True
+
+        # Check if username is detected in HTML content
+        if html_content and username.lower() in html_content.decode('utf-8').lower():
+            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in HTML content{Fore.RED}... {Fore.WHITE}")
+            query_detected = True
+
+        # Check if username is detected in meta description
+        soup = BeautifulSoup(html_content, 'html.parser')
+        meta_description = soup.find("meta", attrs={"name": "description"})
+        description = meta_description['content'] if meta_description else ""
+        if username.lower() in description.lower():
+            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in description{Fore.RED}... {Fore.WHITE}")
+            query_detected = True
+
+        if not query_detected:
+            print(f"{Fore.YELLOW}🔸 Query not detected in URL, description, or HTML content for URL: {Fore.WHITE}{url}")
+
+    except Exception as e:
+        print(f"{Fore.RED}Error occurred while checking for query in URL, description, or HTML content for URL: {Fore.WHITE}{url}: {str(e)}")
 
 
 def write_to_file(username, url, status_code, html_content, include_titles=True, include_descriptions=True, include_html_content=True):
@@ -81,7 +107,7 @@ def write_to_file(username, url, status_code, html_content, include_titles=True,
         logging.error(f"Error occurred while writing to file for {username} on {url}: {e}")
 
 
-def print_html(html_content, url, include_titles=True, include_descriptions=True, include_html_content=True):
+def print_html(html_content, url, query, include_titles=True, include_descriptions=True, include_html_content=True):
     try:
         if not html_content:
             print(f"{Fore.YELLOW}HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW} Empty")
@@ -91,25 +117,31 @@ def print_html(html_content, url, include_titles=True, include_descriptions=True
         if soup:
             if include_titles:
                 title = soup.title.get_text(strip=True) if soup.title else "No title found"
-                print(f"{Fore.YELLOW}🔸 TITLE: {Fore.WHITE}{title}")
+                if query.lower() in title.lower():
+                    print(f"{Fore.YELLOW}🔸 TITLE: {Fore.WHITE}{title}")
             if include_descriptions:
                 meta_description = soup.find("meta", attrs={"name": "description"})
                 description = meta_description['content'] if meta_description else "No meta description found"
-                print(f"{Fore.YELLOW}🔸 DESCRIPTION: {Fore.WHITE}{description}")
+                if query.lower() in description.lower():
+                    print(f"{Fore.YELLOW}🔸 DESCRIPTION: {Fore.WHITE}{description}")
 
             if include_html_content:
                 print(f"{Fore.YELLOW}🔸 HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW}")
                 # Decode bytes to string
                 html_content_str = html_content.decode('utf-8')
-                # Print a snippet of the HTML content with line breaks for better readability
-                snippet_length = 220  # Adjust as needed
-                html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
-                print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
+                # Check if query is in HTML content
+                if query.lower() in html_content_str.lower():
+                    # Print a snippet of the HTML content with line breaks for better readability
+                    snippet_length = 220  # Adjust as needed
+                    html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
+                    print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
 
         else:
             print(f"{Fore.YELLOW}HTML Content for URL {Fore.WHITE}{url}:{Fore.RED} Empty")
     except Exception as e:
         print(f"{Fore.RED}Error occurred while parsing HTML content for URL {Fore.WHITE}{url}:{Fore.RED} {str(e)}")
+
+
 
 
 def main(username):
