@@ -71,7 +71,7 @@ def print_query_detection(username, url, html_content):
 
         # Check if username is detected in HTML content
         if html_content and username.lower() in html_content.decode('utf-8').lower():
-            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in HTML content{Fore.RED}... {Fore.WHITE}")
+            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in 'HTML content'{Fore.RED}... {Fore.WHITE}")
             query_detected = True
 
         # Check if username is detected in meta description
@@ -79,14 +79,23 @@ def print_query_detection(username, url, html_content):
         meta_description = soup.find("meta", attrs={"name": "description"})
         description = meta_description['content'] if meta_description else ""
         if username.lower() in description.lower():
-            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in description{Fore.RED}... {Fore.WHITE}")
+            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in 'description'{Fore.RED}... {Fore.WHITE}")
             query_detected = True
 
         if not query_detected:
             print(f"{Fore.YELLOW}🔸 Query not detected in URL, description, or HTML content for URL: {Fore.WHITE}{url}")
 
+  # Check if username is detected in title
+        title = soup.title.get_text(strip=True) if soup.title else ""
+        if username.lower() in title.lower():
+            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in 'title'{Fore.RED}... {Fore.WHITE}")
+            query_detected = True
+
+        if not query_detected:
+            print(f"{Fore.YELLOW}🔸 Query not detected in URL, title, description, or HTML content for URL: {Fore.WHITE}{url}")
+
     except Exception as e:
-        print(f"{Fore.RED}Error occurred while checking for query in URL, description, or HTML content for URL: {Fore.WHITE}{url}: {str(e)}")
+        print(f"{Fore.RED}Error occurred while checking for query in URL, title, description, or HTML content for URL: {Fore.WHITE}{url}: {str(e)}")
 
 
 def write_to_file(username, url, status_code, html_content, include_titles=True, include_descriptions=True, include_html_content=True):
