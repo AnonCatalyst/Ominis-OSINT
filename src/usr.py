@@ -185,17 +185,23 @@ if __name__ == "__main__":
             sys.exit(1)
 
         if sys.argv[1] == '--skip':
-            print(" - src/usr.py[ Skipping the username search...")
+            print(f" {Fore.RED}- {Fore.LIGHTBLACK_EX}src/usr.py[ Skipping the username search{Fore.RED}...{Style.RESET_ALL}")
             sys.exit(0)
 
-
         input_text = sys.argv[1]
-       # print(f" \n{Fore.RED}〘{Fore.WHITE} Username Search{Fore.YELLOW}: {Fore.CYAN}{input_text}{Fore.RED} 〙\n")
+
+        confirmation = input(f"\n  {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want to run a username search{Fore.RED}? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: {Style.RESET_ALL}")
+        if confirmation.lower() != 'y':
+            #print("Script execution aborted.")
+            sys.exit(0)
+
+        # Uncomment the line below if you want to display input_text before running main
+        # print(f" \n〘 Username Search: {input_text} 〙\n")
 
         main(input_text)
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
-        print(f"❌ {Fore.LIGHTBLACK_EX}- src/usr.py[ Skipping the username search{Fore.RED}...{Style.RESET_ALL}")
+        print("❌ Error: An unexpected error occurred.")
 
 # Close the results file
 results_file.close()
