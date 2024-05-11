@@ -236,7 +236,7 @@ async def fetch_google_results(query, language=None, country=None, date_range=No
 
                         for q, count in mention_count.items():
                             if count > 0:
-                                print(random.choice(counter_emojis), Fore.YELLOW + f"'{q}' Detected in Title/Url: {url}" + Style.RESET_ALL)
+                                print(random.choice(counter_emojis), Fore.YELLOW + f"'{q}': Detected in Title/Url" + Style.RESET_ALL)
                                 all_mention_links.append({"url": url, "count": count})
 
                         social_profiles = find_social_profiles(url)
