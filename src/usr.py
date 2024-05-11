@@ -146,7 +146,7 @@ def print_html(html_content, url, query, include_titles=True, include_descriptio
                 # Check if query is in HTML content
                 if query.lower() in html_content_str.lower():
                     # Print a snippet of the HTML content with line breaks for better readability
-                    snippet_length = 220  # Adjust as needed
+                    snippet_length = 300  # Adjust as needed
                     html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
                     print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
 
