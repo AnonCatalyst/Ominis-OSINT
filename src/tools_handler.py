@@ -43,7 +43,7 @@ visited_urls = set()
 with open("src/social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
-counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
+counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 MAX_RETRY_COUNT = 20  # Define the maximum number of retry attempts
