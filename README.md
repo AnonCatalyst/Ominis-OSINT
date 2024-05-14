@@ -69,6 +69,8 @@ Updated Features in usr.py:
 
     Enhanced Error Handling: ⚠️ Provides informative error messages and logs unexpected errors encountered during execution, improving script reliability and maintainability.
 
+    Query Detection: 🔍 Detect the query in HTML content, description and titles.
+
 ## Targetable and Actionable Results 🎯
 
 Ominis OSINT provides a wealth of targetable and actionable results, empowering users with valuable insights and intelligence from the digital landscape. Here are some key areas where Ominis excels:
