@@ -26,7 +26,7 @@ init(autoreset=True)  # Initialize colorama for colored output
 DEFAULT_NUM_RESULTS = 500
 MAX_RETRY_COUNT = 5
 
-counter_emojis = ['💥', '🌀', '💣', '🔥', '💢', '💀', '⚡', '💫', '💥', '💢']
+counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
 emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
 
 query = None
