@@ -8,7 +8,7 @@
 -- **NOTE:** `Hello World 🌍 👋 - Updated 5/11/2024 - Happy OSINTing!. 😉
 `
 
--- **Support Server** `Help us grow our discord server or contact support by joining our support discord!` 
+-- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
 - https://discord.com/invite/rwjNemwere
 
 ## Compatibility and Future Releases
