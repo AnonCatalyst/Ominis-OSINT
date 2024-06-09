@@ -1,4 +1,4 @@
-># Ominis-Osint: Web Hunter 🌐🕵️‍♂️
+># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 **Information Obtained**
     Discover online mentions of a query or username.
@@ -142,7 +142,7 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 
 ## Installation
    ```
-   git clone https://github.com/AnonCatalyst/Ominis-Osint
+   git clone https://github.com/AnonCatalyst/Ominis-OSINT
    pip install -r requirements.txt
    ```
 - Run the following command at your own risk if your having installation issues when using pip 
@@ -153,7 +153,7 @@ pip install -r requirements.txt --break-system-packages
 > **Usage**
 
 1. Navigate to the script's directory:
-   - `cd Ominis-Osint`
+   - `cd Ominis-OSINT`
 3. Run the desired script:
-   - `python3 Ominis.py`
+   - `python3 ominis.py`
 
