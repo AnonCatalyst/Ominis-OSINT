@@ -1,7 +1,7 @@
 #!/bin/bash
 destination_dir="/usr/local/bin"
 
-cp -r ../Ominis-Osint "$destination_dir"
+cp -r ../Ominis-OSINT "$destination_dir"
 
 if [ $? -eq 0 ]; then
     echo "Copied Ominis-Osint folder to $destination_dir"
