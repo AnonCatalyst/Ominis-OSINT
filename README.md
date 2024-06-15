@@ -3,7 +3,7 @@
 **Warning!** 
     Proxy provider is experiencing server issues and Ominis-OSINT likely won't work until they fix there site.
     If there is no fix soon then I will work on a update.
-    To compensate, Odinova is gonna release sooner now. Odinova will not have its Custom Tools window in its beta release. I had no plans for a beta until complications with the proxy site used in Ominis-OSINT.
+    To compensate, Odinova is released now as BETA. Odinova will not have its Custom Tools window in its beta release. I had no plans for a beta until complications with the proxy site used in Ominis-OSINT.
     To further compensate, Odinova Pro has been canceled and Odinova and all its future features will now remain entirely free and open source for everyone.
 
 **Information Obtained**
