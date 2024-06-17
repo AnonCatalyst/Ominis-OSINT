@@ -1,7 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 > **BUGS-FIXED**
-- No more issues, you can use Ominis-OSINT again!
+- `No more issues, you can use Ominis-OSINT again!`
 
 **Information Obtained**
     Discover online mentions of a query or username.
