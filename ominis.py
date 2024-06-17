@@ -2,19 +2,16 @@ import asyncio
 import logging
 import os
 import random
-import urllib.parse
 import subprocess
-import httpx
-from colorama import Fore, Style, init
-from fake_useragent import UserAgent
-from bs4 import BeautifulSoup
+import urllib.parse
 
-from src.proxy_handler import scrape_proxies, validate_proxies
+from colorama import Fore, Style, init
+
+from src.proxy_handler import scrape_proxies, validate_proxies_concurrently, check_proxies_stability
 from src.tools_handler import fetch_google_results
 
 # Suppress InsecureRequestWarning
 import urllib3
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Logging configuration
@@ -62,22 +59,28 @@ async def main():
     {Fore.YELLOW}~ {Fore.CYAN}Website{Fore.YELLOW}:{Fore.BLUE} https:/hard2find.dev/{Fore.RED}""")
 
     print(f"{Fore.RED}_" * 80 + "\n")
-
+    logger.info(f"🕸️ Scraping proxies...")
     proxies = await scrape_proxies()
     if not proxies:
         logger.error(f" {Fore.RED}No proxies scraped. Exiting...{Style.RESET_ALL}")
         return
     else:
         logger.info(
-            f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}]{Fore.WHITE} Beginning proxy validation for proxy rotation{Fore.RED}.{Fore.WHITE}\n")
+            f" {Fore.RED}[{Fore.GREEN}+{Fore.RED}]{Fore.WHITE} Beginning proxy validation for proxy rotation{Fore.RED}.{Fore.WHITE}")
 
-    valid_proxies = await validate_proxies(proxies)
+    valid_proxies = await validate_proxies_concurrently(proxies, limit=50)
     if not valid_proxies:
         logger.error(f" {Fore.RED}No valid proxies found. Exiting...{Fore.WHITE}")
         return
     else:
-        logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
+        logger.info(f" >| {Fore.GREEN}Proxies validated successfully{Fore.RED}.{Fore.WHITE}")
 
+    stable_proxies = await check_proxies_stability(valid_proxies, limit=50)
+    if not stable_proxies:
+        logger.error(f" {Fore.RED}No stable proxies found. Exiting...{Fore.WHITE}")
+        return
+    else:
+        logger.info(f" >| {Fore.GREEN}Stable proxies validated successfully{Fore.RED}.{Fore.WHITE}\n")
 
     print(f"{Fore.RED}_" * 80 + "\n")
     query = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE}  Enter the query to search{Fore.YELLOW}: {Fore.WHITE}")
@@ -88,8 +91,7 @@ async def main():
     date_range = (start_date, end_date)
     print(f"{Fore.RED}_" * 80 + "\n")
 
-
-    await fetch_google_results(query, language, country, date_range, valid_proxies)
+    await fetch_google_results(query, language, country, date_range, stable_proxies)
     await asyncio.sleep(3)  # Introduce delay between requests
 
     subprocess.run(["python3", "-m", "src.usr", query])
@@ -101,5 +103,3 @@ def clear_screen():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
