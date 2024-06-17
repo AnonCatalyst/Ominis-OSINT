@@ -1,9 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
-**Warning!** 
-    Proxy provider is experiencing server issues and Ominis-OSINT likely won't work until they fix there site and there's no telling how long that will take.
-
-I am now starting the fix for Ominis-OSINT. Stay tuned for update notices.
+**BUGS-FIXED**
+No more issues, you can use Ominis-OSINT again!
 
 **Information Obtained**
     Discover online mentions of a query or username.
