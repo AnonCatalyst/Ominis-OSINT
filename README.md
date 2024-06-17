@@ -14,10 +14,6 @@
 -- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
 - https://discord.com/invite/rwjNemwere
 
-## Compatibility and Future Releases
-
-📱 **Mobile Compatibility:** Please note that Ominis OSINT is primarily designed for use on PC platforms and may not work on mobile environments such as Termux. However, a mobile release is being considered for future development to extend the toolkit's accessibility to mobile users. Stay tuned for updates!
-
 **Contributing**
 Contributions are welcome! Fork the repository, make changes, and submit a pull request.
 
