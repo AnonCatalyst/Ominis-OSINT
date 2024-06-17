@@ -23,7 +23,7 @@ async def fetch_proxies_from_site(proxy_url):
                 soup = BeautifulSoup(html, 'html.parser')
                 tbody = soup.find('tbody')
                 if tbody:
-                    for tr in tbody.find_all('tr')[:10]:  # Limiting to first 10 for example
+                    for tr in tbody.find_all('tr')[:13]:  # Limiting to first 10 for example
                         tds = tr.find_all('td', limit=2)
                         if len(tds) == 2:
                             ip_address = tds[0].get_text(strip=True)
@@ -43,7 +43,7 @@ async def fetch_proxies_from_site(proxy_url):
 async def scrape_proxies():
     proxy_urls = [
         "https://www.us-proxy.org/",
-        "https://advanced.name/freeproxy",
+
         "https://www.sslproxies.org/"
     ]
     tasks = [fetch_proxies_from_site(url) for url in proxy_urls]
