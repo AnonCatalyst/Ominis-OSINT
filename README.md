@@ -1,7 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
-> **BUGS-FIXED**
-- `No more issues, you can use Ominis-OSINT again!`
+> **UP-COMMING**
+- `Refinement update expected in the near future.`
 
 **Information Obtained**
     Discover online mentions of a query or username.
