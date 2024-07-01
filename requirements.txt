@@ -13,3 +13,4 @@ asyncio
 lxml_html_clean
 html_clean
 tqdm
+anyio>=4.4.0 # not directly required, pinned by Snyk to avoid a vulnerability
