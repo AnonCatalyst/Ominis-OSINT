@@ -3,8 +3,13 @@
 # Set the destination directory
 destination_dir="/usr/local/bin"
 
+# Check if cp alias is set, and unalias it if necessary
+if [ "$(alias cp 2>/dev/null)" ]; then
+  unalias cp
+fi
+
 # Copy the Ominis-OSINT folder
-cp -r../Ominis-OSINT "$destination_dir"
+/usr/bin/cp -r ../Ominis-OSINT "$destination_dir"
 
 # Check if the copy was successful
 if [ $? -eq 0 ]; then
