@@ -148,6 +148,11 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 ``` 
 pip install -r requirements.txt --break-system-packages
 ```
+
+- Install using install script
+```
+sudo sh install.sh
+```
     
 > **Usage**
 
