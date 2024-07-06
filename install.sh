@@ -1,41 +1,68 @@
 #!/bin/bash
+
+# Set the destination directory
 destination_dir="/usr/local/bin"
 
-cp -r ../Ominis-OSINT "$destination_dir"
+# Copy the Ominis-OSINT folder
+cp -r../Ominis-OSINT "$destination_dir"
 
+# Check if the copy was successful
 if [ $? -eq 0 ]; then
-    echo "Copied Ominis-Osint folder to $destination_dir"
+  echo "Copied Ominis-OSINT folder to $destination_dir"
 else
-    echo "Failed to copy Ominis-Osint folder"
-    exit 1
+  echo "Failed to copy Ominis-OSINT folder"
+  exit 1
 fi
 
-# Making sure u dont get permission error when running the tool
-chmod -R a+rw "$destination_dir/Ominis-Osint/src"
+# Set permissions for the src directory
+chmod -R a+rw "$destination_dir/Ominis-OSINT/src"
 
-cd "$destination_dir/Ominis-Osint" || { echo "Failed to change directory"; exit 1; }
+# Change to the Ominis-OSINT directory
+cd "$destination_dir/Ominis-OSINT" || { echo "Failed to change directory"; exit 1; }
 
+# Create a virtual environment
 python3 -m venv venv
 
+# Activate the virtual environment
 source venv/bin/activate
 
+# Install dependencies
 pip3 install -r requirements.txt
 
+# Deactivate the virtual environment
 deactivate
+
+# Set execute permission on the ominis file
 chmod +x ominis
+
+# Remove the install script
 rm install.sh
 
-# Making Sure The ominis runs when typing the command in
-# Check if the user is using Bash
+# Add the Ominis-OSINT directory to the system's PATH
 if [ -n "$BASH_VERSION" ]; then
-    echo 'export PATH="$PATH:'"$destination_dir/Ominis-Osint"'"' >> ~/.bashrc
-    echo "Added Ominis-Osint directory to PATH in ~/.bashrc"
-fi
-
-# Check if the user is using Zsh
-if [ -n "$ZSH_VERSION" ]; then
-    echo 'export PATH="$PATH:'"$destination_dir/Ominis-Osint"'"' >> ~/.zshrc
-    echo "Added Ominis-Osint directory to PATH in ~/.zshrc"
+  # Bash shell
+  echo 'export PATH="$PATH:'"$destination_dir/Ominis-OSINT"'"' >> ~/.bashrc
+  echo "Added Ominis-OSINT directory to PATH in ~/.bashrc"
+elif [ -n "$ZSH_VERSION" ]; then
+  # Zsh shell
+  echo 'export PATH="$PATH:'"$destination_dir/Ominis-OSINT"'"' >> ~/.zshrc
+  echo "Added Ominis-OSINT directory to PATH in ~/.zshrc"
+elif [ -n "$FISH_VERSION" ]; then
+  # Fish shell
+  echo 'set -gx PATH $PATH '"$destination_dir/Ominis-OSINT" >> ~/.config/fish/config.fish
+  echo "Added Ominis-OSINT directory to PATH in ~/.config/fish/config.fish"
+else
+  # Other shells (e.g., Dash, Ksh)
+  read -p "Your shell is not supported. Would you like to add the Ominis-OSINT directory to your system's PATH automatically? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Add the directory to the PATH
+    echo "export PATH=\"$PATH:$destination_dir/Ominis-OSINT\"" >> ~/.profile
+    echo "Added Ominis-OSINT directory to PATH in ~/.profile"
+    echo "Please restart your terminal or run 'source ~/.profile' to apply the changes."
+  else
+    echo "Ominis-OSINT will not be added to your system's PATH. You can still run it by navigating to the installation directory."
+  fi
 fi
 
 echo "Installation complete. You can now run ominis from anywhere in the terminal"
