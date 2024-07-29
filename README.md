@@ -1,7 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 > **UP-COMMING**
-- `Refinement update expected in the near future.`
+- `Refinement update scheduled to start __August 6th 2024__.`
 
 **Information Obtained**
     Discover online mentions of a query or username.
