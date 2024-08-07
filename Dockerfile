@@ -1,5 +1,5 @@
-# Dockerfile for Arch Linux
-FROM archlinux:latest
+# Dockerfile for  Linux
+FROM ubuntu:latest
 
 # Install Python and other dependencies
 RUN pacman -Syu --noconfirm \
