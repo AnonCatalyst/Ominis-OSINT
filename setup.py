@@ -26,13 +26,13 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'omnis=omnis:main',  # Assuming `omnis.py` has a `main` function
+            'ominis=ominis:main',  
         ],
     },
     include_package_data=True,
     description='Discover online mentions of a query or username. Identify potential social profiles and forums.',
     author='AnonCatalyst',
     author_email='hard2ind.co.01@gmail.com',
-    url='https://github.com/AnonCatalyst/omnis-osint',  # Update with your actual GitHub URL
+    url='https://github.com/AnonCatalyst/ominis-osint',  # Update with your actual GitHub URL
     license='MIT',  # Choose a license that fits your project
 )
