@@ -140,6 +140,8 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 - Configure the list of URLs in `src/urls.txt` for username searches.
 
 ## Installation
+**Optional PIP install:** ``pip install Ominis-OSINT``
+
    ```
    git clone https://github.com/AnonCatalyst/Ominis-OSINT
    pip install -r requirements.txt
