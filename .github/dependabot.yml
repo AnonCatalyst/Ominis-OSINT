@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: "python"
+  - package-ecosystem: "pip"
     directory: "/" # Location of requirements.txt file
     schedule:
       interval: "weekly" # How often Dependabot checks for updates
