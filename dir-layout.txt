@@ -1,0 +1,13 @@
+Ominis-OSINT/
+├── ominis.py  # Entry point for running the main script
+├── requirements.txt  # Dependencies for the project
+├── setup.py  # Build script for setuptools
+├── README.md  # Project description and instructions
+├── LICENSE  # License for the project
+├── Results/  # Directory for storing result files
+│   └── username-search_results.txt  # File where username search results are saved
+└── src/  # Source directory containing all scripts
+    ├── social_platforms.json
+    ├── urls.txt 
+    ├── tools_handler.py  
+    └── proxy_handler.py  
