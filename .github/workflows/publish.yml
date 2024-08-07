@@ -36,7 +36,7 @@ jobs:
       - name: Build package
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            docker build -t my-package -f Dockerfile . && docker run my-package
+            docker build -t ominis -f Dockerfile . && docker run ominis
           else
             python -m build
           fi
