@@ -11,7 +11,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [archlinux, debianlinux, windows-latest]
+        os: [ubuntu-latest, kali-latest, windows-latest]
         python-version: ['3.9']  # Specify the Python version you want to use
 
     runs-on: ${{ matrix.os == 'archlinux' && 'debianlinux' || matrix.os }}
