@@ -11,23 +11,23 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, kali-latest]
+        os: [ubuntu-latest]
         python-version: ['3.9']  # Specify the Python version you want to use
 
-    runs-on: ${{ matrix.os == 'archlinux' && 'debianlinux' || matrix.os }}
+    runs-on: ${{ matrix.os == 'ubuntu-latest' || matrix.os }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
-        if: matrix.os != 'archlinux'
+        if: matrix.os != 'ubuntu-latest'
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        if: matrix.os != 'archlinux'
+        if: matrix.os != 'ubuntu-latest'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -35,7 +35,7 @@ jobs:
 
       - name: Build package
         run: |
-          if [ "${{ matrix.os }}" == "archlinux" ]; then
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             docker build -t my-package -f Dockerfile . && docker run my-package
           else
             python -m build
