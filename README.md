@@ -151,15 +151,23 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 pip install -r requirements.txt --break-system-packages
 ```
 
-- Install using install script
+- Install using default install script
 ```
+chmod +x install.sh
 sudo sh install.sh
+```
+
+- Install for windows
+```
+Simply double-click the install.bat file or run it from Command Prompt.
 ```
     
 > **Usage**
 
 1. Navigate to the script's directory:
    - `cd Ominis-OSINT`
-3. Run the desired script:
+2. Run on Windows:
+   - Simply double-click the `ominis` __exe__ file or run it from Command Prompt.
+4. Run the script normally:
    - `python3 ominis.py`
 
