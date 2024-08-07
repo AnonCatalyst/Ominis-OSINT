@@ -1,6 +1,7 @@
 Ominis-OSINT/
 ├── ominis.py  # Entry point for running the main script
 ├── requirements.txt  # Dependencies for the project
+├── install.sh # {default}install file 
 ├── setup.py  # Build script for setuptools
 ├── README.md  # Project description and instructions
 ├── LICENSE  # License for the project
