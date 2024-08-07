@@ -11,10 +11,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [archlinux, ubuntu-latest, windows-latest]
+        os: [archlinux, debianlinux, windows-latest]
         python-version: ['3.9']  # Specify the Python version you want to use
 
-    runs-on: ${{ matrix.os == 'archlinux' && 'ubuntu-latest' || matrix.os }}
+    runs-on: ${{ matrix.os == 'archlinux' && 'debianlinux' || matrix.os }}
     
     steps:
       - name: Checkout code
