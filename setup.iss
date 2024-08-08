@@ -10,7 +10,7 @@ SolidCompression=yes
 
 [Files]
 Source: "install.bat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\omnis.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "omnis.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
