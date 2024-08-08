@@ -1,6 +1,6 @@
 [Setup]
 AppName=Ominis-OSINT
-AppVersion=1.0
+AppVersion=0.4.8
 DefaultDirName={pf}\Ominis-OSINT
 DefaultGroupName=Ominis-OSINT
 OutputDir=.\Output
