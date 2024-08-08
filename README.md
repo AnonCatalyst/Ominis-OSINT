@@ -60,18 +60,6 @@ Moreover, Ominis OSINT goes beyond mere data retrieval, providing sophisticated 
 
 In essence, Ominis OSINT redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision.
 
-Updated Features in usr.py:
-
-    Concurrent Execution: 🚀 The script now utilizes thread pools for concurrent execution, enhancing efficiency in searching across multiple URLs simultaneously.
-
-    Detailed Output: 📝 Provides detailed output including titles, meta descriptions, and snippets of HTML content for each URL searched, facilitating better understanding and analysis.
-
-    Logging: 📋 Logs errors and exceptions encountered during execution to a log file (username_search.log), enabling easy troubleshooting and debugging.
-
-    Enhanced Error Handling: ⚠️ Provides informative error messages and logs unexpected errors encountered during execution, improving script reliability and maintainability.
-
-    Query Detection: 🔍 Detect the query in HTML content, description and titles.
-
 ## Targetable and Actionable Results 🎯
 
 Ominis OSINT provides a wealth of targetable and actionable results, empowering users with valuable insights and intelligence from the digital landscape. Here are some key areas where Ominis excels:
