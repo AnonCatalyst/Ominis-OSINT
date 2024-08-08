@@ -5,7 +5,7 @@ RequestExecutionLevel user
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   File "install.bat"
-  File "dist\omnis.exe"
+  File "ominis.exe"
   File "requirements.txt"
 SectionEnd
 
