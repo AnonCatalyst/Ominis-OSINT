@@ -8,7 +8,7 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - Updated 5/11/2024 - You can now use Ominis-OSINT within Odinova - Happy OSINTing!.😉
+-- **NOTE:** `Hello World 🌍 👋 - You can now use Ominis-OSINT within Odinova - Happy OSINTing!.😉
 `
 
 -- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
