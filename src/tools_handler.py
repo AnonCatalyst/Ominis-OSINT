@@ -96,8 +96,8 @@ async def make_request_async(url, proxies=None):
 
 async def ask_to_show_message():
     print(f'{Fore.RED}_' * 80 + "\n")
-    response = await asyncio.get_event_loop().run_in_executor(None, input, f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}:{Style.RESET_ALL} ")
-    return response.lower() == "y"
+    #print(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}:{Style.RESET_ALL} ")
+    return False  # Assume default choice is 'n'
 
 
 
