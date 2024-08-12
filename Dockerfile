@@ -12,20 +12,22 @@ RUN apt-get update \
 # Install Rust and Cargo
 FROM base AS rust
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    && rustup update \
-    && rustup component add rustfmt
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Set the environment variable for Rust
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Verify installation
+RUN rustc --version \
+    && cargo --version \
+    && rustfmt --version
+
 # Set the working directory
 WORKDIR /app
 
-# Copy the package files
+# Copy the package files and install Python dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --upgrade pip \
     && pip install build twine \
     && pip install -r requirements.txt
@@ -35,6 +37,12 @@ COPY . .
 
 # Build the package
 RUN python -m build
+
+# Remove temporary files
+RUN apt-get purge -y build-essential \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup
 
 # Set the entry point
 ENTRYPOINT ["python", "-m", "build"]
