@@ -1,19 +1,22 @@
-⁷# Use a base Python image that supports multiple platforms
+# Use an official Python base image with support for multiple platforms
 FROM python:3.9-slim
 
 # Set the working directory
 WORKDIR /app
 
-# Install system dependencies including Rust and Cargo
+# Install system dependencies
 RUN apt-get update \
     && apt-get install -y \
        build-essential \
        libffi-dev \
        curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    && export PATH="$PATH:/root/.cargo/bin" \
-    && rustup update
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust and Cargo separately to handle potential issues
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && export PATH="/root/.cargo/bin:$PATH" \
+    && rustup update \
+    && rustup component add rustfmt
 
 # Copy application code and necessary files
 COPY . .
