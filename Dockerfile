@@ -7,12 +7,14 @@ WORKDIR /app
 # Copy application code and necessary files
 COPY . .
 
-# Install system dependencies
+# Install system dependencies including libffi-dev
 RUN apt-get update \
-    && apt-get install -y build-essential \
+    && apt-get install -y \
+       build-essential \
+       libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Upgrade pip and install Python dependencies
 RUN pip install --upgrade pip \
     && pip install build twine \
     && pip install -r requirements.txt
@@ -23,6 +25,6 @@ RUN python -m build
 # Command to run the application
 CMD ["python", "ominis.py"]
 
-# Optionally, define environment variables
+# Optionally: define environment variables
 ENV APP_ENV=production
 ENV APP_DEBUG=False
