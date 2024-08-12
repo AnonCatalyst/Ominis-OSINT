@@ -1,19 +1,26 @@
-name: Publish Package
+name: Build and Publish Package
 
 on:
   push:
     branches:
-      - main  # Trigger this workflow on pushes to the main branch
+      - main
     tags:
-      - 'v*.*.*'  # Trigger on tag pushes with version numbers
+      - 'v*.*.*'
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Directly specify the OS
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push multi-platform Docker image
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t your-image-name --push .
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -26,13 +33,9 @@ jobs:
           pip install -r requirements.txt
           pip install build twine
 
-      - name: Build package
+      - name: Build and publish package
         run: |
-          docker build -t ominis -f Dockerfile .
-          docker run ominis  # Adapt as necessary
-
-      - name: Publish to PyPI
+          python -m build
+          python -m twine upload dist/*
         env:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          python -m twine upload dist/*
