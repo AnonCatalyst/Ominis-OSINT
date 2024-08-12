@@ -1,8 +1,5 @@
-# Use an official Python base image with support for multiple platforms
-FROM python:3.9-slim
-
-# Set the working directory
-WORKDIR /app
+# Use a base Python image that supports multiple platforms
+FROM python:3.9-slim AS base
 
 # Install system dependencies
 RUN apt-get update \
@@ -12,16 +9,19 @@ RUN apt-get update \
        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust and Cargo separately to handle potential issues
+# Install Rust and Cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && export PATH="/root/.cargo/bin:$PATH" \
     && rustup update \
     && rustup component add rustfmt
 
-# Copy application code and necessary files
+# Set the working directory
+WORKDIR /app
+
+# Copy the package files
 COPY . .
 
-# Upgrade pip and install Python dependencies
+# Install Python dependencies
 RUN pip install --upgrade pip \
     && pip install build twine \
     && pip install -r requirements.txt
@@ -29,9 +29,8 @@ RUN pip install --upgrade pip \
 # Build the package
 RUN python -m build
 
-# Command to run the application
-CMD ["python", "ominis.py"]
+# Set the entry point
+ENTRYPOINT ["python", "-m", "build"]
 
-# Optionally: define environment variables
-ENV APP_ENV=production
-ENV APP_DEBUG=False
+# Expose any ports (if needed)
+# EXPOSE 8000
