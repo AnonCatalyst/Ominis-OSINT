@@ -5,16 +5,11 @@ on:
     branches:
       - main  # Trigger this workflow on pushes to the main branch
     tags:
-      - 'v*.*.*'  # Optionally trigger on tag pushes with version numbers
+      - 'v*.*.*'  # Trigger on tag pushes with version numbers
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.9']
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest  # Directly specify the OS
 
     steps:
       - name: Checkout code
@@ -23,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.9'
 
       - name: Install dependencies
         run: |
@@ -33,11 +28,8 @@ jobs:
 
       - name: Build package
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            docker build -t ominis -f Dockerfile . && docker run ominis
-          else
-            python -m build
-          fi
+          docker build -t ominis -f Dockerfile .
+          docker run ominis  # Adapt as necessary
 
       - name: Publish to PyPI
         env:
