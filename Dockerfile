@@ -7,30 +7,18 @@ RUN apt-get update \
        build-essential \
        libffi-dev \
        curl \
+       rustc \
+       cargo \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Rust and Cargo
-FROM base AS rust
-
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-# Set the environment variable for Rust
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Verify installation
-RUN rustc --version \
-    && cargo --version \
-    && rustfmt --version
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the package files and install Python dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip \
     && pip install build twine \
-    && pip install -r requirements.txt
+    && pip install -r requirements.txt --break-system-packages
 
 # Copy the rest of the application code
 COPY . .
@@ -38,11 +26,11 @@ COPY . .
 # Build the package
 RUN python -m build
 
-# Remove temporary files
+# Clean up
 RUN apt-get purge -y build-essential \
     && apt-get autoremove -y \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup
+    && rm -rf /var/lib/apt/lists/*
 
 # Set the entry point
 ENTRYPOINT ["python", "-m", "build"]
