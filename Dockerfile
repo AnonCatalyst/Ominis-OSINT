@@ -1,17 +1,28 @@
-# Dockerfile for Linux
-FROM arch:latest
+# Use a base Python image that supports multiple platforms
+FROM python:3.9-slim
 
-# Install Python and other dependencies
-RUN pacman -Syu --noconfirm \
-    && pacman -S --noconfirm python python-pip python-setuptools python-wheel \
-    && pip install --upgrade pip \
-    && pip install build twine
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy the package files
+# Copy application code and necessary files
 COPY . .
 
-# Command to build the package
-CMD ["python", "-m", "build"]
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --upgrade pip \
+    && pip install build twine \
+    && pip install -r requirements.txt
+
+# Build the package
+RUN python -m build
+
+# Command to run the application
+CMD ["python", "ominis.py"]
+
+# Optionally, define environment variables
+ENV APP_ENV=production
+ENV APP_DEBUG=False
