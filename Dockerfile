@@ -9,14 +9,17 @@ RUN apt-get update \
        libssl-dev \
        libxml2-dev \
        libxslt-dev \
+       zlib1g-dev \
        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up environment
 WORKDIR /app
 
-# Copy and install dependencies
+# Copy requirements file first to leverage Docker cache
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --upgrade pip==23.1.2 \
     && pip install --no-cache-dir -r requirements.txt --break-system-packages
 
