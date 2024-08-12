@@ -7,6 +7,8 @@ RUN apt-get update \
        build-essential \
        libffi-dev \
        libssl-dev \
+       libxml2-dev \
+       libxslt-dev \
        curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,8 +17,8 @@ WORKDIR /app
 
 # Copy and install dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip \
-    && pip install -r requirements.txt --break-system-packages
+RUN pip install --upgrade pip==23.1.2 \
+    && pip install --no-cache-dir -r requirements.txt --break-system-packages
 
 # Copy application code
 COPY . .
