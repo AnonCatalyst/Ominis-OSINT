@@ -4,15 +4,19 @@ FROM python:3.9-slim
 # Set the working directory
 WORKDIR /app
 
-# Copy application code and necessary files
-COPY . .
-
-# Install system dependencies including libffi-dev
+# Install system dependencies including Rust and Cargo
 RUN apt-get update \
     && apt-get install -y \
        build-essential \
        libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
+       curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && export PATH="$PATH:/root/.cargo/bin" \
+    && rustup update
+
+# Copy application code and necessary files
+COPY . .
 
 # Upgrade pip and install Python dependencies
 RUN pip install --upgrade pip \
