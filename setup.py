@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='Ominis-OSINT',
-    version='4.7',
+    version='0.4.8',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     python_requires='>=3.9',
