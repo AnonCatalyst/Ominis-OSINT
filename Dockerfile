@@ -11,7 +11,8 @@ RUN apt-get update \
        libxslt-dev \
        zlib1g-dev \
        curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Set up environment
 WORKDIR /app
@@ -21,7 +22,7 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip==23.1.2 \
-    && pip install --no-cache-dir -r requirements.txt --break-system-packages
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
