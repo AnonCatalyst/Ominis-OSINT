@@ -11,8 +11,7 @@ RUN apt-get update \
        libxslt-dev \
        zlib1g-dev \
        curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && rm -rf /var/lib/apt/lists/*
 
 # Set up environment
 WORKDIR /app
