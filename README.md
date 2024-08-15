@@ -26,7 +26,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Features
 
-    Goodle Search Filtering: 🖇 Take advantage of Google search by using the filtering features Country, Language, and date range.
+    Google Search Filtering: 🖇 Take advantage of Google search by using the filtering features Country, Language, and date range.
     Enhanced User Interface: 🚀 Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
     Expanded Digital Reconnaissance: 🔎 Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
     Threading Optimization: 💡 Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
