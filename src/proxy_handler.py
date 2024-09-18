@@ -67,11 +67,11 @@ async def scrape_proxies():
     start_time = time.time()
 
     # Use tqdm to show progress for scraping
-    for result in tqdm(asyncio.as_completed(tasks), total=len(proxy_urls), desc="Scraping Proxies", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]\n"):
+    for result in tqdm(asyncio.as_completed(tasks), total=len(proxy_urls), desc="Scraping Proxies", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"):
         results.append(await result)
 
     elapsed_time = time.time() - start_time
-    logger.info(f"Scraping completed in {elapsed_time:.2f} seconds.")
+    logger.info(f"\nScraping completed in {elapsed_time:.2f} seconds.")
 
     proxies = [proxy for sublist in results for proxy in sublist]
 

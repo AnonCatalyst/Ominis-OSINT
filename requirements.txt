@@ -1,6 +1,6 @@
 beautifulsoup4==4.12.2
 colorama==0.4.6
-requests==2.31.0
+requests==2.32.2
 serpapi==2.13.0
 google-search-results==2.2.0
 httpx==0.24.0
@@ -19,5 +19,4 @@ tqdm-asyncio==0.0.6
 ipwhois==1.0.0
 fake-useragent==1.1.2
 PyQt6==6.5.0
-
 dnspython>=2.6.1 # not directly required, pinned by Snyk to avoid a vulnerability
