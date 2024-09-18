@@ -68,7 +68,6 @@
     "Flirt4Free": "flirt4free\\.com/[\\w.-]+",
     "Cams.com": "cams\\.com/[\\w.-]+",
     "Jasmin": "jasmin\\.com/[\\w.-]+",
-    "Camsoda": "camsoda\\.com/[\\w.-]+",
     "LiveJasmin": "livejasmin\\.com/[\\w.-]+",
     "MyDirtyHobby": "mydirtyhobby\\.com/[\\w.-]+",
     "Cameraprive": "cameraprive\\.com/[\\w.-]+",
@@ -79,7 +78,7 @@
     "Product Hunt": "producthunt\\.com/[\\w.-]+",
     "AngelList": "angel\\.co/[\\w.-]+",
     "CodePen": "codepen\\.io/[\\w.-]+",
-    "Docker": "hub.docker.com/[\\w.-]+",
+    "Docker": "hub\\.docker\\.com/[\\w.-]+",
     "GitLab": "gitlab\\.com/[\\w.-]+",
     "Bitbucket": "bitbucket\\.org/[\\w.-]+",
     "Stack Overflow": "stackoverflow\\.com/users/[\\w.-]+",
@@ -118,6 +117,9 @@
     "PeoplePerHour": "peopleperhour\\.com/[\\w.-]+",
     "ArtStation": "artstation\\.com/[\\w.-]+",
     "Coroflot": "coroflot\\.com/[\\w.-]+",
-    "AdultFriendFinder": "adultfriendfinder\\.com/[\\w.-]+",
-    "Doxbin": "doxbin\\.com/[\\w.-]+"
+    "Doxbin": "doxbin\\.com/[\\w.-]+",
+    "Dribbble": "dribbble\\.com/[\\w.-]+",
+    "Bumble": "bumble\\.com/[\\w.-]+",
+    "Hinge": "hinge\\.co/[\\w.-]+"
 }
+

@@ -16,6 +16,9 @@ from requests.exceptions import RequestException, HTTPError
 from urllib.parse import urlencode, quote_plus
 import urllib3
 
+from src.utils import find_social_profiles, is_potential_forum, extract_mentions
+
+
 
 #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import logging
