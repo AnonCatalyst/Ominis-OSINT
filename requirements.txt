@@ -6,27 +6,17 @@ google-search-results==2.2.0
 httpx==0.24.0
 tenacity==8.2.2
 requests_html==0.10.0
-<<<<<<< snyk-fix-19b65bd5e2933874e2898cafeb1d7e85
-aiohttp==3.8.6
-urllib3==1.26.18
-=======
 aiohttp==3.10.2
 urllib3==1.26.19
->>>>>>> main
 asyncio==3.4.3
 lxml_html_clean==0.1.4
 html_clean==0.1.1
 anyio>=4.4.0
 zipp>=3.19.1
-<<<<<<< snyk-fix-19b65bd5e2933874e2898cafeb1d7e85
 validators==0.21.0
-=======
-validators==0.20.0
->>>>>>> main
 tqdm==4.66.3
 tqdm-asyncio==0.0.6
 ipwhois==1.0.0
 fake-useragent==1.1.2
 PyQt6==6.5.0
-
-dnspython>=2.6.1 # not directly required, pinned by Snyk to avoid a vulnerability
+dnspython>=2.6.1
