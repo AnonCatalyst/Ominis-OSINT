@@ -20,3 +20,4 @@ ipwhois==1.0.0
 fake-useragent==1.1.2
 PyQt6==6.5.0
 dnspython>=2.6.1 # not directly required, pinned by Snyk to avoid a vulnerability
+getrails
