@@ -1,7 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 > **UP-COMMING**
-- `Refinement update started. Tuesday, September 17th.`
+- `Refinement update started. Tuesday, September 17th.  Paused`
 
 **Information Obtained**
     Discover online mentions of a query or username.
