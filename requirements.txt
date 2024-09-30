@@ -6,7 +6,7 @@ google-search-results==2.2.0
 httpx==0.24.0
 tenacity==8.2.2
 requests_html==0.10.0
-aiohttp==3.10.2
+aiohttp==3.10.8
 urllib3==2.2.3
 asyncio==3.4.3
 lxml_html_clean==0.2.2
