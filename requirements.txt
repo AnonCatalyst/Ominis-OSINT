@@ -1,6 +1,6 @@
 beautifulsoup4==4.12.2
 colorama==0.4.6
-requests==2.31.0
+requests==2.32.2
 google-search-results==2.2.0
 httpx==0.27.2
 tenacity==9.0.0
@@ -13,7 +13,7 @@ html_clean
 anyio>=4.4.0
 zipp>=3.19.1
 validators==0.20.0
-tqdm==4.65.0
+tqdm==4.66.3
 ipwhois==1.0.0
 fake_useragent
 PyQt6==6.7.1
