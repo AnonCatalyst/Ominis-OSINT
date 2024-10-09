@@ -16,5 +16,5 @@ validators==0.20.0
 tqdm==4.65.0
 ipwhois==1.0.0
 fake_useragent
-PyQt6==6.5.0
+PyQt6==6.7.1
 dnspython>=2.6.1 # not directly required, pinned by Snyk to avoid a vulnerability
