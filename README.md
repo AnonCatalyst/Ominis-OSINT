@@ -1,5 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
+■ **HELP** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
+
 > **UP-COMMING**
 - `Refinement update started. Tuesday, September 17th.  Paused`
 
