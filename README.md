@@ -1,6 +1,6 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
-■ **HELP** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
+■ **Wanna Help?** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
 
 > **UP-COMMING**
 - `Refinement update.  Paused`
@@ -10,11 +10,8 @@
     Identify potential social profiles and forums.
 
 
--- **NOTE:** `Hello World 🌍 👋 - You can now use Ominis-OSINT within Odinova - Happy OSINTing!.😉
-`
-
 -- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
-- https://discord.com/invite/rwjNemwere
+- [Support Discord Server](https://discord.gg/mkVthGrN96)
 
 **Contributing**
 Contributions are welcome! Fork the repository, make changes, and submit a pull request.
