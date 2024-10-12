@@ -43,8 +43,7 @@ def display_banner():
     {Fore.YELLOW}~ {Fore.CYAN}Github{Fore.YELLOW}:{Fore.BLUE} https://github.com/AnonCatalyst/{Fore.RED}
     {Fore.RED}------------------------------------------
     {Fore.YELLOW}~ {Fore.CYAN}Instagram{Fore.YELLOW}:{Fore.BLUE} https://www.instagram.com/istoleyourbutter/{Fore.RED}
-    {Fore.RED}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    {Fore.YELLOW}~ {Fore.CYAN}Website{Fore.YELLOW}:{Fore.BLUE} https://hard2find.dev/{Fore.RED}""")
+    """)
 
 async def get_user_input(prompt, options=None):
     clear_screen()
