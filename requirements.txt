@@ -12,7 +12,7 @@ lxml_html_clean
 html_clean
 anyio>=4.4.0
 zipp>=3.19.1
-validators==0.21.0
+validators==0.34.0
 tqdm==4.66.5
 ipwhois==1.0.0
 fake_useragent
