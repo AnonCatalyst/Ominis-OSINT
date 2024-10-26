@@ -1,4 +1,4 @@
-># ☆ Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
+># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 ■ **Wanna Help?** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
 
@@ -22,7 +22,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 🚀 Happy OSINTing! 🕵️‍♂️
 
-<img src="src/img/screenshot.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
+<img src="src/img/kmc_20241009_145637.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
 
 ## Features
 
