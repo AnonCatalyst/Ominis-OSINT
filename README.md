@@ -6,6 +6,7 @@
 - `Refinement update.  Paused`
 - `username search (AliaStorm) which is used at the end, is planned to receive a rebuild.`
 - `new optional feature that introduces back SerpApi`
+- `new optional feature to search the query also on the deep web from DepthSearch`
 
 **Information Obtained**
     Discover online mentions of a query or username.
