@@ -2,7 +2,7 @@
 
 ■ **Wanna Help?** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
 
-> **UP-COMMING**
+> **COMMING** ``paused``
 - `Refinement update.  Paused`
 - `username search (AliaStorm) which is used at the end, is planned to receive a rebuild.`
 - `new optional feature that introduces back SerpApi`
