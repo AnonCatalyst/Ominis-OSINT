@@ -14,7 +14,7 @@
 
 
 -- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
-- [Support Discord Server](https://discord.gg/mkVthGrN96)
+- [Support Discord Server](https://discord.gg/tgSacvyHqV)
 
 **Contributing**
 Contributions are welcome! Fork the repository, make changes, and submit a pull request.
