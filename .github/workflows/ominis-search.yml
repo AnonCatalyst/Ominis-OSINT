@@ -54,48 +54,82 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          sudo python -m pip install --upgrade pip
+          sudo pip install -r requirements.txt
+          sudo apt-get update && sudo apt-get install -y tor
+
+      - name: Start Tor service
+        run: |
+          sudo service tor start
+          sudo timeout 30 tail -f /var/log/tor/log || true
 
       - name: Create Results directory
-        run: mkdir -p Results
+        run: |
+          sudo mkdir -p Results
+          sudo chmod 777 Results
 
       - name: Setup environment
         run: |
-          mkdir -p src/logs
-          touch src/gfetcherror.log
-          touch src/username_search.log
+          sudo mkdir -p src/logs
+          sudo touch src/gfetcherror.log
+          sudo touch src/username_search.log
+          sudo chmod -R 777 src/logs
+          sudo chmod 666 src/gfetcherror.log
+          sudo chmod 666 src/username_search.log
 
-      - name: Create automated input script
+      - name: Create proxy configuration
         run: |
-          cat > auto_input.py << 'EOL'
-          import sys
-          import os
+          sudo bash -c 'cat > proxy_config.py << EOL
+          import aiohttp
+          from aiohttp_socks import ProxyConnector
+          import asyncio
+          import random
 
-          def simulate_input(prompt):
+          async def get_tor_session():
+              connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
+              return aiohttp.ClientSession(connector=connector)
+
+          async def rotate_tor_identity():
+              try:
+                  async with aiohttp.ClientSession() as session:
+                      async with session.get("http://127.0.0.1:9051") as response:
+                          await response.text()
+              except:
+                  pass
+              await asyncio.sleep(random.uniform(1, 3))
+          EOL'
+          sudo chmod 666 proxy_config.py
+
+      - name: Create input simulation script
+        run: |
+          sudo bash -c 'cat > input_sim.py << EOL
+          def mock_input(prompt):
+              import os
               if "proxy rotation display" in prompt.lower():
-                  return "n"
+                  return "y"
               if "Include titles" in prompt:
-                  return "y" if os.environ.get("INCLUDE_TITLES") == "true" else "n"
+                  return "y" if os.environ.get("INCLUDE_TITLES", "false").lower() == "true" else "n"
               if "Include descriptions" in prompt:
-                  return "y" if os.environ.get("INCLUDE_DESCRIPTIONS") == "true" else "n"
+                  return "y" if os.environ.get("INCLUDE_DESCRIPTIONS", "false").lower() == "true" else "n"
               if "Include HTML content" in prompt:
-                  return "y" if os.environ.get("INCLUDE_HTML") == "true" else "n"
+                  return "y" if os.environ.get("INCLUDE_HTML", "false").lower() == "true" else "n"
               if "run a username search" in prompt.lower():
-                  return "y" if os.environ.get("DO_USERNAME_SEARCH") == "true" else "n"
+                  return "y" if os.environ.get("DO_USERNAME_SEARCH", "false").lower() == "true" else "n"
               return ""
 
           import builtins
-          builtins.input = simulate_input
-          EOL
+          builtins.input = mock_input
+          EOL'
+          sudo chmod 666 input_sim.py
 
       - name: Run web search
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -c "
-          import auto_input
+          sudo python -c "
+          import input_sim
           import asyncio
+          import proxy_config
           from src.tools_handler import fetch_google_results
 
           async def run_search():
@@ -104,7 +138,7 @@ jobs:
                   language='${{ github.event.inputs.language }}',
                   country='${{ github.event.inputs.country }}',
                   date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
-                  proxies=None
+                  proxies=['socks5://127.0.0.1:9050']
               )
 
           asyncio.run(run_search())
@@ -119,8 +153,8 @@ jobs:
           DO_USERNAME_SEARCH: "true"
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -c "
-          import auto_input
+          sudo python -c "
+          import input_sim
           from src.usr import main
           main('${{ github.event.inputs.query }}')
           "
@@ -130,6 +164,6 @@ jobs:
         with:
           name: ominis-search-results
           path: |
-            Results/*.txt
+            results/*.txt
             src/*.log
           if-no-files-found: warn
