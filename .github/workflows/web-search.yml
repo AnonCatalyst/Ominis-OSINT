@@ -98,8 +98,6 @@ jobs:
               while True:
                   await rotate_tor_identity()
                   await asyncio.sleep(10)
-
-          asyncio.create_task(check_and_rotate())
           EOL'
           sudo chmod 666 proxy_config.py
 
@@ -120,16 +118,20 @@ jobs:
           import proxy_config
           from src.tools_handler import fetch_google_results
 
-          async def run_search():
-              await fetch_google_results(
-                  query='${{ github.event.inputs.query }}',
-                  language='${{ github.event.inputs.language }}',
-                  country='${{ github.event.inputs.country }}',
-                  date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
-                  proxies=['socks5://127.0.0.1:9050']
-              )
+          async def main():
+              rotation_task = asyncio.create_task(proxy_config.check_and_rotate())
+              try:
+                  await fetch_google_results(
+                      query='${{ github.event.inputs.query }}',
+                      language='${{ github.event.inputs.language }}',
+                      country='${{ github.event.inputs.country }}',
+                      date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
+                      proxies=['socks5://127.0.0.1:9050']
+                  )
+              finally:
+                  rotation_task.cancel()
 
-          asyncio.run(run_search())
+          asyncio.run(main())
           "
 
       - name: Upload search results
