@@ -37,45 +37,39 @@ jobs:
           sudo python -m pip install --upgrade pip
           sudo pip install -r requirements.txt
 
-      - name: Create search script
+      - name: Create input simulation script
         run: |
-          sudo bash -c 'cat > run_search.py << EOL
-          import asyncio
-          import sys
-          from src.tools_handler import fetch_google_results
-          from src.proxy_handler import scrape_proxies, validate_proxies
+          sudo bash -c 'cat > input_sim.py << EOL
+          def mock_input(prompt):
+              if "proxy rotation display" in prompt.lower():
+                  return "n"
+              return ""
 
-          async def main():
-              query = sys.argv[1]
-              language = sys.argv[2]
-              country = sys.argv[3]
-              date_range = (sys.argv[4], sys.argv[5]) if sys.argv[4] and sys.argv[5] else None
-              
-              proxies = await scrape_proxies()
-              valid_proxies = await validate_proxies(proxies)
-              
-              results = await fetch_google_results(
-                  query=query,
-                  language=language,
-                  country=country,
-                  date_range=date_range,
-                  proxies=valid_proxies
-              )
-              return results
-
-          if __name__ == "__main__":
-              asyncio.run(main())
+          import builtins
+          builtins.input = mock_input
           EOL'
-
-          sudo chmod 666 run_search.py
+          sudo chmod 666 input_sim.py
 
       - name: Run web search
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          sudo python run_search.py "${{ github.event.inputs.query }}" \
-                              "${{ github.event.inputs.language }}" \
-                              "${{ github.event.inputs.country }}" \
-                              "${{ github.event.inputs.start_date }}" \
-                              "${{ github.event.inputs.end_date }}"
+          sudo python -c "
+          import input_sim
+          import asyncio
+          from src.tools_handler import fetch_google_results
+
+          async def run_search():
+              await fetch_google_results(
+                  query='${{ github.event.inputs.query }}',
+                  language='${{ github.event.inputs.language }}',
+                  country='${{ github.event.inputs.country }}',
+                  date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
+                  proxies=None
+              )
+
+          asyncio.run(run_search())
+          "
 
       - name: Upload search results
         uses: actions/upload-artifact@v4
@@ -83,4 +77,4 @@ jobs:
           name: search-results
           path: |
             results/*.txt
-            logs/gfetcherror.log 
+            logs/gfetcherror.log
