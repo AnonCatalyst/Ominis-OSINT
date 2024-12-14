@@ -40,11 +40,6 @@ on:
         required: false
         type: boolean
         default: false
-      enable_proxy_rotation:
-        description: 'Enable proxy rotation for searches'
-        required: false
-        type: boolean
-        default: true
 
 jobs:
   ominis-search:
@@ -79,7 +74,7 @@ jobs:
 
           def simulate_input(prompt):
               if "proxy rotation display" in prompt.lower():
-                  return "y" if os.environ.get("ENABLE_PROXY") == "true" else "n"
+                  return "n"
               if "Include titles" in prompt:
                   return "y" if os.environ.get("INCLUDE_TITLES") == "true" else "n"
               if "Include descriptions" in prompt:
@@ -96,25 +91,20 @@ jobs:
 
       - name: Run web search
         env:
-          ENABLE_PROXY: ${{ github.event.inputs.enable_proxy_rotation }}
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -c "
           import auto_input
           import asyncio
           from src.tools_handler import fetch_google_results
-          from src.proxy_handler import scrape_proxies, validate_proxies
 
           async def run_search():
-              proxies = await scrape_proxies() if '${{ github.event.inputs.enable_proxy_rotation }}' == 'true' else None
-              valid_proxies = await validate_proxies(proxies) if proxies else None
-              
               await fetch_google_results(
                   query='${{ github.event.inputs.query }}',
                   language='${{ github.event.inputs.language }}',
                   country='${{ github.event.inputs.country }}',
                   date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
-                  proxies=valid_proxies
+                  proxies=None
               )
 
           asyncio.run(run_search())
