@@ -35,30 +35,44 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          sudo python -m pip install --upgrade pip
+          sudo pip install -r requirements.txt
 
-      - name: Create search script
+      - name: Create Results directory
         run: |
-          cat > run_username_search.py << 'EOL'
-          import sys
-          from src.usr import main
+          sudo mkdir -p Results
+          sudo chmod 777 Results
 
-          if __name__ == "__main__":
-              username = sys.argv[1]
-              include_titles = sys.argv[2].lower() == 'true'
-              include_descriptions = sys.argv[3].lower() == 'true'
-              include_html = sys.argv[4].lower() == 'true'
-              
-              main(username)
-          EOL
+      - name: Create input simulation script
+        run: |
+          sudo bash -c 'cat > input_sim.py << EOL
+          def mock_input(prompt):
+              import os
+              if "Include titles" in prompt:
+                  return "y" if os.environ.get("INCLUDE_TITLES", "false").lower() == "true" else "n"
+              if "Include descriptions" in prompt:
+                  return "y" if os.environ.get("INCLUDE_DESCRIPTIONS", "false").lower() == "true" else "n"
+              if "Include HTML content" in prompt:
+                  return "y" if os.environ.get("INCLUDE_HTML", "false").lower() == "true" else "n"
+              return ""
+
+          import builtins
+          builtins.input = mock_input
+          EOL'
+          sudo chmod 666 input_sim.py
 
       - name: Run username search
+        env:
+          INCLUDE_TITLES: ${{ github.event.inputs.include_titles }}
+          INCLUDE_DESCRIPTIONS: ${{ github.event.inputs.include_descriptions }}
+          INCLUDE_HTML: ${{ github.event.inputs.include_html }}
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          python run_username_search.py "${{ github.event.inputs.username }}" \
-                                      "${{ github.event.inputs.include_titles }}" \
-                                      "${{ github.event.inputs.include_descriptions }}" \
-                                      "${{ github.event.inputs.include_html }}"
+          sudo python -c "
+          import input_sim
+          from src.usr import main
+          main('${{ github.event.inputs.username }}')
+          "
 
       - name: Upload search results
         uses: actions/upload-artifact@v4
