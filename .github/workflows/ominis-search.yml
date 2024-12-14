@@ -88,7 +88,7 @@ jobs:
           import subprocess
 
           last_rotation = 0
-          ROTATION_INTERVAL = 60  # 1 minute in seconds
+          ROTATION_INTERVAL = 60  # 1 min in sec
 
           async def get_tor_session():
               connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
@@ -100,9 +100,8 @@ jobs:
               
               if current_time - last_rotation >= ROTATION_INTERVAL:
                   try:
-                      # Force new Tor identity
                       subprocess.run(["sudo", "killall", "-HUP", "tor"])
-                      await asyncio.sleep(random.uniform(2, 4))  # Wait for Tor to establish new circuit
+                      await asyncio.sleep(random.uniform(2, 4))
                       last_rotation = current_time
                       print("🔄 Rotated Tor identity")
                   except Exception as e:
@@ -112,9 +111,8 @@ jobs:
           async def check_and_rotate():
               while True:
                   await rotate_tor_identity()
-                  await asyncio.sleep(10)  # Check every 10 seconds
+                  await asyncio.sleep(10)
 
-          # Start rotation checker in background
           asyncio.create_task(check_and_rotate())
           EOL'
           sudo chmod 666 proxy_config.py
