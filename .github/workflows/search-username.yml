@@ -1,0 +1,69 @@
+name: Search username
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Username to search'
+        required: true
+      include_titles:
+        description: 'Include titles in results'
+        required: true
+        type: boolean
+        default: true
+      include_descriptions:
+        description: 'Include descriptions in results'
+        required: true
+        type: boolean
+        default: true
+      include_html:
+        description: 'Include HTML content in results'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  username-search:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create search script
+        run: |
+          cat > run_username_search.py << 'EOL'
+          import sys
+          from src.usr import main
+
+          if __name__ == "__main__":
+              username = sys.argv[1]
+              include_titles = sys.argv[2].lower() == 'true'
+              include_descriptions = sys.argv[3].lower() == 'true'
+              include_html = sys.argv[4].lower() == 'true'
+              
+              main(username)
+          EOL
+
+      - name: Run username search
+        run: |
+          python run_username_search.py "${{ github.event.inputs.username }}" \
+                                      "${{ github.event.inputs.include_titles }}" \
+                                      "${{ github.event.inputs.include_descriptions }}" \
+                                      "${{ github.event.inputs.include_html }}"
+
+      - name: Upload search results
+        uses: actions/upload-artifact@v4
+        with:
+          name: username-search-results
+          path: |
+            Results/username-search_results.txt
+            src/username_search.log
