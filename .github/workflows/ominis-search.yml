@@ -84,21 +84,47 @@ jobs:
           from aiohttp_socks import ProxyConnector
           import asyncio
           import random
+          import time
+          import subprocess
+
+          last_rotation = 0
+          ROTATION_INTERVAL = 60  # 1 minute in seconds
 
           async def get_tor_session():
               connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
               return aiohttp.ClientSession(connector=connector)
 
           async def rotate_tor_identity():
-              try:
-                  async with aiohttp.ClientSession() as session:
-                      async with session.get("http://127.0.0.1:9051") as response:
-                          await response.text()
-              except:
-                  pass
-              await asyncio.sleep(random.uniform(1, 3))
+              global last_rotation
+              current_time = time.time()
+              
+              if current_time - last_rotation >= ROTATION_INTERVAL:
+                  try:
+                      # Force new Tor identity
+                      subprocess.run(["sudo", "killall", "-HUP", "tor"])
+                      await asyncio.sleep(random.uniform(2, 4))  # Wait for Tor to establish new circuit
+                      last_rotation = current_time
+                      print("🔄 Rotated Tor identity")
+                  except Exception as e:
+                      print(f"Failed to rotate Tor identity: {e}")
+                      pass
+
+          async def check_and_rotate():
+              while True:
+                  await rotate_tor_identity()
+                  await asyncio.sleep(10)  # Check every 10 seconds
+
+          # Start rotation checker in background
+          asyncio.create_task(check_and_rotate())
           EOL'
           sudo chmod 666 proxy_config.py
+
+      - name: Configure Tor control
+        run: |
+          sudo bash -c 'echo "ControlPort 9051" >> /etc/tor/torrc'
+          sudo bash -c 'echo "CookieAuthentication 1" >> /etc/tor/torrc'
+          sudo service tor restart
+          sudo timeout 30 tail -f /var/log/tor/log || true
 
       - name: Create input simulation script
         run: |
