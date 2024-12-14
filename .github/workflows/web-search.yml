@@ -36,19 +36,79 @@ jobs:
         run: |
           sudo python -m pip install --upgrade pip
           sudo pip install -r requirements.txt
+          sudo apt-get update && sudo apt-get install -y tor
+
+      - name: Start Tor service
+        run: |
+          sudo service tor start
+          sudo timeout 30 tail -f /var/log/tor/log || true
+
+      - name: Create directories
+        run: |
+          sudo mkdir -p Results src/logs
+          sudo chmod -R 777 Results src/logs
+          sudo touch src/logs/gfetcherror.log
+          sudo chmod 666 src/logs/gfetcherror.log
 
       - name: Create input simulation script
         run: |
           sudo bash -c 'cat > input_sim.py << EOL
           def mock_input(prompt):
               if "proxy rotation display" in prompt.lower():
-                  return "n"
+                  return "y"
               return ""
 
           import builtins
           builtins.input = mock_input
           EOL'
           sudo chmod 666 input_sim.py
+
+      - name: Create proxy configuration
+        run: |
+          sudo bash -c 'cat > proxy_config.py << EOL
+          import aiohttp
+          from aiohttp_socks import ProxyConnector
+          import asyncio
+          import random
+          import time
+          import subprocess
+
+          last_rotation = 0
+          ROTATION_INTERVAL = 60  # 1 min in sec
+
+          async def get_tor_session():
+              connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
+              return aiohttp.ClientSession(connector=connector)
+
+          async def rotate_tor_identity():
+              global last_rotation
+              current_time = time.time()
+              
+              if current_time - last_rotation >= ROTATION_INTERVAL:
+                  try:
+                      subprocess.run(["sudo", "killall", "-HUP", "tor"])
+                      await asyncio.sleep(random.uniform(2, 4))
+                      last_rotation = current_time
+                      print("🔄 Rotated Tor identity")
+                  except Exception as e:
+                      print(f"Failed to rotate Tor identity: {e}")
+                      pass
+
+          async def check_and_rotate():
+              while True:
+                  await rotate_tor_identity()
+                  await asyncio.sleep(10)
+
+          asyncio.create_task(check_and_rotate())
+          EOL'
+          sudo chmod 666 proxy_config.py
+
+      - name: Configure Tor control
+        run: |
+          sudo bash -c 'echo "ControlPort 9051" >> /etc/tor/torrc'
+          sudo bash -c 'echo "CookieAuthentication 1" >> /etc/tor/torrc'
+          sudo service tor restart
+          sudo timeout 30 tail -f /var/log/tor/log || true
 
       - name: Run web search
         env:
@@ -57,6 +117,7 @@ jobs:
           sudo python -c "
           import input_sim
           import asyncio
+          import proxy_config
           from src.tools_handler import fetch_google_results
 
           async def run_search():
@@ -65,7 +126,7 @@ jobs:
                   language='${{ github.event.inputs.language }}',
                   country='${{ github.event.inputs.country }}',
                   date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
-                  proxies=None
+                  proxies=['socks5://127.0.0.1:9050']
               )
 
           asyncio.run(run_search())
@@ -76,5 +137,5 @@ jobs:
         with:
           name: search-results
           path: |
-            results/*.txt
-            logs/gfetcherror.log
+            Results/*.txt
+            src/logs/gfetcherror.log
