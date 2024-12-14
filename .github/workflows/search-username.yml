@@ -84,8 +84,6 @@ jobs:
               while True:
                   await rotate_tor_identity()
                   await asyncio.sleep(10)
-
-          asyncio.create_task(check_and_rotate())
           EOL'
           sudo chmod 666 proxy_config.py
 
@@ -125,9 +123,18 @@ jobs:
         run: |
           sudo python -c "
           import input_sim
+          import asyncio
           import proxy_config
           from src.usr import main
-          main('${{ github.event.inputs.username }}')
+
+          async def run_search():
+              rotation_task = asyncio.create_task(proxy_config.check_and_rotate())
+              try:
+                  main('${{ github.event.inputs.username }}')
+              finally:
+                  rotation_task.cancel()
+
+          asyncio.run(run_search())
           "
 
       - name: Upload search results
