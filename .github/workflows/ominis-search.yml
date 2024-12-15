@@ -1,0 +1,204 @@
+name: Ominis Search
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: 'Search query/username'
+        required: true
+      language:
+        description: 'Language code (e.g., lang_en)'
+        required: false
+        default: 'lang_en'
+      country:
+        description: 'Country code (e.g., US)'
+        required: false
+        default: 'US'
+      start_date:
+        description: 'Start date (YYYY-MM-DD)'
+        required: false
+      end_date:
+        description: 'End date (YYYY-MM-DD)'
+        required: false
+      include_username_search:
+        description: 'Perform username search'
+        required: true
+        type: boolean
+        default: true
+      include_titles:
+        description: 'Include titles in username search results'
+        required: false
+        type: boolean
+        default: true
+      include_descriptions:
+        description: 'Include descriptions in username search results'
+        required: false
+        type: boolean
+        default: true
+      include_html:
+        description: 'Include HTML content in username search results'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  ominis-search:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          sudo python -m pip install --upgrade pip
+          sudo pip install -r requirements.txt
+          sudo apt-get update && sudo apt-get install -y tor
+
+      - name: Start Tor service
+        run: |
+          sudo service tor start
+          sudo timeout 30 tail -f /var/log/tor/log || true
+
+      - name: Create Results directory
+        run: |
+          sudo mkdir -p Results
+          sudo chmod 777 Results
+
+      - name: Setup environment
+        run: |
+          sudo mkdir -p src/logs
+          sudo touch src/gfetcherror.log
+          sudo touch src/username_search.log
+          sudo chmod -R 777 src/logs
+          sudo chmod 666 src/gfetcherror.log
+          sudo chmod 666 src/username_search.log
+
+      - name: Create proxy configuration
+        run: |
+          sudo bash -c 'cat > proxy_config.py << EOL
+          import aiohttp
+          from aiohttp_socks import ProxyConnector
+          import asyncio
+          import random
+          import time
+          import subprocess
+
+          last_rotation = 0
+          ROTATION_INTERVAL = 60  # 1 min in sec
+
+          async def get_tor_session():
+              connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
+              return aiohttp.ClientSession(connector=connector)
+
+          async def rotate_tor_identity():
+              global last_rotation
+              current_time = time.time()
+              
+              if current_time - last_rotation >= ROTATION_INTERVAL:
+                  try:
+                      subprocess.run(["sudo", "killall", "-HUP", "tor"])
+                      await asyncio.sleep(random.uniform(2, 4))
+                      last_rotation = current_time
+                      print("🔄 Rotated Tor identity")
+                  except Exception as e:
+                      print(f"Failed to rotate Tor identity: {e}")
+                      pass
+
+          async def check_and_rotate():
+              while True:
+                  await rotate_tor_identity()
+                  await asyncio.sleep(10)
+          EOL'
+          sudo chmod 666 proxy_config.py
+
+      - name: Configure Tor control
+        run: |
+          sudo bash -c 'echo "ControlPort 9051" >> /etc/tor/torrc'
+          sudo bash -c 'echo "CookieAuthentication 1" >> /etc/tor/torrc'
+          sudo service tor restart
+          sudo timeout 30 tail -f /var/log/tor/log || true
+
+      - name: Create input simulation script
+        run: |
+          sudo bash -c 'cat > input_sim.py << EOL
+          def mock_input(prompt):
+              import os
+              if "proxy rotation display" in prompt.lower():
+                  return "y"
+              if "Include titles" in prompt:
+                  return "y" if os.environ.get("INCLUDE_TITLES", "false").lower() == "true" else "n"
+              if "Include descriptions" in prompt:
+                  return "y" if os.environ.get("INCLUDE_DESCRIPTIONS", "false").lower() == "true" else "n"
+              if "Include HTML content" in prompt:
+                  return "y" if os.environ.get("INCLUDE_HTML", "false").lower() == "true" else "n"
+              if "run a username search" in prompt.lower():
+                  return "y" if os.environ.get("DO_USERNAME_SEARCH", "false").lower() == "true" else "n"
+              return ""
+
+          import builtins
+          builtins.input = mock_input
+          EOL'
+          sudo chmod 666 input_sim.py
+
+      - name: Run web search
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          sudo python -c "
+          import input_sim
+          import asyncio
+          import proxy_config
+          from src.tools_handler import fetch_google_results
+
+          async def main():
+              rotation_task = asyncio.create_task(proxy_config.check_and_rotate())
+              try:
+                  await fetch_google_results(
+                      query='${{ github.event.inputs.query }}',
+                      language='${{ github.event.inputs.language }}',
+                      country='${{ github.event.inputs.country }}',
+                      date_range=('${{ github.event.inputs.start_date }}', '${{ github.event.inputs.end_date }}'),
+                      proxies=['socks5://127.0.0.1:9050']
+                  )
+              finally:
+                  rotation_task.cancel()
+
+          asyncio.run(main())
+          "
+
+      - name: Run username search
+        if: ${{ github.event.inputs.include_username_search == 'true' }}
+        env:
+          INCLUDE_TITLES: ${{ github.event.inputs.include_titles }}
+          INCLUDE_DESCRIPTIONS: ${{ github.event.inputs.include_descriptions }}
+          INCLUDE_HTML: ${{ github.event.inputs.include_html }}
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          sudo python -c "
+          import input_sim
+          import asyncio
+          import proxy_config
+          from src.usr import main
+
+          async def run_search():
+              rotation_task = asyncio.create_task(proxy_config.check_and_rotate())
+              try:
+                  main('${{ github.event.inputs.query }}')
+              finally:
+                  rotation_task.cancel()
+
+          asyncio.run(run_search())
+          "
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ominis-search-results
+          path: |
+            results/*.txt
+            src/*.log
+          if-no-files-found: warn
