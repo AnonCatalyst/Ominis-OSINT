@@ -11,14 +11,14 @@
 
 # **Github Actions**
 
-https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/web-search.yml
-https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/search-username.yml
-https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/ominis-search.yml
 
 Visit actions/workflows and chose any of the 3 options to try out Ominis OSINT right from github!
 - ``Web Search``
+  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/web-search.yml
 - ``Ominis Search``
+  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/ominis-search.yml
 - ``Username Search``
+  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/search-username.yml
 
 **Information Obtained**
     Discover online mentions of a query or username.
