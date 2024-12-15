@@ -8,6 +8,18 @@
 - `new optional feature that introduces back SerpApi`
 - `new optional feature to search the query also on the deep web from DepthSearch`
 
+
+# **Github Actions**
+
+https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/web-search.yml
+https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/search-username.yml
+https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/ominis-search.yml
+
+Visit actions/workflows and chose any of the 3 options to try out Ominis OSINT right from github!
+- ``Web Search``
+- ``Ominis Search``
+- ``Username Search``
+
 **Information Obtained**
     Discover online mentions of a query or username.
     Identify potential social profiles and forums.
