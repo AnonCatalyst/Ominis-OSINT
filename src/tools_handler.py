@@ -97,14 +97,15 @@ async def make_request_async(url, proxies=None):
     logger.info("Final retry using DuckDuckGo...")
     return await fetch_ddg_results(url)
 
+
 async def ask_to_show_message():
     global show_message
     if show_message is None:
-        response = input(f'{Fore.RED}_' * 80 + "\n" +
-                         f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}:{Style.RESET_ALL} ").strip().lower()
-        show_message = response == 'y'
+        # Await the asyncio.to_thread to get the user input as a string
+        response = await asyncio.to_thread(input, f'{Fore.RED}_' * 80 + "\n" +
+                                             f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}:{Style.RESET_ALL} ")
+        show_message = response.strip().lower() == 'y'
     return show_message
-
 
 
 async def fetch_ddg_results(query):
