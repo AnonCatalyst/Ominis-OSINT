@@ -3,7 +3,7 @@
 ■ **Wanna Help?** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
 
 > **BUG FIX!**
-- proxy_handler.py was encountering a configuration error, I was unable to resolve the issue with the module httpx and decided to switch it out with another module. This switch has been tested and things should now be functional.
+- proxy_handler.py was encountering a configuration error, I was unable to resolve the issue with the module httpx and decided to switch it out with the aiohttp module. This switch has been tested and things should now be functional.
 
 > **COMMING** ``paused``
 - `Refinement update.  Paused`
