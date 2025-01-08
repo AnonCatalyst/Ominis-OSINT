@@ -2,6 +2,9 @@
 
 ■ **Wanna Help?** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
 
+> **Ominis-OSINT PRO**
+- The pro version of Ominis-OSINT is almost ready for release, if youd like to experience the power of Ominis-OSINT Pro then it will require a $5 payment. Payments will be accepted trough cashapp and paypal. This will give you free rain over the code of the pro version as the first few releases will not have obfus code.
+
 > **BUG FIX!**
 - proxy_handler.py was encountering a configuration error, I was unable to resolve the issue with the module httpx and decided to switch it out with the aiohttp module. This switch has been tested and things should now be functional.
 
