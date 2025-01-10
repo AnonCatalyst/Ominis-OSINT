@@ -1,7 +1,5 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
-■ **Wanna Help?** > Wanna help prevent life from pausing development? DONATE!? Even the smallest amount helps https://cash.app/$anoncatalyst
-
 > **Ominis-OSINT PRO**
 - The pro version of Ominis-OSINT is almost ready for release, if youd like to experience the power of Ominis-OSINT Pro then it will require a $5 payment. Payments will be accepted trough cashapp and paypal. This will give you free rain over the code of the pro version as the first few releases will not have obfus code.
 
