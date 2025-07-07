@@ -6,304 +6,337 @@ import json
 import logging
 import urllib.parse
 import httpx
-import aiohttp
 from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from httpx import TimeoutException, RequestError
-from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_exception_type
-from requests.exceptions import RequestException, HTTPError
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
 import urllib3
+import ssl
 
+# Load utility functions from src/utils.py
 from src.utils import find_social_profiles, is_potential_forum, extract_mentions
 
+# Initialize colorama for colored output
+init(autoreset=True)
 
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+ssl._create_default_https_context = ssl._create_unverified_context
 
-#urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import logging
-
-# Set up error logger for tool errors
+# Set up error logger
 error_logger = logging.getLogger('gfetcherror')
 error_logger.setLevel(logging.ERROR)
 error_handler = logging.FileHandler('src/gfetcherror.log')
 error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 error_logger.addHandler(error_handler)
 
-# Disable httpx INFO logging
+# Configure logging
 logging.getLogger('httpx').setLevel(logging.WARNING)
-
-# Configure logging to save to a file
-logging.basicConfig(level=logging.INFO, filename='src/gfetcherror.log', format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    filename='src/gfetcherror.log',
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-init(autoreset=True)  # Initialize colorama for colored output
-
-# Set to store visited URLs
+# Global variables
 visited_urls = set()
+counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
+MAX_RETRY_COUNT = 20
+MAX_REDIRECTS = 5
+show_message = None
 
-# Load social platform patterns from a JSON file
+# Load social platform patterns
 with open("src/social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
-counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
-emoji = random.choice(counter_emojis)  # Select a random emoji for the counter
+# Advanced evasion headers
+EVASION_HEADERS = [
+    {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "DNT": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1"
+    },
+    {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Connection": "keep-alive",
+        "TE": "Trailers",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1"
+    },
+    {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.7",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1"
+    }
+]
 
-MAX_RETRY_COUNT = 20  # Define the maximum number of retry attempts
-MAX_REDIRECTS = 5
-
-# Global variable to store user's response
-show_message = None
+# JA4 fingerprint evasion
+JA4_STRINGS = [
+    "t13d1516h2_8daaf6152771_0275b9b5b656",  # Chrome-like
+    "t13d1516h2_8daaf6152771_61e2afb5b656",  # Firefox-like
+    "t13d1516h2_8daaf6152771_9d3b5b5b656"    # Safari-like
+]
 
 async def make_request_async(url, proxies=None):
     retry_count = 0
-    global show_message  # Using global variable for caching user's response
+    global show_message
+    
     while retry_count < MAX_RETRY_COUNT:
         try:
-            async with httpx.AsyncClient() as client:
+            # Create custom SSL context for JA3 evasion
+            ssl_context = ssl.create_default_context()
+            ssl_context.set_ciphers("ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256")
+            
+            async with httpx.AsyncClient(
+                http2=True,
+                verify=False,
+                timeout=10.0,
+                follow_redirects=True,
+                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
+            ) as client:
+                # Advanced evasion techniques
+                headers = random.choice(EVASION_HEADERS).copy()
+                headers["User-Agent"] = UserAgent().random.strip()
+                
+                # JA3/JA4 evasion simulation
+                headers["Sec-Ch-Ua"] = '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+                headers["Sec-Ch-Ua-Mobile"] = "?0"
+                headers["Sec-Ch-Ua-Platform"] = '"Windows"'
+                headers["X-Evasion-Fingerprint"] = random.choice(JA4_STRINGS)
+                
                 if proxies:
                     proxy = random.choice(proxies)
                     if show_message is None:
                         show_message = await ask_to_show_message()
                     if show_message:
-                        print(f"  {Fore.LIGHTBLACK_EX}Rotated to Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {proxy} Avoiding detection{Fore.RED}! {Style.RESET_ALL}")
-                    client.proxies = {"http://": proxy}
+                        print(f"  {Fore.LIGHTBLACK_EX}Rotated Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {proxy} {Fore.RED}| ", end='')
+                    client.proxies = {"http://": proxy, "https://": proxy}
 
-                client.headers = {"User-Agent": UserAgent().random.strip()}  # Strip extra spaces
-                response = await client.get(url, timeout=7)
-
-                if response.status_code == 302:
-                    redirect_location = response.headers.get('location')
-                    logger.info(f"{Fore.LIGHTBLACK_EX} ? Redirecting to: {redirect_location}{Style.RESET_ALL}")
-                    if redirect_location:
-                        if retry_count < MAX_REDIRECTS:
-                            return await make_request_async(redirect_location, proxies)
-                        else:
-                            raise RuntimeError("Exceeded maximum number of redirects.")
-
+                # Add random delay to simulate human behavior
+                await asyncio.sleep(random.uniform(0.1, 0.5))
+                
+                response = await client.get(
+                    url,
+                    headers=headers,
+                )
+                
+                if response.status_code in [403, 429]:
+                    raise httpx.HTTPStatusError(f"Blocked by server (HTTP {response.status_code})", request=response.request, response=response)
+                
                 response.raise_for_status()
                 return response.text
 
-        except httpx.RequestError as e:
-            logger.error(f"Failed to make connection: {e}")
+        except (TimeoutException, RequestError, httpx.HTTPStatusError) as e:
+            logger.error(f"Connection error ({retry_count + 1}/{MAX_RETRY_COUNT}): {e}")
             retry_count += 1
-            logger.info(f"{Fore.LIGHTBLACK_EX} Retrying request {retry_count}{Fore.LIGHTBLACK_EX}/{MAX_RETRY_COUNT}{Fore.RED}...{Style.RESET_ALL}")
-            await asyncio.sleep(7 * retry_count)  # Exponential backoff for retries
             if retry_count < MAX_RETRY_COUNT:
-                await asyncio.sleep(6 * retry_count)  # Exponential backoff for retries
+                print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{MAX_RETRY_COUNT})...{Style.RESET_ALL}")
+                # Exponential backoff with jitter
+                sleep_time = min(2 ** retry_count + random.uniform(0, 1), 30)
+                await asyncio.sleep(sleep_time)
             else:
-                raise RuntimeError(f"Failed to make connection after {MAX_RETRY_COUNT} retries{Fore.YELLOW}: {e}{Style.RESET_ALL}")
-
-    logger.info("Final retry using DuckDuckGo...")
-    return await fetch_ddg_results(url)
-
+                logger.error(f"Max retries exceeded for {url}")
+                raise RuntimeError(f"Request failed after {MAX_RETRY_COUNT} retries")
+    
+    logger.error("All evasion attempts failed")
+    return None
 
 async def ask_to_show_message():
     global show_message
     if show_message is None:
-        # Await the asyncio.to_thread to get the user input as a string
-        response = await asyncio.to_thread(input, f'{Fore.RED}_' * 80 + "\n" +
-                                             f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Enable proxy rotation display? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}:{Style.RESET_ALL} ")
+        response = await asyncio.to_thread(
+            input, 
+            f'{Fore.RED}_'*80 + f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Enable proxy rotation display? {Fore.LIGHTBLACK_EX}(y/n){Fore.YELLOW}:{Style.RESET_ALL} "
+        )
         show_message = response.strip().lower() == 'y'
     return show_message
 
+async def fetch_engine_results(engine, query, start=0, proxies=None):
+    if engine == "duckduckgo":
+        url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}&s={start}"
+    elif engine == "bing":
+        url = f"https://www.bing.com/search?q={quote_plus(query)}&first={start}"
+    else:
+        raise ValueError("Unsupported search engine")
+    
+    try:
+        response_text = await make_request_async(url, proxies)
+        if not response_text:
+            return []
+        
+        soup = BeautifulSoup(response_text, 'html.parser')
+        results = []
+        
+        if engine == "duckduckgo":
+            for result in soup.select('.result'):
+                title_elem = result.find('a', class_='result__a')
+                if not title_elem:
+                    continue
+                    
+                # Extract URL from DuckDuckGo's redirect link
+                href = title_elem.get('href', '')
+                if href.startswith('/l/?'):
+                    # Parse query parameters from redirect URL
+                    parsed = urlparse(href)
+                    query_params = parse_qs(parsed.query)
+                    real_url = query_params.get('uddg', [''])[0]
+                    if real_url:
+                        real_url = urllib.parse.unquote(real_url)
+                else:
+                    real_url = href
+                    
+                # Skip if we couldn't extract a valid URL
+                if not real_url or not real_url.startswith('http'):
+                    continue
+                    
+                results.append({
+                    'title': title_elem.get_text(strip=True),
+                    'url': real_url
+                })
+                
+        elif engine == "bing":
+            for result in soup.select('.b_algo'):
+                title_elem = result.find('h2')
+                link_elem = result.find('a', href=True)
+                if title_elem and link_elem:
+                    results.append({
+                        'title': title_elem.get_text(strip=True),
+                        'url': link_elem['href']
+                    })
+        
+        return results
+    
+    except Exception as e:
+        logger.error(f"{engine.upper()} search failed: {e}")
+        return []
 
-async def fetch_ddg_results(query):
-    ddg_search_url = f"https://html.duckduckgo.com/html/?q={query}"
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(ddg_search_url)
-            response.raise_for_status()
-            if response.is_redirect:
-                redirected_url = response.headers['location']
-                logger.info(f"Redirecting to{Fore.RED}:{Fore.LIGHTBLACK_EX} {redirected_url}{Style.RESET_ALL}")
-                # Follow redirects until a final response is obtained
-                return await follow_redirects_async(redirected_url)
-            return response.text
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error occurred during DuckDuckGo search: {e}")
-            raise
-        except httpx.RequestError as e:
-            logger.error(f"Request error occurred during DuckDuckGo search: {e}")
-            raise
+async def fetch_dual_engine_results(query, language=None, country=None, date_range=None, proxies=None, max_results=100):
+    """
+    Main function for dual-engine search that matches the import expectation in ominis.py
+    Accepts language, country, and date_range parameters for future compatibility
+    """
+    # Currently language, country, and date_range are not implemented
+    # They are accepted for future compatibility and API consistency
+    print(f"{Fore.YELLOW}Note:{Fore.WHITE} Language, country, and date filters are not yet implemented{Style.RESET_ALL}")
+    
+    # Run the dual-engine search
+    return await dual_engine_search(query, proxies, max_results)
 
-async def follow_redirects_async(url):
-    MAX_REDIRECTS = 4  # Define the maximum number of redirects to prevent infinite loops
-    redirect_count = 0
-    while redirect_count < MAX_REDIRECTS:
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(url)
-                response.raise_for_status()
-                if not response.is_redirect:
-                    return response.text
-                redirected_url = response.headers['location']
-                logger.info(f"Redirecting to: {redirected_url}")
-                url = redirected_url
-                redirect_count += 1
-            except httpx.HTTPStatusError as e:
-                logger.error(f"HTTP error occurred during redirect: {e}")
-                raise
-            except httpx.RequestError as e:
-                logger.error(f"Request error occurred during redirect: {e}")
-                raise
-    logger.error("Exceeded maximum number of redirects.")
-    return None
-
-
-async def fetch_google_results(query, language=None, country=None, date_range=None, proxies=None):
+async def dual_engine_search(query, proxies=None, max_results=100):
+    """
+    Actual implementation of the dual-engine search
+    """
+    engines = ["duckduckgo", "bing"]
+    seen_urls = set()
+    all_results = []
     all_mention_links = []
     all_unique_social_profiles = set()
-    processed_urls = set()  # Keep track of processed URLs
-    total_results = 0
-    retries = 0
-    consistent_duplicates_count = 0
-    previous_unique_count = 0
-    max_retries = 15  # Define maximum retry attempts
-    retry_interval = 13  # Initial retry interval in seconds
-
-    # Encode the query
-    encoded_query = quote_plus(query)
-
-    # Construct the Google search URL with filtering options if provided
-    params = {'q': encoded_query, 'start': total_results}
-    if language:
-        params['lr'] = language  # Language parameter (e.g., 'lang_en' for English)
-    if country:
-        params['cr'] = country   # Country parameter (e.g., 'countryUS' for United States)
-    if date_range:
-        params['tbs'] = f'cdr:1,cd_min:{date_range[0]},cd_max:{date_range[1]}'  # Date range parameter (e.g., 'cdr:1,cd_min:01/01/2023,cd_max:12/31/2023')
-
-    output_file = f"Results/{query}_built-in-search_results.txt"
-    with open(output_file, 'w') as file:  # Open file for writing
-        print(f"Search Query: {query}")
-        if language:
-            print(f"Chosen Language: {language}")
-        if country:
-            print(f"Chosen Country: {country}")
-        if date_range:
-            print(f"Chosen Date Range: {date_range[0]} - {date_range[1]}")
-        #print("_" * 80)
-
-        while True:  # Infinite loop for continuous search
-            try:
-                # Construct the Google search URL with pagination
-                params['start'] = total_results  # Update the 'start' parameter for pagination
-                google_search_url = f"https://www.google.com/search?{urlencode(params)}"
-
-                response_text = await make_request_async(google_search_url, proxies)
-                if response_text is None:
-                    retries += 1
-                    if retries >= max_retries:
-                        print(Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
-                        break
-                    print(Fore.RED + f"No response received from Google. Retrying ({retries})..." + Style.RESET_ALL)
-                    await asyncio.sleep(retry_interval * retries)  # Exponential backoff
-                    continue
-
-                soup = BeautifulSoup(response_text, "html.parser")
-                search_results = soup.find_all("div", class_="tF2Cxc")
-
-                if not search_results:
-                    if len(processed_urls) == previous_unique_count:
-                        consistent_duplicates_count += 1
-                        if consistent_duplicates_count >= 4:
-                            print(f" {Fore.LIGHTBLACK_EX}Consistent duplicates detected{Fore.RED}. {Fore.WHITE}Stopping search{Fore.RED}..." + Style.RESET_ALL)
-                            break
-                    else:
-                        consistent_duplicates_count = 0
-                    previous_unique_count = len(processed_urls)
-                    continue
-
-                for result in search_results:
-                    title = result.find("h3")
-                    url = result.find("a", href=True)["href"] if result.find("a", href=True) else None
-
-                    if not url or url.startswith('/'):
-                        continue
-
-                    if url in processed_urls:
-                        continue
-
-                    processed_urls.add(url)  # Mark URL as processed
-
-                    if title and url:
-                        # Write result to file
-                        file.write(f"Title: {title.text.strip()}\n")
-                        file.write(f"URL: {url}\n")
-
-                        print('_' * 80)
-                        print(random.choice(counter_emojis), f"Title{Fore.YELLOW}: {Fore.BLUE}{title.text.strip()}" + Style.RESET_ALL)
-                        print(random.choice(counter_emojis), f"URL{Fore.YELLOW}: {Fore.LIGHTBLACK_EX}{url}" + Style.RESET_ALL)
-
-                        text_to_check = title.text + ' ' + url
-                        mention_count = extract_mentions(text_to_check, query)
-
-                        for q, count in mention_count.items():
-                            if count > 0:
-                                print(random.choice(counter_emojis), f"{Fore.BLUE}'{q}'{Fore.YELLOW}: {Fore.WHITE}Detected in Title{Fore.RED}-{Fore.WHITE}&or{Fore.RED}-{Fore.WHITE}Url{Fore.RED}..." + Style.RESET_ALL)
-                                all_mention_links.append({"url": url, "count": count})
-
-                        social_profiles = find_social_profiles(url)
-                        if social_profiles:
-                            for profile in social_profiles:
-                                print(random.choice(counter_emojis), Fore.GREEN + f"{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}" + Style.RESET_ALL)
-                                all_unique_social_profiles.add(profile['profile_url'])
-
-                        total_results += 1
-
-                        await asyncio.sleep(2)
-
-            except RequestException as e:
-                print(random.choice(counter_emojis), Fore.RED + f"Request error occurred during search: {e}" + Style.RESET_ALL)
-                # Retry for connection errors or other transient issues
-                retries += 1
-                if retries >= max_retries:
-                    print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
+    
+    # Create results directory if not exists
+    os.makedirs("Results", exist_ok=True)
+    output_file = f"Results/{query}_dual-engine_results.txt"
+    
+    with open(output_file, 'w', encoding='utf-8') as file:
+        print(f"Search Query: {query}\n{'='*80}", file=file)
+        print(f"{Fore.YELLOW}Starting dual-engine search:{Fore.CYAN} DuckDuckGo & Bing{Style.RESET_ALL}")
+        print(f"{Fore.LIGHTBLACK_EX}Maximum results set to:{Fore.WHITE} {max_results}{Style.RESET_ALL}")
+        
+        for engine in engines:
+            start = 0
+            engine_results_count = 0
+            print(f"\n{Fore.YELLOW}Searching{Fore.LIGHTBLACK_EX}:{Fore.CYAN} {engine.upper()}{Style.RESET_ALL}")
+            
+            while engine_results_count < max_results / len(engines):
+                results = await fetch_engine_results(engine, query, start, proxies)
+                if not results:
+                    print(f"{Fore.LIGHTBLACK_EX}No more results from {engine.upper()}{Style.RESET_ALL}")
                     break
-                print(random.choice(counter_emojis), Fore.RED + f"Retrying request after error ({retries})..." + Style.RESET_ALL)
-                await asyncio.sleep(retry_interval * retries)  # Exponential backoff
-            except HTTPError as e:
-                # Retry for certain HTTP status codes
-                if e.response.status_code in [500, 502, 503, 504, 429]:
-                    retries += 1
-                    if retries >= max_retries:
-                        print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
-                        break
-                    print(random.choice(counter_emojis), Fore.RED + f"Retrying request after HTTP error ({e.response.status_code}) ({retries})..." + Style.RESET_ALL)
-                    await asyncio.sleep(retry_interval * retries)  # Exponential backoff
-                else:
-                    print(random.choice(counter_emojis), Fore.RED + f"HTTP error occurred during search: {e}" + Style.RESET_ALL)
-            except Exception as e:
-                print(random.choice(counter_emojis), Fore.RED + f"An error occurred during search: {e}" + Style.RESET_ALL)
-                # Retry for generic errors
-                retries += 1
-                if retries >= max_retries:
-                    print(random.choice(counter_emojis), Fore.RED + "Exceeded maximum retry attempts. Stopping search." + Style.RESET_ALL)
+                
+                new_results = 0
+                for result in results:
+                    if result['url'] in seen_urls:
+                        continue
+                    
+                    seen_urls.add(result['url'])
+                    all_results.append(result)
+                    new_results += 1
+                    engine_results_count += 1
+                    
+                    # Write to file
+                    print(f"[{engine.upper()}] Title: {result['title']}\nURL: {result['url']}\n{'-'*80}", file=file)
+                    
+                    # Console output
+                    print('_' * 80)
+                    print(f"{random.choice(counter_emojis)} {Fore.YELLOW}Engine{Fore.LIGHTBLACK_EX}:{Fore.CYAN} {engine.upper()}{Style.RESET_ALL}")
+                    print(f"{random.choice(counter_emojis)} {Fore.YELLOW}Title{Fore.LIGHTBLACK_EX}: {Fore.BLUE}{result['title']}{Style.RESET_ALL}")
+                    print(f"{random.choice(counter_emojis)} {Fore.YELLOW}URL{Fore.LIGHTBLACK_EX}: {Fore.LIGHTBLACK_EX}{result['url']}{Style.RESET_ALL}")
+                    
+                    # Extract mentions
+                    text = f"{result['title']} {result['url']}"
+                    mentions = extract_mentions(text, query)
+                    for term, count in mentions.items():
+                        if count > 0:
+                            print(f"{random.choice(counter_emojis)} {Fore.BLUE}{term}{Fore.YELLOW} mentioned {Fore.WHITE}{count}x{Style.RESET_ALL}")
+                            all_mention_links.append({"url": result['url'], "count": count})
+                    
+                    # Find social profiles
+                    social_profiles = find_social_profiles(result['url'])
+                    if social_profiles:
+                        for profile in social_profiles:
+                            print(f"{random.choice(counter_emojis)} {Fore.GREEN}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}{Style.RESET_ALL}")
+                            all_unique_social_profiles.add(profile['profile_url'])
+                    
+                    # Random delay between processing results
+                    await asyncio.sleep(random.uniform(0.3, 1.2))
+                
+                if new_results == 0:
+                    print(f"{Fore.LIGHTBLACK_EX}No new results from {engine.upper()}, moving on...{Style.RESET_ALL}")
                     break
-                print(random.choice(counter_emojis), Fore.RED + f"Retrying request after error ({retries})..." + Style.RESET_ALL)
-                await asyncio.sleep(retry_interval * retries)
+                
+                # Update start position for next page
+                start += len(results)
+                print(f"{Fore.LIGHTBLACK_EX}Page completed for {engine.upper()}. Total: {engine_results_count}{Style.RESET_ALL}")
+                
+                # Random delay between pages
+                await asyncio.sleep(random.uniform(1.5, 3.5))
+        
+        # Final statistics
+        print(f"\n{Fore.GREEN}Search completed!{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Total results:{Fore.WHITE} {len(all_results)}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Unique mentions found:{Fore.WHITE} {len(all_mention_links)}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Social profiles discovered:{Fore.WHITE} {len(all_unique_social_profiles)}{Style.RESET_ALL}")
+        
+        # Write summary to file
+        print(f"\nSummary\n{'='*30}", file=file)
+        print(f"Total results: {len(all_results)}", file=file)
+        print(f"Unique mentions found: {len(all_mention_links)}", file=file)
+        print(f"Social profiles discovered: {len(all_unique_social_profiles)}", file=file)
+    
+    return len(all_results), all_mention_links, list(all_unique_social_profiles)
 
-    if total_results == 0 and consistent_duplicates_count < 3:
-        print(random.choice(counter_emojis), Fore.YELLOW + f"No more results found for the query '{query}'." + Style.RESET_ALL)
-    elif total_results == 0 and consistent_duplicates_count >= 3:
-        print(random.choice(counter_emojis), Fore.YELLOW + "No more new results found after consistent duplicates." + Style.RESET_ALL)
-        print(random.choice(counter_emojis), Fore.YELLOW + "Stopping search." + Style.RESET_ALL)
-
-    return total_results, all_mention_links, all_unique_social_profiles
-
-
-
-
-
-# Define the find_social_profiles function
+# Utility functions (reused from original)
 def find_social_profiles(url):
     if not isinstance(url, str):
         raise ValueError("URL must be a string")
 
     profiles = []
 
-    # Check if URL has been visited before
     if url in visited_urls:
         return profiles
 
@@ -316,12 +349,9 @@ def find_social_profiles(url):
     if is_potential_forum(url):
         profiles.append({"platform": "Forum", "profile_url": url})
 
-    # Add URL to visited set
     visited_urls.add(url)
-
     return profiles
 
-# Define the is_potential_forum function
 def is_potential_forum(url):
     forum_keywords = [
         r"forum[s]?",
@@ -333,12 +363,11 @@ def is_potential_forum(url):
     ]
     url_parts = urllib.parse.urlparse(url)
     path = url_parts.path.lower()
-    subdomain = url_parts.hostname.split('.')[0].lower()  # Extract subdomain
+    subdomain = url_parts.hostname.split('.')[0].lower() if url_parts.hostname else ""
     path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
     subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
     return path_keywords or subdomain_keywords
 
-# Define the extract_mentions function
 def extract_mentions(text, query):
     if not isinstance(text, str) or not text:
         raise ValueError("Input 'text' must be a non-empty string.")

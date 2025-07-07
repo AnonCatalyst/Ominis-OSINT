@@ -1,131 +1,194 @@
+# src/proxy_handler.py
 import asyncio
 import logging
-import ssl
-import aiohttp
+import re
+import random
+import time
+import json
+import os
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
+from aiohttp import ClientSession, ClientConnectorError, ClientProxyConnectionError, TCPConnector
 from bs4 import BeautifulSoup
-from colorama import Fore, Style, init
-import fake_useragent
-from multiprocessing import Pool, cpu_count
-import math
+from fake_useragent import UserAgent
+from colorama import Fore, Style
 
-# Initialize logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-init()  # Initialize colorama
+# Suppress fake_useragent warnings
+logging.getLogger('fake_useragent').setLevel(logging.ERROR)
 
-# Function to fetch proxies from a URL using aiohttp
-async def fetch_proxies_from_site(session, proxy_url):
-    proxies = []
-
-    try:
-        logger.info(f"🕸️ Scraping proxies from {Fore.RED}{proxy_url}{Style.RESET_ALL}")
-        async with session.get(proxy_url) as response:
-            if response.status == 200:
-                html = await response.text()
-                soup = BeautifulSoup(html, 'html.parser')
-                tbody = soup.find('tbody')
-                if tbody:
-                    for tr in tbody.find_all('tr')[:30]:  # Limiting to first 13 proxies for example
-                        tds = tr.find_all('td', limit=2)
-                        if len(tds) == 2:
-                            ip_address = tds[0].get_text(strip=True)
-                            port = tds[1].get_text(strip=True)
-                            proxy = f"{ip_address}:{port}"
-                            proxies.append(proxy)
-                    logger.info(f"🎃 Proxies scraped successfully from {Fore.RED}{proxy_url}{Style.RESET_ALL}. Total: {Fore.GREEN}{len(proxies)}{Style.RESET_ALL}")
-                else:
-                    logger.error(f"👻 {Fore.RED}Proxy list not found in the response from {proxy_url}.{Style.RESET_ALL}")
-            else:
-                logger.error(f"🧟 {Fore.RED}Failed to retrieve proxy list from {proxy_url}. Status code: {Fore.YELLOW}{response.status}{Style.RESET_ALL}")
-    except Exception as e:
-        logger.error(f"👻 {Fore.RED}Error scraping proxies from {proxy_url}: {Style.RESET_ALL}{e}")
-
-    return proxies
-
-# Function to scrape proxies from multiple sources concurrently
-async def scrape_proxies():
-    proxy_urls = [
-        "https://www.us-proxy.org/",
-        "https://www.sslproxies.org/"
+# Initialize UserAgent
+try:
+    ua = UserAgent()
+    ua.random  # Test generation
+except:
+    USER_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
     ]
+    ua = type('', (), {'random': lambda: random.choice(USER_AGENTS)})()
+
+# Configuration
+PROXY_SOURCES = [
+    "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http",
+    "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt",
+    "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc"
+]
+
+TEST_URLS = [
+    "http://httpbin.org/ip",
+    "http://example.com",
+    "http://icanhazip.com"
+]
+
+# Performance tuning
+TIMEOUT = 10
+MAX_CONCURRENT_TASKS = 50  # Per process
+MIN_DELAY = 0.1
+MAX_DELAY = 0.5
+MAX_VALIDATION_PROXIES = 200  # Check more to find working ones
+MAX_RETRIES = 2
+CPU_CORES = max(1, multiprocessing.cpu_count() - 1)  # Leave one core free
+
+def get_random_headers():
+    """Generate random headers with proper UserAgent handling."""
+    return {
+        'User-Agent': ua.random,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive'
+    }
+
+async def fetch_with_retry(session, url, max_retries=MAX_RETRIES):
+    """Fetch content with retries and random delays."""
+    for attempt in range(max_retries):
+        try:
+            await asyncio.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
+            async with session.get(
+                url,
+                headers=get_random_headers(),
+                timeout=TIMEOUT,
+                ssl=False
+            ) as response:
+                if response.status == 200:
+                    return await response.text()
+        except Exception as e:
+            logger.debug(f"Attempt {attempt+1} failed for {url}: {str(e)}")
+            await asyncio.sleep(random.uniform(0.5, 1.5))
+    return None
+
+async def fetch_proxies_from_source(session, url):
+    """Fetch proxies from a single source URL."""
+    content = await fetch_with_retry(session, url)
+    if not content:
+        return set()
     
-    async with aiohttp.ClientSession() as session:
-        tasks = [fetch_proxies_from_site(session, url) for url in proxy_urls]
-        results = await asyncio.gather(*tasks)
+    try:
+        if "geonode" in url:
+            data = json.loads(content)
+            return {f"{p['ip']}:{p['port']}" for p in data['data']}
+        elif "raw.githubusercontent" in url:
+            return set(line.strip() for line in content.split('\n') if re.match(r'\d+\.\d+\.\d+\.\d+:\d+', line))
+        else:
+            return parse_proxies(content)
+    except Exception as e:
+        logger.error(f"Error processing {url}: {str(e)}")
+        return set()
 
-    # Flatten the results list
-    proxies = [proxy for sublist in results for proxy in sublist]
-
-    if not proxies:
-        logger.error(f"👻 {Fore.RED}No proxies scraped.{Style.RESET_ALL}")
-
+def parse_proxies(html):
+    """Parse HTML content to extract proxies."""
+    proxies = set()
+    try:
+        soup = BeautifulSoup(html, 'html.parser')
+        for row in soup.find_all('tr'):
+            cols = [col.text.strip() for col in row.find_all('td')]
+            if len(cols) >= 2 and re.match(r'\d+\.\d+\.\d+\.\d+', cols[0]):
+                proxies.add(f"{cols[0]}:{cols[1]}")
+    except Exception as e:
+        logger.error(f"Error parsing HTML: {str(e)}")
     return proxies
 
-# Function to validate proxies with SSL verification disabled
-async def validate_proxies(proxies, validation_url="https://www.example.com/", timeout=10):
-    valid_proxies = []
-    ua = fake_useragent.UserAgent()
-
-    # SSL context creation (no certificate validation)
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:  # Fixed SSL context usage
-        tasks = []
-        for proxy in proxies:
-            proxy_with_scheme = proxy if proxy.startswith("http") else f"http://{proxy}"
-            task = asyncio.create_task(validate_single_proxy(session, proxy_with_scheme, validation_url, ua, timeout))
-            tasks.append(task)
-
-        results = await asyncio.gather(*tasks)
-
-    valid_proxies = [proxy for proxy, is_valid in results if is_valid]
-    return valid_proxies
-
-# Function to validate a single proxy with SSL verification disabled
-async def validate_single_proxy(session, proxy, validation_url, ua, timeout):
-    try:
-        headers = {"User-Agent": ua.random}
-
-        async with session.get(validation_url, headers=headers, proxy=proxy, timeout=timeout) as response:
-            if response.status == 200:
-                logger.info(f"✅ Proxy {Fore.CYAN}{proxy}{Fore.GREEN} is valid.{Style.RESET_ALL}")
-                return proxy, True
-            else:
-                return proxy, False  # Do not log this error
-    except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-        return proxy, False  # Do not log this error
-
-# Batch processing function
-def process_in_batches(proxies, batch_size=10):
-    num_batches = math.ceil(len(proxies) / batch_size)
-    batches = [proxies[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
-
-    # Using multiprocessing Pool to validate each batch concurrently
-    with Pool(cpu_count()) as pool:
-        results = pool.map(validate_proxy_batch, batches)
-
-    # Flatten the list of results and return all valid proxies
-    return [proxy for sublist in results for proxy in sublist]
-
-# Function to validate a batch of proxies
-def validate_proxy_batch(proxy_batch):
-    return asyncio.run(validate_proxies(proxy_batch))  # Ensure event loop is created
-
-# Main function to run the program
-async def main():
-    proxies = await scrape_proxies()
-    if proxies:
-        logger.info(f"Total proxies scraped: {len(proxies)}")
+async def validate_proxy_batch(proxy_batch):
+    """Validate a batch of proxies (async for single process)."""
+    connector = TCPConnector(limit=MAX_CONCURRENT_TASKS, ssl=False)
+    async with ClientSession(connector=connector) as session:
+        valid_proxies = []
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
         
-        # Using batch processing to validate proxies
-        valid_proxies = process_in_batches(proxies)
-        logger.info(f"Total valid proxies found: {Fore.GREEN}{len(valid_proxies)}{Style.RESET_ALL}")
-    else:
-        logger.error(f"👻 {Fore.RED}No proxies found to validate.{Style.RESET_ALL}")
+        async def validate(proxy):
+            async with semaphore:
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        await asyncio.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
+                        test_url = random.choice(TEST_URLS)
+                        async with session.get(
+                            test_url,
+                            proxy=f"http://{proxy}",
+                            headers=get_random_headers(),
+                            timeout=TIMEOUT,
+                            ssl=False
+                        ) as response:
+                            if response.status == 200:
+                                content = await response.text()
+                                if proxy.split(':')[0] in content:
+                                    valid_proxies.append(proxy)
+                                    logger.info(f"{Fore.GREEN}Valid proxy: {proxy}{Style.RESET_ALL}")
+                                    return True
+                    except Exception:
+                        continue
+            return False
+        
+        await asyncio.gather(*[validate(proxy) for proxy in proxy_batch])
+        return valid_proxies
 
-# Entry point of the script
-if __name__ == "__main__":
-    asyncio.run(main())
+def validate_proxy_wrapper(proxy_batch):
+    """Wrapper for multiprocessing."""
+    return asyncio.run(validate_proxy_batch(proxy_batch))
+
+async def scrape_proxies():
+    """Main function to scrape and validate proxies with multiprocessing."""
+    logger.info(f"{Fore.CYAN}Starting proxy scraping with {CPU_CORES} processes...{Style.RESET_ALL}")
+    
+    # Step 1: Fetch all proxies
+    connector = TCPConnector(limit=20, ssl=False)
+    async with ClientSession(connector=connector) as session:
+        tasks = [fetch_proxies_from_source(session, url) for url in PROXY_SOURCES]
+        results = await asyncio.gather(*tasks)
+        all_proxies = set().union(*results)
+        logger.info(f"Found {len(all_proxies)} raw proxies")
+        
+        if not all_proxies:
+            return []
+        
+        # Step 2: Prepare for multiprocessing validation
+        proxy_list = list(all_proxies)
+        random.shuffle(proxy_list)
+        validation_proxies = proxy_list[:MAX_VALIDATION_PROXIES]
+        
+        # Split proxies into batches for each process
+        batch_size = max(1, len(validation_proxies) // CPU_CORES)
+        batches = [validation_proxies[i:i + batch_size] for i in range(0, len(validation_proxies), batch_size)]
+        
+        logger.info(f"Validating {len(validation_proxies)} proxies across {CPU_CORES} processes...")
+        
+        # Step 3: Parallel processing
+        with ProcessPoolExecutor(max_workers=CPU_CORES) as executor:
+            results = list(executor.map(validate_proxy_wrapper, batches))
+        
+        # Combine results
+        valid_proxies = []
+        for batch_result in results:
+            valid_proxies.extend(batch_result)
+        
+        logger.info(f"{Fore.GREEN}Found {len(valid_proxies)} valid proxies{Style.RESET_ALL}")
+        
+        # Save valid proxies
+        os.makedirs("config", exist_ok=True)
+        with open("config/valid_proxies.txt", "w") as f:
+            f.write("\n".join(valid_proxies))
+        
+        return valid_proxies
