@@ -22,7 +22,7 @@ Visit actions/workflows and chose any of the 3 options to try out Ominis OSINT r
 
 
 -- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
-- [Support Discord Server](https://discord.gg/tgSacvyHqV)
+- [Support Discord Server](https://discord.gg/P8PxC5EGaU)
 
 **Contributing**
 Contributions are welcome! Fork the repository, make changes, and submit a pull request.
