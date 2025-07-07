@@ -1,7 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 
-> **UPDATE** ``proceeding``
+> **UPDATE** ``ongoing``
 - ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT``
 
 
