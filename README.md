@@ -1,7 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 
-> **UPDATE** ``ongoing``
+> **UPDATE** ``ongoing-paused: Cyber Crime is on the rise, investigations proceed - - \NoTrac3-agent: Please be on the look out for 2 growing cyber criminal groups as follow> UTTP - YouTube Trolling Police - DPOS - DEGENERACY POLICE ORDER STAT. Transparency repository will be uploaded on github @github.com/NoTrac3.``
 - ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT``
 
 https://wintergate.org
