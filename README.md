@@ -2,7 +2,7 @@
 
 
 > **UPDATE** ``ongoing-paused: Cyber Crime is on the rise, investigations proceed - - \NoTrac3-agent: Please be on the look out for 2 growing cyber criminal groups as follows> UTTP - YouTube Trolling Police - DPOS - DEGENERACY POLICE ORDER STAT(UTTP-Branch). Transparency repository will be uploaded on github @github.com/NoTrac3.``
-- ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT``
+- ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT`` **DELAYED**
 
 https://wintergate.org
 
