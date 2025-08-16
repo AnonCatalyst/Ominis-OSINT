@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+@qweed_ggfrom setuptools import setup, find_packages
 
 setup(
     name='Ominis-OSINT',
