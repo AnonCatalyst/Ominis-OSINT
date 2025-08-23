@@ -36,7 +36,8 @@ except:
 PROXY_SOURCES = [
     "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http",
     "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt",
-    "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc"
+    "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc",
+    "https://proxik.cloud/proxy_list?type=http"
 ]
 
 TEST_URLS = [
