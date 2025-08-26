@@ -1,6 +1,6 @@
 beautifulsoup4==4.13.4
 colorama==0.4.6
-requests==2.32.4
+requests==2.32.5
 google-search-results==2.4.2
 httpx==0.28.1
 tenacity==9.1.2
