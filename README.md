@@ -1,6 +1,6 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
-- ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT`` **RESCHEDULED WINTERGATE WILL BE EXPANDING THIS PROJECT**
+- ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT`` **RESCHEDULED. WINTERGATE WILL BE EXPANDING THIS PROJECT**
 
 https://wintergate.org - __The front end of this website is a template until further notice thank you.__
 
