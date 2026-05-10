@@ -1,10 +1,10 @@
-@qweed_ggfrom setuptools import setup, find_packages
+from setuptools import setup, find_packages
 
 setup(
     name='Ominis-OSINT',
     version='0.4.8',
-    packages=find_packages(where='src'),
-    package_dir={'': 'src'},
+    packages=['src'],
+    py_modules=['ominis'],
     python_requires='>=3.9',
     install_requires=[
         'beautifulsoup4',
