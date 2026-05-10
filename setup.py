@@ -23,7 +23,8 @@ setup(
         'html_clean',
         'tqdm',
         'anyio>=4.4.0',  # not directly required, pinned by Snyk to avoid a vulnerability
-        'zipp>=3.19.1',  # not directly required, pinned by Snyk to avoid a vulnerability
+        'zipp>=3.19.1',
+        'validators',  # not directly required, pinned by Snyk to avoid a vulnerability
     ],
     entry_points={
         'console_scripts': [
