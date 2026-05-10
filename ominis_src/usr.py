@@ -4,6 +4,7 @@ import concurrent.futures
 import logging
 import random
 import time
+import threading
 from colorama import Fore, Style, init
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
@@ -23,32 +24,44 @@ results_file = open("Results/username-search_results.txt", "w")
 visited_urls = set()
 visited_html_content = set()
 
+# Progress tracking
+_progress_lock = threading.Lock()
+_progress_done = 0
+_progress_total = 0
+
 
 # Function to search for username on a single URL
 def search_username_on_url(username: str, url: str, include_titles=True, include_descriptions=True, include_html_content=True):
-    global visited_urls, visited_html_content
+    global visited_urls, visited_html_content, _progress_done, _progress_total
     try:
         if username.lower() not in url.lower():
             url += f'/{username}' if url.endswith('/') else f'/{username}'
 
         if url in visited_urls:
-            print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate URL: {Fore.WHITE}{url}")
+            with _progress_lock:
+                _progress_done += 1
+                print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate URL: {Fore.WHITE}{url} {Fore.LIGHTBLACK_EX}[{_progress_done}/{_progress_total}]")
             return
 
         visited_urls.add(url)
 
         session = HTMLSession()
-        time.sleep(random.uniform(1, 3))  # Introduce a random delay to mimic human behavior
-        response = session.get(url)
+        time.sleep(random.uniform(0.5, 1.5))  # Introduce a random delay to mimic human behavior
+        response = session.get(url, timeout=15)
+
+        with _progress_lock:
+            _progress_done += 1
+            done = _progress_done
+            total = _progress_total
 
         if response.status_code == 200:
             if response.html.raw_html in visited_html_content:
-                print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate HTML content for URL: {Fore.WHITE}{url}")
+                print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate HTML content for URL: {Fore.WHITE}{url} {Fore.LIGHTBLACK_EX}[{done}/{total}]")
                 return
 
             visited_html_content.add(response.html.raw_html)
 
-            print(f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code}")
+            print(f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code} {Fore.LIGHTBLACK_EX}[{done}/{total}]")
 
             # Always check for query in URL, title, description, and HTML content
             print_query_detection(username, url, response.html.raw_html)
@@ -65,8 +78,15 @@ def search_username_on_url(username: str, url: str, include_titles=True, include
             return
     except UnicodeEncodeError:
         logging.error(f"UnicodeEncodeError occurred while printing to console for {username} on {url}")
+        with _progress_lock:
+            _progress_done += 1
     except Exception as e:
         logging.error(f"Error occurred while searching for {username} on {url}: {e}")
+        with _progress_lock:
+            _progress_done += 1
+            done = _progress_done
+            total = _progress_total
+        print(f"{Fore.RED}⚠️ Timeout/error for {Fore.WHITE}{url} {Fore.LIGHTBLACK_EX}[{done}/{total}]")
 
 def print_query_detection(username, url, html_content):
     query_detected = False
@@ -175,7 +195,12 @@ def main(username):
     include_html_content = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include HTML content? (y/n):{Style.RESET_ALL} ").lower() == 'y'
     print(f"{Fore.RED}_" * 80 + "\n")
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    global _progress_done, _progress_total
+    _progress_done = 0
+    _progress_total = len(url_list)
+    print(f"{Fore.LIGHTBLACK_EX}Checking {_progress_total} platforms...\n")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(search_username_on_url, username, url, include_titles, include_descriptions, include_html_content) for url in url_list]
         concurrent.futures.wait(futures)
 
