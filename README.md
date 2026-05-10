@@ -2,8 +2,6 @@
 
 - ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT`` **RESCHEDULED. WINTERGATE WILL BE EXPANDING THIS PROJECT**
 
-https://wintergate.org - __The front end of this website is a template until further notice thank you.__
-
 # **Github Actions**
 
 
