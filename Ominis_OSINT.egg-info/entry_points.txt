@@ -1,0 +1,2 @@
+[console_scripts]
+ominis = ominis:run
