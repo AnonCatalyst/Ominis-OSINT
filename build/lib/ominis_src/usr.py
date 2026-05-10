@@ -1,4 +1,5 @@
 import sys
+import os
 import concurrent.futures
 import logging
 import random
@@ -11,10 +12,11 @@ from bs4 import BeautifulSoup
 init(autoreset=True)
 
 # Set up logging
-logging.basicConfig(filename='src/username_search.log', level=logging.INFO,
+logging.basicConfig(filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'username_search.log'), level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Set up file for saving results
+os.makedirs("Results", exist_ok=True)
 results_file = open("Results/username-search_results.txt", "w")
 
 # Keep track of visited URLs to prevent duplicates
@@ -159,7 +161,7 @@ def print_html(html_content, url, query, include_titles=True, include_descriptio
 
 
 def main(username):
-    with open("src/urls.txt", "r") as f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'urls.txt'), "r") as f:
         url_list = [x.strip() for x in f.readlines()]
 
     if not username:
@@ -190,7 +192,10 @@ if __name__ == "__main__":
 
         input_text = sys.argv[1]
 
-        confirmation = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want to run a username search{Fore.RED}? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: {Style.RESET_ALL}")
+        try:
+            confirmation = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want to run a username search{Fore.RED}? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: {Style.RESET_ALL}")
+        except EOFError:
+            confirmation = "n"
         if confirmation.lower() != 'y':
             #print("Script execution aborted.")
             sys.exit(0)

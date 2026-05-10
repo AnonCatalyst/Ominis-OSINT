@@ -121,7 +121,7 @@ async def main():
     )
     await asyncio.sleep(3)  # Introduce delay between requests
 
-    subprocess.run(["python3", "-m", "ominis_src.usr", query])
+    subprocess.run(["/home/ant/.local/share/pipx/venvs/ominis-osint/bin/python", "-m", "ominis_src.usr", query])
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')

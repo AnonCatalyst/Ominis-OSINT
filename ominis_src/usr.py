@@ -192,7 +192,10 @@ if __name__ == "__main__":
 
         input_text = sys.argv[1]
 
-        confirmation = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want to run a username search{Fore.RED}? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: {Style.RESET_ALL}")
+        try:
+            confirmation = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want to run a username search{Fore.RED}? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: {Style.RESET_ALL}")
+        except EOFError:
+            confirmation = "n"
         if confirmation.lower() != 'y':
             #print("Script execution aborted.")
             sys.exit(0)
