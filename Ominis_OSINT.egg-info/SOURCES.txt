@@ -8,8 +8,8 @@ Ominis_OSINT.egg-info/dependency_links.txt
 Ominis_OSINT.egg-info/entry_points.txt
 Ominis_OSINT.egg-info/requires.txt
 Ominis_OSINT.egg-info/top_level.txt
-src/__init__.py
-src/proxy_handler.py
-src/tools_handler.py
-src/usr.py
-src/utils.py
+ominis_src/__init__.py
+ominis_src/proxy_handler.py
+ominis_src/tools_handler.py
+ominis_src/usr.py
+ominis_src/utils.py

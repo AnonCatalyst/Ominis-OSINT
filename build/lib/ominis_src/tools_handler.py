@@ -27,7 +27,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # Set up error logger
 error_logger = logging.getLogger('gfetcherror')
 error_logger.setLevel(logging.ERROR)
-error_handler = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gfetcherror.log'))
+error_handler = logging.FileHandler('src/gfetcherror.log')
 error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 error_logger.addHandler(error_handler)
 
@@ -35,7 +35,7 @@ error_logger.addHandler(error_handler)
 logging.getLogger('httpx').setLevel(logging.WARNING)
 logging.basicConfig(
     level=logging.INFO,
-    filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gfetcherror.log'),
+    filename='src/gfetcherror.log',
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ MAX_REDIRECTS = 5
 show_message = None
 
 # Load social platform patterns
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r") as json_file:
+with open("src/social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
 # Advanced evasion headers

@@ -1,5 +1,4 @@
 import re
-import os
 import urllib.parse
 import json
 import logging
@@ -11,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 visited_urls = set()
 # Load social platform patterns from a JSON file
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r") as json_file:
+with open("src/social_platforms.json", "r") as json_file:
     social_platforms = json.load(json_file)
 
 # Define the find_social_profiles function

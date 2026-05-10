@@ -8,9 +8,9 @@ import time
 from colorama import Fore, Style, init
 from fake_useragent import UserAgent
 
-from src.proxy_handler import scrape_proxies  # Only import scrape_proxies
-from src.tools_handler import fetch_dual_engine_results
-from src.utils import find_social_profiles, is_potential_forum, extract_mentions
+from ominis_src.proxy_handler import scrape_proxies  # Only import scrape_proxies
+from ominis_src.tools_handler import fetch_dual_engine_results
+from ominis_src.utils import find_social_profiles, is_potential_forum, extract_mentions
 
 # Suppress InsecureRequestWarning
 import urllib3
