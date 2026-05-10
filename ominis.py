@@ -60,7 +60,10 @@ async def get_user_input(prompt, options=None):
         for option in options:
             print(f" - {option}")
 
-    user_input = input(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} {prompt}: {Fore.WHITE}")
+    try:
+        user_input = input(f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} {prompt}: {Fore.WHITE}")
+    except EOFError:
+        user_input = ""
     
     # Save input
     user_inputs[prompt] = user_input
@@ -118,7 +121,7 @@ async def main():
     )
     await asyncio.sleep(3)  # Introduce delay between requests
 
-    subprocess.run(["python3", "-m", "src.usr", query])
+    subprocess.run(["python3", "-m", "ominis_src.usr", query])
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
