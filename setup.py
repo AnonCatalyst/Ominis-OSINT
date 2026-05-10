@@ -4,6 +4,7 @@ setup(
     name='Ominis-OSINT',
     version='0.4.8',
     packages=['ominis_src'],
+    package_data={'ominis_src': ['*.json', '*.txt']},
     py_modules=['ominis'],
     python_requires='>=3.9',
     install_requires=[
