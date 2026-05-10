@@ -1,39 +1,44 @@
-from setuptools import setup, find_packages
+Metadata-Version: 2.4
+Name: Ominis-OSINT
+Version: 0.4.8
+Summary: Discover online mentions of a query or username. Identify potential social profiles and forums.
+Home-page: https://github.com/AnonCatalyst/Ominis-OSINT
+Author: AnonCatalyst
+Author-email: hard2find.co.01@gmail.com
+License: MIT
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: beautifulsoup4
+Requires-Dist: colorama
+Requires-Dist: fake_useragent
+Requires-Dist: requests
+Requires-Dist: serpapi
+Requires-Dist: google-search-results
+Requires-Dist: httpx[http2]
+Requires-Dist: tenacity
+Requires-Dist: requests-html
+Requires-Dist: aiohttp
+Requires-Dist: urllib3
+Requires-Dist: asyncio
+Requires-Dist: lxml_html_clean
+Requires-Dist: html_clean
+Requires-Dist: tqdm
+Requires-Dist: anyio>=4.4.0
+Requires-Dist: zipp>=3.19.1
+Requires-Dist: validators
+Dynamic: author
+Dynamic: author-email
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
-setup(
-    name='Ominis-OSINT',
-    version='0.4.8',
-    packages=['ominis_src'],
-    py_modules=['ominis'],
-    python_requires='>=3.9',
-    install_requires=[
-        'beautifulsoup4',
-        'colorama',
-        'fake_useragent',
-        'requests',
-        'serpapi',
-        'google-search-results',
-        'httpx[http2]',
-        'tenacity',
-        'requests-html',
-        'aiohttp',
-        'urllib3',
-        'asyncio',
-        'lxml_html_clean',
-        'html_clean',
-        'tqdm',
-        'anyio>=4.4.0',  # not directly required, pinned by Snyk to avoid a vulnerability
-        'zipp>=3.19.1',
-        'validators',  # not directly required, pinned by Snyk to avoid a vulnerability
-    ],
-    entry_points={
-        'console_scripts': [
-            'ominis=ominis:run',
-        ],
-    },
-    include_package_data=True,
-    description='Discover online mentions of a query or username. Identify potential social profiles and forums.',
-    long_description="""
+
     🌐 Premier Digital Reconnaissance Solution
     
     Ominis OSINT Secure Web-Hunter stands as a premier solution for digital reconnaissance, offering unparalleled capabilities in gathering, analyzing, and interpreting publicly available information sourced from diverse online platforms. With its comprehensive suite of features, Ominis equips users to navigate through the expansive digital landscape with precision and efficiency, enabling the extraction of valuable insights from a myriad of sources.
@@ -49,10 +54,4 @@ setup(
     🛠️ Cutting-edge Technology
     
     In essence, Ominis OSINT redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision.
-    """,
-    long_description_content_type='text/markdown',
-    author='AnonCatalyst',
-    author_email='hard2find.co.01@gmail.com',
-    url='https://github.com/AnonCatalyst/Ominis-OSINT',
-    license='MIT',
-)
+    

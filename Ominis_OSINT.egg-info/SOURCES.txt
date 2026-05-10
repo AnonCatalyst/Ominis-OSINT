@@ -1,0 +1,15 @@
+LICENSE
+README.md
+ominis.py
+setup.py
+Ominis_OSINT.egg-info/PKG-INFO
+Ominis_OSINT.egg-info/SOURCES.txt
+Ominis_OSINT.egg-info/dependency_links.txt
+Ominis_OSINT.egg-info/entry_points.txt
+Ominis_OSINT.egg-info/requires.txt
+Ominis_OSINT.egg-info/top_level.txt
+src/__init__.py
+src/proxy_handler.py
+src/tools_handler.py
+src/usr.py
+src/utils.py
