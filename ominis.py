@@ -123,5 +123,8 @@ async def main():
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-if __name__ == "__main__":
+def run():
     asyncio.run(main())
+
+if __name__ == "__main__":
+    run()
