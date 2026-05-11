@@ -14,5 +14,5 @@ lxml_html_clean
 html_clean
 tqdm
 anyio>=4.4.0
-zipp>=3.19.1
+zipp>=3.23.1
 validators
