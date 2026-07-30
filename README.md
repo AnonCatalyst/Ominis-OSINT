@@ -1,6 +1,6 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
-- ``SURPRISE UPDATE SCHEDULED FOR DEVELOPMENT`` **RESCHEDULED. WINTERGATE WILL BE EXPANDING THIS PROJECT**
+- ``This Project Will Re-enter development`` **WINTERGATEIC WILL BE EXPANDING THIS PROJECT**
 
 # **Github Actions**
 
