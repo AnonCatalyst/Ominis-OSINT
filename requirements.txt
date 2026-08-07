@@ -19,4 +19,4 @@ fake_useragent
 PyQt6==6.11.0
 dnspython>=2.8.0 # not directly required, pinned by Snyk to avoid a vulnerability
 aiohttp-socks==0.11.0
-python-socks[asyncio]>=2.4.3
+python-socks[asyncio]>=2.8.2
