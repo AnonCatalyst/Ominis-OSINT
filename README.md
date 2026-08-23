@@ -29,7 +29,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 🚀 Happy OSINTing! 🕵️‍♂️
 
-<img src="src/img/kmc_20241009_145637.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
+<img src="ominis_src/img/kmc_20241009_145637.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
 
 ## Features
 
@@ -127,7 +127,7 @@ Ominis OSINT provides a wealth of targetable and actionable results, empowering 
 Ominis OSINT Tools delivers actionable insights that enable users to make informed decisions, mitigate risks, and capitalize on opportunities in a rapidly evolving digital landscape.
 
 
-![Watch the video](src/img/video.gif)
+![Watch the video](ominis_src/img/video.gif)
 
 ## Configuration
 
