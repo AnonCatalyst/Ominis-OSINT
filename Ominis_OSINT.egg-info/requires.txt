@@ -13,6 +13,6 @@ asyncio
 lxml_html_clean
 html_clean
 tqdm
-anyio>=4.14.2
+anyio>=4.15.0
 zipp>=4.1.0
 validators

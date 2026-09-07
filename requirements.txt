@@ -10,7 +10,7 @@ urllib3==2.7.0
 asyncio==4.0.0
 lxml_html_clean
 html_clean
-anyio>=4.14.2
+anyio>=4.15.0
 zipp>=4.1.0
 validators==0.35.0
 tqdm==4.70.0
