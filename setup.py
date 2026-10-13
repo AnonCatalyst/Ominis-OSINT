@@ -14,7 +14,7 @@ setup(
         'requests',
         'serpapi',
         'google-search-results',
-        'httpx[http2]',
+        'httpx[http2,socks]>=0.28.1',
         'tenacity',
         'requests-html',
         'aiohttp',

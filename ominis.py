@@ -12,10 +12,6 @@ from ominis_src.proxy_handler import scrape_proxies  # Only import scrape_proxie
 from ominis_src.tools_handler import fetch_dual_engine_results
 from ominis_src.utils import find_social_profiles, is_potential_forum, extract_mentions
 
-# Suppress InsecureRequestWarning
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
