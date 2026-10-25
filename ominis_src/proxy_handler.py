@@ -65,6 +65,7 @@ def get_random_headers():
 
 async def fetch_with_retry(session, url, max_retries=MAX_RETRIES):
     """Fetch content with retries and random delays."""
+    last_error = RuntimeError("No fetch attempts made")
     for attempt in range(max_retries):
         try:
             await asyncio.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
@@ -75,9 +76,14 @@ async def fetch_with_retry(session, url, max_retries=MAX_RETRIES):
             ) as response:
                 if response.status == 200:
                     return await response.text()
+                last_error = RuntimeError(f"Unexpected HTTP {response.status}")
         except Exception as e:
+            last_error = e
             logger.debug(f"Attempt {attempt+1} failed for {url}: {str(e)}")
+        if attempt + 1 < max_retries:
             await asyncio.sleep(random.uniform(0.5, 1.5))
+    logger.warning("Proxy source fetch failed for %s after %d attempts: %s: %s",
+                   url, max_retries, type(last_error).__name__, last_error)
     return None
 
 async def fetch_proxies_from_source(session, url):

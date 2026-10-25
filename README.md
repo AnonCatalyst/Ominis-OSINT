@@ -144,6 +144,11 @@ credentials are redacted from display and connection-error messages.
 
 An explicit proxy pool must be nonempty and contain valid endpoints. Failed
 proxy requests retry through that pool and never fall back to a direct request.
+Each explicit proxy request uses at most three attempts within a 30-second total
+budget, including request time and backoff. The optional proxy-display prompt is
+outside that budget. Invalid pools raise `ValueError` through both search APIs
+before any requests or result files are created. Exhausted proxy-source fetches
+log a warning with the source URL and final failure reason.
 With `proxies=None`, HTTPX's normal environment proxy settings apply.
 
 HTTPS certificates are verified for searches and proxy-source retrieval. For

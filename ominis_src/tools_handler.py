@@ -38,6 +38,8 @@ logger = logging.getLogger(__name__)
 visited_urls = set()
 counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
 MAX_RETRY_COUNT = 20
+MAX_PROXY_RETRY_COUNT = 3
+PROXY_REQUEST_TIMEOUT = 30.0
 MAX_REDIRECTS = 5
 show_message = None
 
@@ -118,6 +120,14 @@ def _normalize_proxy(proxy):
         raise ValueError("Invalid proxy endpoint; use host:port or an HTTP(S)/SOCKS5 URL") from None
 
 
+def _normalize_proxy_pool(proxies):
+    if proxies is None:
+        return None
+    if not isinstance(proxies, (list, tuple)) or not proxies:
+        raise ValueError("Supply a non-empty proxy pool, or None for environment routing")
+    return [_normalize_proxy(proxy) for proxy in proxies]
+
+
 def _redact_proxy(proxy):
     parsed = urllib.parse.urlsplit(proxy)
     endpoint = parsed.netloc.rsplit("@", 1)[-1]
@@ -137,14 +147,28 @@ def _safe_proxy_error(error, proxy):
 
 
 async def make_request_async(url, proxies=None):
-    if proxies is not None:
-        if not isinstance(proxies, (list, tuple)) or not proxies:
-            raise ValueError("Supply a non-empty proxy pool, or None for environment routing")
-        proxies = [_normalize_proxy(proxy) for proxy in proxies]
-    retry_count = 0
+    proxies = _normalize_proxy_pool(proxies)
+    if proxies is None:
+        return await _make_request_with_retries(url, proxies, MAX_RETRY_COUNT)
+
+    # User input must not consume the network retry budget.
     global show_message
-    
-    while retry_count < MAX_RETRY_COUNT:
+    if show_message is None:
+        show_message = await ask_to_show_message()
+    max_retries = min(MAX_RETRY_COUNT, MAX_PROXY_RETRY_COUNT)
+    try:
+        return await asyncio.wait_for(
+            _make_request_with_retries(url, proxies, max_retries),
+            timeout=PROXY_REQUEST_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        logger.error("Explicit proxy request exceeded %g-second budget for %s", PROXY_REQUEST_TIMEOUT, url)
+        raise RuntimeError(f"Request failed: explicit proxy budget of {PROXY_REQUEST_TIMEOUT:g} seconds exceeded") from None
+
+
+async def _make_request_with_retries(url, proxies, max_retries):
+    retry_count = 0
+    while retry_count < max_retries:
         proxy = random.choice(proxies) if proxies is not None else None
         try:
             async with httpx.AsyncClient(
@@ -166,8 +190,6 @@ async def make_request_async(url, proxies=None):
                 headers["X-Evasion-Fingerprint"] = random.choice(JA4_STRINGS)
                 
                 if proxy is not None:
-                    if show_message is None:
-                        show_message = await ask_to_show_message()
                     if show_message:
                         print(f"  {Fore.LIGHTBLACK_EX}Rotated Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {_redact_proxy(proxy)} {Fore.RED}| ", end='')
 
@@ -186,16 +208,16 @@ async def make_request_async(url, proxies=None):
                 return response.text
 
         except (TimeoutException, RequestError, httpx.HTTPStatusError) as e:
-            logger.error(f"Connection error ({retry_count + 1}/{MAX_RETRY_COUNT}): {_safe_proxy_error(e, proxy)}")
+            logger.error(f"Connection error ({retry_count + 1}/{max_retries}): {_safe_proxy_error(e, proxy)}")
             retry_count += 1
-            if retry_count < MAX_RETRY_COUNT:
-                print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{MAX_RETRY_COUNT})...{Style.RESET_ALL}")
+            if retry_count < max_retries:
+                print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{max_retries})...{Style.RESET_ALL}")
                 # Exponential backoff with jitter
                 sleep_time = min(2 ** retry_count + random.uniform(0, 1), 30)
                 await asyncio.sleep(sleep_time)
             else:
                 logger.error(f"Max retries exceeded for {url}")
-                raise RuntimeError(f"Request failed after {MAX_RETRY_COUNT} retries") from None
+                raise RuntimeError(f"Request failed after {max_retries} attempts") from None
     
     logger.error("All evasion attempts failed")
     return None
@@ -217,7 +239,9 @@ async def fetch_engine_results(engine, query, start=0, proxies=None):
         url = f"https://www.bing.com/search?q={quote_plus(query)}&first={start}"
     else:
         raise ValueError("Unsupported search engine")
-    
+
+    # Validate configuration outside the catch for recoverable search failures.
+    proxies = _normalize_proxy_pool(proxies)
     try:
         response_text = await make_request_async(url, proxies)
         if not response_text:
@@ -285,6 +309,7 @@ async def dual_engine_search(query, proxies=None, max_results=100):
     """
     Actual implementation of the dual-engine search
     """
+    proxies = _normalize_proxy_pool(proxies)
     engines = ["duckduckgo", "bing"]
     seen_urls = set()
     all_results = []
