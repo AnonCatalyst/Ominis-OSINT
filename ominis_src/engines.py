@@ -94,7 +94,7 @@ def parse_duckduckgo(html: str) -> list[Result]:
         if not href.startswith("http"):
             continue
         tracked = urllib.parse.urlparse(href)
-        if ((tracked.hostname or "").endswith("duckduckgo.com")
+        if (utils.host_matches(href, "duckduckgo.com")
                 and tracked.path.startswith("/y.js")):
             continue  # sponsored placement
         snippet = ""

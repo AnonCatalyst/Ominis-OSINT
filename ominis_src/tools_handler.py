@@ -13,8 +13,8 @@ from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
 
 # Load utility functions from ominis_src/utils.py
 from ominis_src.utils import (extract_mentions, find_social_profiles,
-                              is_potential_forum, unwrap_bing_url,
-                              unwrap_duckduckgo_url)
+                              host_matches, is_potential_forum,
+                              unwrap_bing_url, unwrap_duckduckgo_url)
 
 # Initialize colorama for colored output
 init(autoreset=True)
@@ -261,7 +261,7 @@ async def fetch_engine_results(engine, query, start=0, proxies=None):
                 if not href or not href.startswith('http'):
                     continue
                 tracked = urlparse(href)
-                if ((tracked.hostname or '').endswith('duckduckgo.com')
+                if (host_matches(href, 'duckduckgo.com')
                         and tracked.path.startswith('/y.js')):
                     continue
                     

@@ -11,6 +11,19 @@ def test_unwrap_bing_click_tracker():
     assert utils.unwrap_bing_url(url) == "https://example.net/target"
 
 
+@pytest.mark.parametrize("url,domain,expected", [
+    ("https://duckduckgo.com/", "duckduckgo.com", True),
+    ("https://html.duckduckgo.com/html/", "duckduckgo.com", True),
+    ("https://evilduckduckgo.com/", "duckduckgo.com", False),
+    ("https://duckduckgo.com.example.net/", "duckduckgo.com", False),
+    ("https://example.com/?next=duckduckgo.com", "duckduckgo.com", False),
+    ("not a url", "duckduckgo.com", False),
+    (None, "duckduckgo.com", False),
+])
+def test_host_matches_only_real_domains(url, domain, expected):
+    assert utils.host_matches(url, domain) is expected
+
+
 @pytest.mark.parametrize("url,expected", [
     ("/l/?uddg=https%3A%2F%2Fexample.com%2Fone&rut=abc",
      "https://example.com/one"),

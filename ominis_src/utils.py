@@ -15,6 +15,19 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platf
     social_platforms = json.load(json_file)
 
 
+def host_matches(url, domain):
+    """True when ``url`` belongs to ``domain`` or one of its subdomains.
+
+    Compares the parsed hostname exactly, so ``duckduckgo.com.example.net``
+    and ``evilduckduckgo.com`` never match while ``html.duckduckgo.com`` does.
+    """
+    if not isinstance(url, str):
+        return False
+    host = (urllib.parse.urlparse(url).hostname or "").lower().rstrip(".")
+    domain = domain.lower().rstrip(".")
+    return bool(host) and (host == domain or host.endswith("." + domain))
+
+
 def unwrap_duckduckgo_url(url):
     """Return the destination behind DuckDuckGo's ``/l/`` redirect.
 
