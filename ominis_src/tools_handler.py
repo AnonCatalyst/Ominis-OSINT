@@ -80,13 +80,21 @@ async def make_request_async(url: str, proxies: tuple[str, ...] | None = None,
     raise SearchError(f"request failed after {MAX_RETRIES} attempts: {last_error}")
 
 
+def _host_matches(url: str, domain: str) -> bool:
+    """Exact parsed-hostname match, so look-alike domains never pass."""
+    host = (urlparse(url).hostname or "").lower().rstrip(".")
+    domain = domain.lower().rstrip(".")
+    return bool(host) and (host == domain or host.endswith("." + domain))
+
+
 def _unwrap_ddg(href: str) -> str:
     if not href:
         return ""
     if href.startswith("//"):
         href = "https:" + href
-    if "duckduckgo.com/l/" in href or href.startswith("/l/"):
-        parsed = urlparse(href)
+    parsed = urlparse(href)
+    if (_host_matches(href, "duckduckgo.com")
+            and parsed.path.startswith("/l/")):
         target = parse_qs(parsed.query).get("uddg", [""])[0]
         if target:
             return unquote(target)
@@ -96,8 +104,9 @@ def _unwrap_ddg(href: str) -> str:
 def _unwrap_bing(href: str) -> str:
     if not href:
         return ""
-    if "bing.com/ck/a" in href:
-        parsed = urlparse(href)
+    parsed = urlparse(href)
+    if (_host_matches(href, "bing.com")
+            and parsed.path.startswith("/ck/a")):
         encoded = parse_qs(parsed.query).get("u", [""])[0]
         if encoded.startswith("a1"):
             encoded = encoded[2:]
@@ -127,7 +136,10 @@ def parse_duckduckgo(html: str) -> list[dict[str, Any]]:
         if not link:
             continue
         href = _unwrap_ddg(link.get("href", ""))
-        if not _valid(href) or "duckduckgo.com/y.js" in href:
+        if not _valid(href):
+            continue
+        if (_host_matches(href, "duckduckgo.com")
+                and urlparse(href).path.startswith("/y.js")):
             continue
         snippet = block.select_one(".result__snippet")
         rows.append(_result("duckduckgo", link.get_text(" ", strip=True),
