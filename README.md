@@ -71,5 +71,10 @@ extra dependency. Date filters are folded into the query for that provider.
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE). This release is unsigned; verify the SHA-256 digest
+MIT. See [LICENSE](LICENSE).
+
+This build is not code-signed. See [CODE_SIGNING.md](CODE_SIGNING.md) for
+the SHA-256 verification steps and why there is no self-signed
+certificate. The WinterGate names and logos are covered by
+[TRADEMARKS.md](TRADEMARKS.md), not by the MIT licence. This release is unsigned; verify the SHA-256 digest
 published with the release.
