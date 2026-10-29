@@ -23,7 +23,7 @@ Use GitHub's private reporting flow:
 3. Include the affected version or commit, a description, and a minimal
    reproduction (command, input and observed output).
 
-If you cannot use GitHub, write to <security@wintergate.org>. Encrypting the
+If you cannot use GitHub, write to <support@wintergate.org>. Encrypting the
 message is welcome but not required. Never include live API keys, proxy
 credentials or personal data in a report; redact them.
 
