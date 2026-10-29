@@ -1,122 +1,118 @@
+"""Opt-in proxy harvesting for the ARG build.
+
+Nothing here runs unless the user asks for it. The parser is defensive and the
+validator uses httpx's current proxy argument rather than the removed
+``proxies=`` mapping.
+"""
+
+from __future__ import annotations
+
 import asyncio
-import logging
+import random
+import re
+
 import httpx
 from bs4 import BeautifulSoup
-from colorama import Fore, Style, init
-import fake_useragent
-from tqdm import tqdm
-import time
 
-# Initialize colorama
-init()
+USER_AGENTS = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0",
+)
+PROXY_SOURCES = (
+    "https://www.sslproxies.org/",
+    "https://free-proxy-list.net/",
+)
+VALIDATION_URL = "https://example.com/"
+MAX_CANDIDATES = 200
 
-# Custom logging handler to avoid spamming
-class ProgressLoggingHandler(logging.Handler):
-    def __init__(self, progress_bar):
-        super().__init__()
-        self.progress_bar = progress_bar
 
-    def emit(self, record):
-        # Customize what to display here
-        pass
+def _clean(value: str) -> str:
+    value = value.strip()
+    return value if "://" in value else f"http://{value}"
 
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-progress_handler = ProgressLoggingHandler(progress_bar=None)
-logger.addHandler(progress_handler)
 
-async def fetch_proxies_from_site(proxy_url):
-    proxies = []
+def _looks_like_proxy(value: str) -> bool:
+    return bool(re.fullmatch(r"(?:\w+://)?[^:\s/]+:\d{1,5}", value.strip()))
 
-    async with httpx.AsyncClient() as session:
+
+async def fetch_proxies_from_site(proxy_url: str) -> list[str]:
+    proxies: list[str] = []
+    headers = {"User-Agent": random.choice(USER_AGENTS)}
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True,
+                                     headers=headers) as client:
+            response = await client.get(proxy_url)
+            response.raise_for_status()
+    except httpx.HTTPError:
+        return proxies
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    table = soup.find("table")
+    if not table:
+        return proxies
+    for row in table.find_all("tr"):
+        cells = row.find_all("td", limit=2)
+        if len(cells) != 2:
+            continue
+        candidate = f"{cells[0].get_text(strip=True)}:{cells[1].get_text(strip=True)}"
+        if _looks_like_proxy(candidate):
+            proxies.append(candidate)
+        if len(proxies) >= MAX_CANDIDATES:
+            break
+    return proxies
+
+
+async def scrape_proxies() -> list[str]:
+    """Return de-duplicated candidates, or an empty list on failure."""
+    results = await asyncio.gather(
+        *(fetch_proxies_from_site(url) for url in PROXY_SOURCES),
+        return_exceptions=True)
+    seen: set[str] = set()
+    proxies: list[str] = []
+    for group in results:
+        if isinstance(group, Exception):
+            continue
+        for item in group:
+            if item not in seen:
+                seen.add(item)
+                proxies.append(item)
+    return proxies
+
+
+async def validate_proxies(proxies: list[str], *, timeout: float = 10.0,
+                           limit: int = 100) -> list[str]:
+    valid: list[str] = []
+    queue = list(dict.fromkeys(_clean(item) for item in proxies))[:limit]
+    headers = {"User-Agent": random.choice(USER_AGENTS)}
+
+    async def check(proxy: str) -> str | None:
         try:
-            logger.info(f"🕸️ Scraping proxies from {Fore.RED}{proxy_url}{Style.RESET_ALL}")
-            response = await session.get(proxy_url)
-            if response.status_code == 200:
-                html = response.text
-                soup = BeautifulSoup(html, 'html.parser')
-                tbody = soup.find('tbody')
-                if tbody:
-                    for tr in tbody.find_all('tr')[:13]:  # Limiting to first 13 for example
-                        tds = tr.find_all('td', limit=2)
-                        if len(tds) == 2:
-                            ip_address = tds[0].get_text(strip=True)
-                            port = tds[1].get_text(strip=True)
-                            proxy = f"{ip_address}:{port}"
-                            proxies.append(proxy)
-                    logger.info(f"🎃 Proxies scraped successfully from {Fore.RED}{proxy_url}{Style.RESET_ALL}. Total: {Fore.GREEN}{len(proxies)}{Style.RESET_ALL}")
-                else:
-                    logger.error(f"👻 {Fore.RED}Proxy list not found in the response from {proxy_url}.{Style.RESET_ALL}")
-            else:
-                logger.error(f"🧟 {Fore.RED}Failed to retrieve proxy list from {proxy_url}. Status code: {Fore.YELLOW}{response.status_code}{Style.RESET_ALL}")
-        except Exception as e:
-            logger.error(f"👻 {Fore.RED}Error scraping proxies from {proxy_url}: {Style.RESET_ALL}{e}")
+            async with httpx.AsyncClient(proxy=proxy, timeout=timeout,
+                                         verify=True,
+                                         follow_redirects=True,
+                                         headers=headers) as client:
+                response = await client.get(VALIDATION_URL)
+                return proxy if response.status_code == 200 else None
+        except httpx.HTTPError:
+            return None
 
-    return proxies
+    for start in range(0, len(queue), 20):
+        batch = queue[start:start + 20]
+        checked = await asyncio.gather(*(check(proxy) for proxy in batch))
+        valid.extend(proxy for proxy in checked if proxy)
+        print(f"Validated: {min(start + 20, len(queue))}/{len(queue)} proxies",
+              end="\r")
+    if queue:
+        print()
+    return valid
 
-async def scrape_proxies():
-    proxy_urls = [
-        "https://www.us-proxy.org/",
-        "https://www.sslproxies.org/"
-    ]
 
-    tasks = [fetch_proxies_from_site(url) for url in proxy_urls]
-    results = []
+async def main() -> None:
+    candidates = await scrape_proxies()
+    valid = await validate_proxies(candidates)
+    print(f"\nTotal valid proxies found: {len(valid)}")
 
-    start_time = time.time()
-
-    # Use tqdm to show progress for scraping
-    for result in tqdm(asyncio.as_completed(tasks), total=len(proxy_urls), desc="Scraping Proxies", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"):
-        results.append(await result)
-
-    elapsed_time = time.time() - start_time
-    logger.info(f"\nScraping completed in {elapsed_time:.2f} seconds.")
-
-    proxies = [proxy for sublist in results for proxy in sublist]
-
-    if not proxies:
-        logger.error(f"👻 {Fore.RED}No proxies scraped.{Style.RESET_ALL}")
-
-    return proxies
-
-async def validate_proxies(proxies, validation_url="https://www.example.com/", timeout=10):
-    valid_proxies = []
-    ua = fake_useragent.UserAgent()
-
-    start_time = time.time()
-
-    # Use tqdm to show progress for validation
-    with tqdm(total=len(proxies), desc="Validating Proxies", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-        for proxy in proxies:
-            proxy_with_scheme = proxy if proxy.startswith("http") else f"http://{proxy}"
-            try:
-                logger.debug(f"🔍 Validating proxy: {Fore.LIGHTBLACK_EX}{proxy_with_scheme}{Style.RESET_ALL}")  # Use debug level to suppress in normal output
-                headers = {"User-Agent": ua.random}
-                async with httpx.AsyncClient(proxies={proxy_with_scheme: None}, timeout=timeout) as client:
-                    response = await client.get(validation_url, headers=headers, timeout=timeout)
-                    if response.status_code == 200:
-                        valid_proxies.append(proxy_with_scheme)
-                        logger.debug(f"✅ Proxy: {Fore.CYAN}{proxy_with_scheme} {Fore.GREEN}is valid.{Style.RESET_ALL}")  # Use debug level to suppress in normal output
-                    else:
-                        logger.debug(f"❌ Proxy {Fore.CYAN}{proxy_with_scheme} returned status code {Fore.YELLOW}{response.status_code}.{Style.RESET_ALL}")  # Use debug level to suppress in normal output
-            except (httpx.TimeoutException, httpx.RequestError) as e:
-                logger.debug(f"👻 {Fore.RED}Error occurred while testing proxy {Fore.CYAN}{proxy_with_scheme}: {Style.RESET_ALL}{e}")  # Use debug level to suppress in normal output
-            
-            # Update progress bar
-            pbar.update(1)
-
-    elapsed_time = time.time() - start_time
-    logger.info(f"Validation completed in {elapsed_time:.2f} seconds.")
-    logger.info(f"Total valid proxies found: {Fore.GREEN}{len(valid_proxies)}{Style.RESET_ALL}")
-
-    return valid_proxies
-
-async def main():
-    proxies = await scrape_proxies()
-    valid_proxies = await validate_proxies(proxies)
-    logger.info(f"Total valid proxies found: {Fore.GREEN}{len(valid_proxies)}{Style.RESET_ALL}")
 
 if __name__ == "__main__":
     asyncio.run(main())
-
