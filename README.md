@@ -90,5 +90,10 @@ on unless you explicitly pass `--no-verify`.
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE). Third-party components keep their own licences.
+MIT. See [LICENSE](LICENSE).
+
+This build is not code-signed. See [CODE_SIGNING.md](CODE_SIGNING.md) for
+the SHA-256 verification steps and why there is no self-signed
+certificate. The WinterGate names and logos are covered by
+[TRADEMARKS.md](TRADEMARKS.md), not by the MIT licence. Third-party components keep their own licences.
 This release is unsigned; verify the SHA-256 digest published with the release.

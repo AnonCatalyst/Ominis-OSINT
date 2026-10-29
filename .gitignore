@@ -16,3 +16,7 @@ config/valid_proxies.txt
 .idea/
 .vscode/
 *.swp
+
+# Prebuilt binaries are not part of the source release
+ominis
+ominis.exe

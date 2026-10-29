@@ -1,14 +1,23 @@
-Ominis-OSINT/
-├── ominis.py  # Entry point for running the main script
-├── requirements.txt  # Dependencies for the project
-├── install.sh # {default}install file 
-├── setup.py  # Build script for setuptools
-├── README.md  # Project description and instructions
-├── LICENSE  # License for the project
-├── Results/  # Directory for storing result files
-│   └── username-search_results.txt  # File where username search results are saved
-└── src/  # Source directory containing all scripts
+Ominis-OSINT/  (ARG build, 10.12.2024.post1)
+├── ominis.py               argparse entry point (-q/-l/-c/-s/-e)
+├── requirements.txt        runtime dependencies
+├── requirements-test.txt   offline test dependencies
+├── setup.py                wheel build
+├── pytest.ini              pytest configuration
+├── README.md               usage and changes
+├── LICENSE                 MIT
+├── CODE_SIGNING.md         unsigned-release and digest guidance
+├── TRADEMARKS.md           mark usage
+├── install.sh              local POSIX install (no sudo)
+├── install.bat             local Windows install
+├── Dockerfile              container image
+├── tests/                  offline test suite
+├── Results/                runtime reports (git-ignored)
+└── src/
+    ├── __init__.py
+    ├── proxy_handler.py    opt-in proxy harvesting and validation
+    ├── tools_handler.py    DuckDuckGo, Bing, Google, SerpBase
+    ├── usr.py              username checks
     ├── social_platforms.json
-    ├── urls.txt 
-    ├── tools_handler.py  
-    └── proxy_handler.py  
+    ├── urls.txt
+    └── img/                screenshots and demo media
