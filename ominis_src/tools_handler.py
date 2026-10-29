@@ -11,18 +11,12 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from httpx import TimeoutException, RequestError
 from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
-import urllib3
-import ssl
 
 # Load utility functions from ominis_src/utils.py
 from ominis_src.utils import find_social_profiles, is_potential_forum, extract_mentions
 
 # Initialize colorama for colored output
 init(autoreset=True)
-
-# Disable SSL warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-ssl._create_default_https_context = ssl._create_unverified_context
 
 # Set up error logger
 error_logger = logging.getLogger('gfetcherror')
@@ -44,6 +38,8 @@ logger = logging.getLogger(__name__)
 visited_urls = set()
 counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
 MAX_RETRY_COUNT = 20
+MAX_PROXY_RETRY_COUNT = 3
+PROXY_REQUEST_TIMEOUT = 30.0
 MAX_REDIRECTS = 5
 show_message = None
 
@@ -93,19 +89,92 @@ JA4_STRINGS = [
     "t13d1516h2_8daaf6152771_9d3b5b5b656"    # Safari-like
 ]
 
+def _normalize_proxy(proxy):
+    """Validate one proxy endpoint without disclosing credentials in errors."""
+    if not isinstance(proxy, str) or any(ord(char) < 32 or ord(char) == 127 for char in proxy):
+        raise ValueError("Proxy entries must be non-empty strings without control characters")
+    proxy = proxy.strip()
+    if not proxy:
+        raise ValueError("Proxy entries must be non-empty strings")
+
+    bare_endpoint = "://" not in proxy
+    if bare_endpoint:
+        proxy = "http://" + proxy
+    try:
+        parsed = urllib.parse.urlsplit(proxy)
+        host, port = parsed.hostname, parsed.port
+        if parsed.scheme not in ("http", "https", "socks5", "socks5h"):
+            raise ValueError("Unsupported proxy scheme")
+        if not host or any(char.isspace() or char in "\\/" for char in host):
+            raise ValueError("Invalid proxy hostname")
+        if parsed.netloc.endswith(":") or (bare_endpoint and port is None):
+            raise ValueError("A bare proxy endpoint must include a valid port")
+        if port is not None and not 1 <= port <= 65535:
+            raise ValueError("Invalid proxy port")
+        if parsed.path not in ("", "/") or parsed.query or parsed.fragment:
+            raise ValueError("Proxy endpoints must not include a path, query, or fragment")
+        normalized = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
+        httpx.Proxy(normalized)
+        return normalized
+    except (ValueError, httpx.InvalidURL):
+        raise ValueError("Invalid proxy endpoint; use host:port or an HTTP(S)/SOCKS5 URL") from None
+
+
+def _normalize_proxy_pool(proxies):
+    if proxies is None:
+        return None
+    if not isinstance(proxies, (list, tuple)) or not proxies:
+        raise ValueError("Supply a non-empty proxy pool, or None for environment routing")
+    return [_normalize_proxy(proxy) for proxy in proxies]
+
+
+def _redact_proxy(proxy):
+    parsed = urllib.parse.urlsplit(proxy)
+    endpoint = parsed.netloc.rsplit("@", 1)[-1]
+    return urllib.parse.urlunsplit((parsed.scheme, endpoint, "", "", ""))
+
+
+def _safe_proxy_error(error, proxy):
+    message = str(error)
+    if proxy is not None:
+        message = message.replace(proxy, _redact_proxy(proxy))
+        parsed = urllib.parse.urlsplit(proxy)
+        credentials = {value for value in (parsed.username, parsed.password) if value}
+        credentials.update(urllib.parse.unquote(value) for value in list(credentials))
+        for value in sorted(credentials, key=len, reverse=True):
+            message = message.replace(value, "[redacted]")
+    return message
+
+
 async def make_request_async(url, proxies=None):
-    retry_count = 0
+    proxies = _normalize_proxy_pool(proxies)
+    if proxies is None:
+        return await _make_request_with_retries(url, proxies, MAX_RETRY_COUNT)
+
+    # User input must not consume the network retry budget.
     global show_message
-    
-    while retry_count < MAX_RETRY_COUNT:
+    if show_message is None:
+        show_message = await ask_to_show_message()
+    max_retries = min(MAX_RETRY_COUNT, MAX_PROXY_RETRY_COUNT)
+    try:
+        return await asyncio.wait_for(
+            _make_request_with_retries(url, proxies, max_retries),
+            timeout=PROXY_REQUEST_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        logger.error("Explicit proxy request exceeded %g-second budget for %s", PROXY_REQUEST_TIMEOUT, url)
+        raise RuntimeError(f"Request failed: explicit proxy budget of {PROXY_REQUEST_TIMEOUT:g} seconds exceeded") from None
+
+
+async def _make_request_with_retries(url, proxies, max_retries):
+    retry_count = 0
+    while retry_count < max_retries:
+        proxy = random.choice(proxies) if proxies is not None else None
         try:
-            # Create custom SSL context for JA3 evasion
-            ssl_context = ssl.create_default_context()
-            ssl_context.set_ciphers("ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256")
-            
             async with httpx.AsyncClient(
+                proxy=proxy,
                 http2=True,
-                verify=False,
+                verify=True,
                 timeout=10.0,
                 follow_redirects=True,
                 limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
@@ -120,13 +189,9 @@ async def make_request_async(url, proxies=None):
                 headers["Sec-Ch-Ua-Platform"] = '"Windows"'
                 headers["X-Evasion-Fingerprint"] = random.choice(JA4_STRINGS)
                 
-                if proxies:
-                    proxy = random.choice(proxies)
-                    if show_message is None:
-                        show_message = await ask_to_show_message()
+                if proxy is not None:
                     if show_message:
-                        print(f"  {Fore.LIGHTBLACK_EX}Rotated Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {proxy} {Fore.RED}| ", end='')
-                    client.proxies = {"http://": proxy, "https://": proxy}
+                        print(f"  {Fore.LIGHTBLACK_EX}Rotated Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {_redact_proxy(proxy)} {Fore.RED}| ", end='')
 
                 # Add random delay to simulate human behavior
                 await asyncio.sleep(random.uniform(0.1, 0.5))
@@ -143,16 +208,16 @@ async def make_request_async(url, proxies=None):
                 return response.text
 
         except (TimeoutException, RequestError, httpx.HTTPStatusError) as e:
-            logger.error(f"Connection error ({retry_count + 1}/{MAX_RETRY_COUNT}): {e}")
+            logger.error(f"Connection error ({retry_count + 1}/{max_retries}): {_safe_proxy_error(e, proxy)}")
             retry_count += 1
-            if retry_count < MAX_RETRY_COUNT:
-                print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{MAX_RETRY_COUNT})...{Style.RESET_ALL}")
+            if retry_count < max_retries:
+                print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{max_retries})...{Style.RESET_ALL}")
                 # Exponential backoff with jitter
                 sleep_time = min(2 ** retry_count + random.uniform(0, 1), 30)
                 await asyncio.sleep(sleep_time)
             else:
                 logger.error(f"Max retries exceeded for {url}")
-                raise RuntimeError(f"Request failed after {MAX_RETRY_COUNT} retries")
+                raise RuntimeError(f"Request failed after {max_retries} attempts") from None
     
     logger.error("All evasion attempts failed")
     return None
@@ -174,7 +239,9 @@ async def fetch_engine_results(engine, query, start=0, proxies=None):
         url = f"https://www.bing.com/search?q={quote_plus(query)}&first={start}"
     else:
         raise ValueError("Unsupported search engine")
-    
+
+    # Validate configuration outside the catch for recoverable search failures.
+    proxies = _normalize_proxy_pool(proxies)
     try:
         response_text = await make_request_async(url, proxies)
         if not response_text:
@@ -242,6 +309,7 @@ async def dual_engine_search(query, proxies=None, max_results=100):
     """
     Actual implementation of the dual-engine search
     """
+    proxies = _normalize_proxy_pool(proxies)
     engines = ["duckduckgo", "bing"]
     seen_urls = set()
     all_results = []

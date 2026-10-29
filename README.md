@@ -135,6 +135,36 @@ Ominis OSINT Tools delivers actionable insights that enable users to make inform
 - Web search uses Google by default.
 - Configure the list of URLs in `src/urls.txt` for username searches.
 
+### Proxy transport and HTTPS
+
+Web-search requests configure the selected proxy before creating the HTTP client.
+Proxy pools passed to the request helper can contain bare `host:port` entries
+(including `[::1]:8080`), or `http://`, `https://`, `socks5://`, and `socks5h://`
+URLs. Bare entries use HTTP proxies. Authentication is supported, and proxy
+credentials are redacted from display and connection-error messages.
+
+An explicit proxy pool must be nonempty and contain valid endpoints. Failed
+proxy requests retry through that pool and never fall back to a direct request.
+Each explicit proxy request uses at most three attempts within a 30-second total
+budget, including request time and backoff. The optional proxy-display prompt is
+outside that budget. Invalid pools raise `ValueError` through both search APIs
+before any requests or result files are created. Exhausted proxy-source fetches
+log a warning with the source URL and final failure reason.
+With `proxies=None`, HTTPX's normal environment proxy settings apply.
+
+HTTPS certificates are verified for searches and proxy-source retrieval. For
+private certificates, configure a trusted CA bundle (for HTTPX, `SSL_CERT_FILE`
+or `SSL_CERT_DIR`) instead of disabling verification. HTTP/2 and SOCKS support
+are installed through `httpx[http2,socks]`, with HTTPX 0.28.1 or newer required.
+
+The focused transport tests use loopback origins/proxies and locally generated
+certificates. Run them in a Python 3.12 virtual environment:
+
+```sh
+python -m pip install -r requirements-test.txt
+python -m pytest -q
+```
+
 ## Installation
 **Optional PIP install:** ``pip install Ominis-OSINT``
 

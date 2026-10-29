@@ -65,20 +65,25 @@ def get_random_headers():
 
 async def fetch_with_retry(session, url, max_retries=MAX_RETRIES):
     """Fetch content with retries and random delays."""
+    last_error = RuntimeError("No fetch attempts made")
     for attempt in range(max_retries):
         try:
             await asyncio.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
             async with session.get(
                 url,
                 headers=get_random_headers(),
-                timeout=TIMEOUT,
-                ssl=False
+                timeout=TIMEOUT
             ) as response:
                 if response.status == 200:
                     return await response.text()
+                last_error = RuntimeError(f"Unexpected HTTP {response.status}")
         except Exception as e:
+            last_error = e
             logger.debug(f"Attempt {attempt+1} failed for {url}: {str(e)}")
+        if attempt + 1 < max_retries:
             await asyncio.sleep(random.uniform(0.5, 1.5))
+    logger.warning("Proxy source fetch failed for %s after %d attempts: %s: %s",
+                   url, max_retries, type(last_error).__name__, last_error)
     return None
 
 async def fetch_proxies_from_source(session, url):
@@ -114,7 +119,7 @@ def parse_proxies(html):
 
 async def validate_proxy_batch(proxy_batch):
     """Validate a batch of proxies (async for single process)."""
-    connector = TCPConnector(limit=MAX_CONCURRENT_TASKS, ssl=False)
+    connector = TCPConnector(limit=MAX_CONCURRENT_TASKS)
     async with ClientSession(connector=connector) as session:
         valid_proxies = []
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
@@ -129,8 +134,7 @@ async def validate_proxy_batch(proxy_batch):
                             test_url,
                             proxy=f"http://{proxy}",
                             headers=get_random_headers(),
-                            timeout=TIMEOUT,
-                            ssl=False
+                            timeout=TIMEOUT
                         ) as response:
                             if response.status == 200:
                                 content = await response.text()
@@ -154,7 +158,7 @@ async def scrape_proxies():
     logger.info(f"{Fore.CYAN}Starting proxy scraping with {CPU_CORES} processes...{Style.RESET_ALL}")
     
     # Step 1: Fetch all proxies
-    connector = TCPConnector(limit=20, ssl=False)
+    connector = TCPConnector(limit=20)
     async with ClientSession(connector=connector) as session:
         tasks = [fetch_proxies_from_source(session, url) for url in PROXY_SOURCES]
         results = await asyncio.gather(*tasks)
