@@ -56,6 +56,19 @@ def test_parse_google_unwraps_url_redirect():
     assert rows[0]["snippet"] == "google snippet"
 
 
+def test_look_alike_hosts_are_not_unwrapped():
+    assert tools_handler._unwrap_ddg(
+        "https://duckduckgo.com.example.net/l/?uddg=https%3A%2F%2Fevil") == (
+        "https://duckduckgo.com.example.net/l/?uddg=https%3A%2F%2Fevil")
+    assert tools_handler._unwrap_bing(
+        "https://bing.com.example.net/ck/a?u=a1aHR0cHM6Ly9ldmls") == (
+        "https://bing.com.example.net/ck/a?u=a1aHR0cHM6Ly9ldmls")
+    assert tools_handler._host_matches("https://evilduckduckgo.com/",
+                                       "duckduckgo.com") is False
+    assert tools_handler._host_matches("https://html.duckduckgo.com/",
+                                       "duckduckgo.com") is True
+
+
 def test_parse_serpbase_reads_documented_payload():
     rows = tools_handler.parse_serpbase({"organic": [
         {"link": "https://example.com/one", "title": "One",
