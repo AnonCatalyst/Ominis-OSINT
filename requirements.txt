@@ -13,7 +13,7 @@ html_clean
 anyio>=4.15.1
 zipp>=4.1.0
 validators==0.35.0
-tqdm==4.70.0
+tqdm==4.70.1
 ipwhois==1.3.0
 fake_useragent
 PyQt6==6.11.0
