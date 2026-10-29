@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in Ominis does not work as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please redact API keys, tokens, proxy
+        credentials and personal data before posting. Security problems go to
+        the private flow in SECURITY.md, not here.
+  - type: input
+    id: version
+    attributes:
+      label: Ominis version or commit
+      description: The release tag, PyPI version, or `git rev-parse --short HEAD`.
+      placeholder: v1.0.0 / 12d06a6
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, and install method.
+      placeholder: Windows 11, Python 3.12.4, git clone + venv
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and input
+      description: The exact command you ran. Remove secrets.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include the traceback or a short log excerpt.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am using the latest release or `main`.
+          required: true
+        - label: I searched existing issues.
+          required: true
+        - label: I removed secrets and personal data from this report.
+          required: true
