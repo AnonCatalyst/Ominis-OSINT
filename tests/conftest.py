@@ -7,7 +7,6 @@ import socket
 import ssl
 import struct
 from dataclasses import dataclass, field
-from types import SimpleNamespace
 from urllib.parse import urlsplit
 
 import pytest
@@ -61,7 +60,7 @@ def deterministic_requests(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(tools_handler, "MAX_RETRY_COUNT", 1)
     monkeypatch.setattr(tools_handler, "show_message", False)
-    monkeypatch.setattr(tools_handler, "UserAgent", lambda: SimpleNamespace(random="Ominis-test"))
+    monkeypatch.setattr(tools_handler, "USER_AGENTS", ["Ominis-test"])
     monkeypatch.setattr(tools_handler.random, "uniform", lambda *args: 0)
     monkeypatch.setattr(proxy_handler, "MAX_RETRIES", 1)
     monkeypatch.setattr(proxy_handler, "get_random_headers", lambda: {"User-Agent": "Ominis-test"})

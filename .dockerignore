@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+venv
+build
+dist
+*.egg-info
+__pycache__
+*.py[cod]
+.pytest_cache
+Results
+config/valid_proxies.txt
+*.log
+.env
+.env.*

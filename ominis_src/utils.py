@@ -2,28 +2,70 @@ import re
 import os
 import urllib.parse
 import json
-import logging
 import csv
+import base64
+import logging
 import validators
 
 # Initialize logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-visited_urls = set()
 # Load social platform patterns from a JSON file
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r") as json_file:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r", encoding="utf-8") as json_file:
     social_platforms = json.load(json_file)
 
-# Define the find_social_profiles function
+
+def unwrap_duckduckgo_url(url):
+    """Return the destination behind DuckDuckGo's ``/l/`` redirect.
+
+    The HTML endpoint emits both ``/l/?uddg=...`` and protocol-relative
+    ``//duckduckgo.com/l/?uddg=...`` links; treating either as a result URL
+    loses every hit.
+    """
+    if not isinstance(url, str) or not url:
+        return url
+    absolute = "https:" + url if url.startswith("//") else url
+    parsed = urllib.parse.urlparse(absolute)
+    host = (parsed.hostname or "").lower()
+    if host and not (host == "duckduckgo.com" or host.endswith(".duckduckgo.com")):
+        return url
+    if not parsed.path.startswith("/l/"):
+        return url
+    target = urllib.parse.parse_qs(parsed.query).get("uddg", [""])[0]
+    return urllib.parse.unquote(target) if target else url
+
+
+def unwrap_bing_url(url):
+    """Return the destination behind Bing's ``/ck/a`` click tracker.
+
+    Modern Bing results link to ``bing.com/ck/a?...&u=a1<base64url>`` rather
+    than the destination, which made every result point back at Bing.
+    """
+    if not isinstance(url, str):
+        return url
+    parsed = urllib.parse.urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if not (host == "bing.com" or host.endswith(".bing.com")):
+        return url
+    if not parsed.path.startswith("/ck/a"):
+        return url
+    target = urllib.parse.parse_qs(parsed.query).get("u", [""])[0]
+    if not target.startswith("a1"):
+        return url
+    encoded = target[2:]
+    encoded += "=" * (-len(encoded) % 4)
+    try:
+        decoded = base64.urlsafe_b64decode(encoded).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return url
+    return decoded if decoded.startswith("http") else url
+
+
 def find_social_profiles(url):
     if not isinstance(url, str):
         raise ValueError("URL must be a string")
 
     profiles = []
-
-    # Check if URL has been visited before
-    if url in visited_urls:
-        return profiles
 
     for platform, pattern in social_platforms.items():
         match = re.search(pattern, url)
@@ -33,9 +75,6 @@ def find_social_profiles(url):
 
     if is_potential_forum(url):
         profiles.append({"platform": "Forum", "profile_url": url})
-
-    # Add URL to visited set
-    visited_urls.add(url)
 
     return profiles
 
@@ -51,7 +90,7 @@ def is_potential_forum(url):
     ]
     url_parts = urllib.parse.urlparse(url)
     path = url_parts.path.lower()
-    subdomain = url_parts.hostname.split('.')[0].lower()  # Extract subdomain
+    subdomain = (url_parts.hostname or "").split('.')[0].lower()
     path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
     subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
     return path_keywords or subdomain_keywords

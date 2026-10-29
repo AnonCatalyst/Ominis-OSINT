@@ -1,11 +1,10 @@
 # Focused transport/wheel tests on Python 3.12; no public searches are performed.
 httpx[http2,socks]==0.28.1
-aiohttp==3.14.3
+aiohttp==3.14.4
 beautifulsoup4==4.15.0
 colorama==0.4.6
-fake_useragent==2.2.0
 validators==0.35.0
-urllib3==2.7.0
+urllib3==2.8.0
 pytest==9.1.1
 pytest-asyncio==1.4.0
 trustme==1.2.1

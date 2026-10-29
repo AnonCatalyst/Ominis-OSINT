@@ -1,199 +1,213 @@
-># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
+# Ominis-OSINT: Web Hunter
 
-- ``This Project Will Re-enter development`` **WINTERGATEIC WILL BE EXPANDING THIS PROJECT**
-  **NOTICE**: ``WIC has finalized core development of its infrastructure and operational model and will now begin to focus on refining this tool for the OSINT & Security communities`` 
+Discover online mentions of a query or username, and map the social profiles
+and forums that surface with them. Ominis searches public web results, reports
+what it finds, and gets out of the way.
 
-# **Github Actions**
+MIT licensed. Maintained by [AnonCatalyst](https://github.com/AnonCatalyst) with
+the [WinterGate Intelligence Collective](https://wintergate.org).
 
+> **Use it on your own presence or with permission.** Ominis only reads public
+> pages, but a search can still be intrusive. You are responsible for the law,
+> the site's terms, and the people whose data you touch.
 
-Visit actions/workflows and chose any of the 3 options to try out Ominis OSINT right from github!
-- ``Web Search``
-  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/web-search.yml
-- ``Ominis Search``
-  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/ominis-search.yml
-- ``Username Search``
-  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/search-username.yml
+## Version 1.0
 
-**Information Obtained**
-    Discover online mentions of a query or username.
-    Identify potential social profiles and forums.
+This is the full suite. It is published alongside the patched original
+(`v0.5.0`) so anyone relying on the old layout can keep it. Highlights:
 
+- **Proxies are off by default.** No proxy list is downloaded or validated
+  unless you ask for it.
+- **Real filters.** Language, country, and date ranges are passed to each
+  engine instead of being accepted and ignored.
+- **Optional results API.** Set `SERPBASE_API_KEY` and the Google leg goes
+  through a SerpBase-compatible JSON API; leave it unset and the scrapers run
+  as before.
+- **No browser download.** Username checks share one HTTPX client instead of
+  starting a `requests_html` Chromium session per URL.
+- **Reports in four formats.** `txt`, `json`, `csv`, and `md`, with file names
+  that are safe for any query.
+- **A real CLI.** Scriptable subcommands, exit codes, and a `doctor` check.
 
--- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
-- [Support Discord Server](https://discord.gg/vGajPbwhdA)
+## Install
 
-**Contributing**
-Contributions are welcome! Fork the repository, make changes, and submit a pull request.
+```sh
+git clone https://github.com/AnonCatalyst/Ominis-OSINT
+cd Ominis-OSINT
+python -m pip install -r requirements.txt
+```
 
-> **License**
-This project is licensed under the MIT License - see the LICENSE file for details.
+Or install the package:
 
-🚀 Happy OSINTing! 🕵️‍♂️
+```sh
+python -m pip install Ominis-OSINT
+```
 
-<img src="ominis_src/img/kmc_20241009_145637.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
+Python 3.10 or newer is required.
 
-## Features
+## Use
 
-    Google Search Filtering: 🖇 Take advantage of Google search by using the filtering features Country, Language, and date range.
-    Enhanced User Interface: 🚀 Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
-    Expanded Digital Reconnaissance: 🔎 Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
-    Threading Optimization: 💡 Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
-    Detailed Results: 📊 Gain comprehensive insights from search results, including detailed information extracted from various sources such as social profiles, mentions, and potential forum links.
-    Proxy Validation: ⚙️ The tool validates proxies for secure and efficient web requests, ensuring anonymity and privacy during the search process. This feature enhances the reliability of the search results by utilizing a pool of validated proxies, mitigating the risk of IP blocking and ensuring seamless execution of the search queries.
-    Human-like Behavior Mimicking: 🕵️‍♂️ To mimic human-like behavior and avoid detection by anti-bot mechanisms, the tool randomizes user agents for each request. This helps in making the requests appear more natural and reduces the likelihood of being flagged as automated activity.
-    Randomized User Agents: 🛡️ In addition to proxy validation, the tool utilizes randomized user agents for each request, further enhancing user anonymity. By rotating through a pool of proxies, the tool reduces the chances of being tracked or identified by websites, thus safeguarding user privacy throughout the reconnaissance process.
-    Username Search: 🔍 Searches a list of URLs for a specific username. Utilizes threading for parallel execution. Provides detailed results with URL and HTTP status code.
+### Search
 
+```sh
+python ominis.py search "acme corp" --country US --lang en --max-results 40
+```
 
-These measures collectively contribute to ensuring user anonymity and privacy, providing a secure environment for conducting digital reconnaissance activities.
+Results are written to `Results/` (override with `--out`). Choose formats with
+`--format txt,json,csv,md`.
 
-- **Username Search:**
-  - Searches a list of URLs for a specific username.
-  - Utilizes threading for parallel execution.
-  - Provides detailed results with URL and HTTP status code.
+Filters:
 
-🌐 Premier Digital Reconnaissance Solution
+```sh
+python ominis.py search "acme corp" --since 2025-01-01 --until 2025-12-31
+```
 
-Ominis OSINT Secure Web-Hunter stands as a premier solution for digital reconnaissance, offering unparalleled capabilities in gathering, analyzing, and interpreting publicly available information sourced from diverse online platforms. With its comprehensive suite of features, Ominis equips users to navigate through the expansive digital landscape with precision and efficiency, enabling the extraction of valuable insights from a myriad of sources.
+Engines are `duckduckgo`, `bing`, and `serpbase`. The first two are scraped.
+`serpbase` needs a key:
 
-🔍 Comprehensive Data Gathering
+```sh
+export SERPBASE_API_KEY=...            # PowerShell: $env:SERPBASE_API_KEY="..."
+python ominis.py search "acme corp" --engine duckduckgo,serpbase
+```
 
-From scouring social media platforms and forums to parsing through web pages and search engine results, Ominis OSINT leaves no stone unturned in the quest for relevant data. Its robust functionality encompasses advanced techniques for data collection, including scraping proxies, asynchronous HTTP requests, and intelligent pattern matching. This ensures that users can access a wealth of information while adhering to the highest standards of data integrity and security.
+With a key, the Google leg is a JSON API call. Without one, the engine is
+skipped with a clear message and the scraped engines still run. The API is
+`POST https://api.serpbase.dev/google/search` with the key in `X-API-Key` and a
+JSON body of `q`, `page`, `gl`, `hl`. Override the endpoint in
+`ominis_src/config.py` if you use a compatible provider. Date filters are folded
+into the query for this provider (`after:YYYY/MM/DD before:YYYY/MM/DD`), so the
+other engines keep their native date parameters.
 
-📊 Sophisticated Analysis Capabilities
+### Username search
 
-Moreover, Ominis OSINT goes beyond mere data retrieval, providing sophisticated analysis tools to uncover hidden connections, identify emerging trends, and discern actionable intelligence from vast troves of digital content. Whether it's investigating potential threats, conducting due diligence, or gathering competitive intelligence, Ominis empowers users with the insights they need to make informed decisions and stay ahead in an increasingly complex digital landscape.
+```sh
+python ominis.py username acme --format txt,json,md
+```
 
-🛠️ Cutting-edge Technology
+The platform list lives in `ominis_src/urls.txt`, one URL template per line.
+`--urls FILE` points at your own list. Checks run concurrently (default 8),
+each with its own timeout. `--all` records non-matches too.
 
-In essence, Ominis OSINT redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision.
+### Proxies (opt-in)
 
-## Targetable and Actionable Results 🎯
+```sh
+python ominis.py proxy harvest --limit 50
+python ominis.py search "acme corp" --proxy-file config/valid_proxies.txt
+```
 
-Ominis OSINT provides a wealth of targetable and actionable results, empowering users with valuable insights and intelligence from the digital landscape. Here are some key areas where Ominis excels:
+`proxy harvest` downloads candidates, validates them, and writes the working
+pool. Nothing else in Ominis calls it. You can also pass endpoints directly:
 
-### 1. Identifying Potential Threats 🚨
+```sh
+python ominis.py search "acme corp" --proxy 127.0.0.1:8080 --proxy socks5://127.0.0.1:1080
+```
 
-   - Monitoring online chatter to identify security breaches, cyberattacks, or malicious activities.
-   - Proactively mitigating risks and safeguarding assets.
+Bare `host:port` entries are HTTP proxies. `http://`, `https://`, `socks5://`,
+and `socks5h://` URLs are accepted, including authenticated forms. Credentials
+are redacted from console output and error logs. An explicit pool is never
+silently bypassed: if every proxy fails, the request fails.
 
-### 2. Monitoring Competitors 🕵️‍♂️
+TLS verification is on. For a private CA set `SSL_CERT_FILE` (HTTPX and aiohttp
+both honour it). `--no-verify` exists for debugging and is not recommended.
 
-   - Tracking competitors' online presence, social media activities, and product launches.
-   - Identifying market trends, assessing competitor strategies, and capitalizing on opportunities.
+### Guided mode
 
-### 3. Gathering Human Intelligence 👥
+`python ominis.py` with no arguments walks through a search and offers a
+username check at the end. Every prompt has a default; proxies default to off.
 
-   - Collecting human intelligence from forums, social media, and online discussions.
-   - Staying informed about emerging trends, sentiment analysis, and public opinion.
+### Health check
 
-### 4. Detecting Brand Mentions 📣
+```sh
+python ominis.py doctor
+```
 
-   - Tracking brand mentions, reviews, and sentiment across social media and news articles.
-   - Analyzing customer feedback, addressing concerns, and managing online reputation.
+## Try it from GitHub Actions
 
-### 5. Investigating Individuals 🔍
+The **Ominis demo** workflow runs a search or username check on GitHub's
+runners and uploads the report as an artifact. No clone, no install:
 
-   - Conducting background checks, investigating individuals, and gathering public information.
-   - Identifying relationships, affiliations, employment history, and online activities.
+1. Open **Actions → Ominis demo → Run workflow**.
+2. Pick `search`, `username`, or `both`, and fill in the query.
+3. Download `ominis-results` when it finishes.
 
-### 6. Uncovering Financial Insights 💰
-
-   - Monitoring business news, financial reports, and regulatory filings.
-   - Assessing financial health, identifying investment opportunities, and detecting fraud.
-
-### 7. Mapping Digital Footprints 🗺️
-
-   - Aggregating data to create comprehensive profiles of individuals, organizations, or events.
-   - Tracking geolocation, online activities, social connections, and historical data.
-
-### 8. Tracking Online Campaigns 📊
-
-   - Monitoring online campaigns, social media trends, and digital marketing efforts.
-   - Analyzing engagement metrics, identifying influencers, and optimizing marketing strategies.
-
-### 9. Monitoring Regulatory Compliance 📝
-
-   - Tracking industry regulations, legal developments, and enforcement actions.
-   - Staying informed about compliance requirements and implementing proactive measures.
-
-### 10. Forecasting Emerging Risks 📈
-
-   - Leveraging predictive analytics to forecast emerging risks and market shifts.
-   - Anticipating vulnerabilities, seizing opportunities, and staying ahead of the curve.
-
-### 11. Google Search Filtering 🖇
-   - Adjust your search by using the filtering features (Language, Country, and Date-range).
-
-Ominis OSINT Tools delivers actionable insights that enable users to make informed decisions, mitigate risks, and capitalize on opportunities in a rapidly evolving digital landscape.
-
-
-![Watch the video](ominis_src/img/video.gif)
+It uses `contents: read`, passes inputs through environment variables rather
+than interpolating them into shell code, and does not use sudo or Tor.
 
 ## Configuration
 
-- Web search uses Google by default.
-- Configure the list of URLs in `src/urls.txt` for username searches.
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `OMINIS_ENGINES` | comma-separated engine list | `duckduckgo,bing` |
+| `OMINIS_LANGUAGE` | language code, e.g. `en` | none |
+| `OMINIS_COUNTRY` | country code, e.g. `US` | none |
+| `OMINIS_SINCE`, `OMINIS_UNTIL` | `YYYY-MM-DD` bounds | none |
+| `OMINIS_MAX_RESULTS` | total results to keep | `50` |
+| `OMINIS_PROXY_POOL` | comma-separated proxy endpoints | off |
+| `SERPBASE_API_KEY` | optional results API key | none |
+| `OMINIS_OUTPUT_DIR` | report directory | `Results` |
+| `OMINIS_FORMATS` | `txt,json,csv,md` | `txt,json` |
+| `OMINIS_TIMEOUT` | seconds per request | `15` |
 
-### Proxy transport and HTTPS
+Arguments win over environment variables. The tool never writes secrets to
+disk.
 
-Web-search requests configure the selected proxy before creating the HTTP client.
-Proxy pools passed to the request helper can contain bare `host:port` entries
-(including `[::1]:8080`), or `http://`, `https://`, `socks5://`, and `socks5h://`
-URLs. Bare entries use HTTP proxies. Authentication is supported, and proxy
-credentials are redacted from display and connection-error messages.
+## Output
 
-An explicit proxy pool must be nonempty and contain valid endpoints. Failed
-proxy requests retry through that pool and never fall back to a direct request.
-Each explicit proxy request uses at most three attempts within a 30-second total
-budget, including request time and backoff. The optional proxy-display prompt is
-outside that budget. Invalid pools raise `ValueError` through both search APIs
-before any requests or result files are created. Exhausted proxy-source fetches
-log a warning with the source URL and final failure reason.
-With `proxies=None`, HTTPX's normal environment proxy settings apply.
+| File | Contents |
+| --- | --- |
+| `Results/<query>.txt` | human-readable results and summary |
+| `Results/<query>.json` | summary, results, profiles |
+| `Results/<query>.csv` | one row per result |
+| `Results/<query>.md` | Markdown brief |
+| `Results/username-<name>.<ext>` | username matches and errors |
 
-HTTPS certificates are verified for searches and proxy-source retrieval. For
-private certificates, configure a trusted CA bundle (for HTTPX, `SSL_CERT_FILE`
-or `SSL_CERT_DIR`) instead of disabling verification. HTTP/2 and SOCKS support
-are installed through `httpx[http2,socks]`, with HTTPX 0.28.1 or newer required.
+`<query>` is a slug: letters, digits, `.`, `-` and `_` only, at most 60
+characters. `../../notes` becomes `notes`, so a query can never choose the
+directory a report is written to.
 
-The focused transport tests use loopback origins/proxies and locally generated
-certificates. Run them in a Python 3.12 virtual environment:
+## Development
 
 ```sh
 python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
-## Installation
-**Optional PIP install:** ``pip install Ominis-OSINT``
+The suite is offline. Transport tests run against loopback proxies and locally
+generated certificates; engine and report tests parse fixed fixtures. CI runs
+the same command on Python 3.10, 3.11, and 3.12. CodeQL and Dependabot also run
+from `.github/workflows/codeql.yml` and `.github/dependabot.yml`.
 
-   ```
-   git clone https://github.com/AnonCatalyst/Ominis-OSINT
-   pip install -r requirements.txt
-   ```
-- Run the following command at your own risk if your having installation issues when using pip 
-``` 
-pip install -r requirements.txt --break-system-packages
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, style, and pull-request
+expectations, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community rules.
+
+Layout:
+
+```
+ominis.py              entry point (delegates to ominis_src.cli)
+ominis_src/
+  cli.py               subcommands and arguments
+  config.py            settings, environment, proxy files
+  engines.py           DuckDuckGo, Bing, SerpBase, parsers
+  search.py            orchestration, de-duplication, reports
+  username.py          profile checks
+  report.py            safe file names and writers
+  proxy_handler.py     opt-in harvesting and validation
+  wizard.py            guided first run
+  tools_handler.py     legacy scraping API (kept for compatibility)
+  utils.py             mentions, profiles, forums
+tests/                 offline tests
 ```
 
-- Install using default install script
-```
-chmod +x install.sh
-sudo sh install.sh
-```
+## Security
 
-- Install for windows
-```
-Simply double-click the install.bat file or run it from Command Prompt.
-```
-    
-> **Usage**
+- Reports are plain text; do not paste them into public issues if they contain
+  personal data.
+- Proxy endpoints are untrusted input. The parser rejects malformed entries and
+  never logs credentials.
+- Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md) or use
+  the repository's Security tab. Never open a public issue with a live key.
+- No API key, token or proxy credential is written to disk by the tool.
 
-1. Navigate to the script's directory:
-   - `cd Ominis-OSINT`
-2. Run on Windows:
-   - Simply double-click the `ominis` __exe__ file or run it from Command Prompt.
-4. Run the script normally:
-   - `python3 ominis.py`
+## Licence
 
+MIT. See [LICENSE](LICENSE).

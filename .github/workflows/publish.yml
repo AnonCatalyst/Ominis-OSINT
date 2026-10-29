@@ -1,43 +1,78 @@
-name: Build and Publish Docker Image
+name: Release
+
+# Runs only for version tags, so a broken publish job cannot fail every push.
+# The Docker image goes to GitHub Container Registry; the Python package goes
+# to PyPI when PYPI_API_TOKEN is configured.
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Also publish to PyPI and GHCR"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
-  build-and-publish:
+  docker:
+    name: Build the container image
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Build the image
+        run: docker build --tag ominis-osint:ci .
 
-      - name: Build and push Docker image
+      - name: Smoke-test the image
+        run: docker run --rm ominis-osint:ci --version
+
+      - name: Publish to GHCR
+        if: startsWith(github.ref, 'refs/tags/') || inputs.publish
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t your-image-name:latest --push .
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          tag="${GITHUB_REF_NAME:-manual}"
+          echo "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+          docker tag ominis-osint:ci "$image:$tag"
+          docker tag ominis-osint:ci "$image:latest"
+          docker push "$image:$tag"
+          docker push "$image:latest"
+
+  pypi:
+    name: Publish the Python package
+    if: startsWith(github.ref, 'refs/tags/') || inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.9'
+          python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Build the distribution
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install build twine
-
-      - name: Build and publish Python package
-        run: |
+          python -m pip install --upgrade build twine
           python -m build
-          python -m twine upload dist/*
+          python -m twine check dist/*
+
+      - name: Upload to PyPI
         env:
+          TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: python -m twine upload --skip-existing dist/*

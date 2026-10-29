@@ -53,11 +53,14 @@ async def test_explicit_proxy_budget_includes_requests_and_backoff(servers, monk
     proxy = (await servers.start(stall) if failure == "stalled"
              else await servers.http_proxy(reject_reason="unavailable"))
     monkeypatch.setattr(tools_handler, "MAX_RETRY_COUNT", 20)
-    monkeypatch.setattr(tools_handler, "PROXY_REQUEST_TIMEOUT", 0.2, raising=False)
+    # The budget must cover client setup, the request and backoff. Client setup
+    # alone takes most of a second on Windows, so the budget is generous enough
+    # for the first attempt to reach the proxy, then expire during the retry.
+    monkeypatch.setattr(tools_handler, "PROXY_REQUEST_TIMEOUT", 1.5, raising=False)
     started = asyncio.get_running_loop().time()
     with pytest.raises(RuntimeError, match="Request failed"):
-        await asyncio.wait_for(tools_handler.make_request_async(origin.url, [proxy.url]), timeout=2)
-    assert asyncio.get_running_loop().time() - started < 1.5
+        await asyncio.wait_for(tools_handler.make_request_async(origin.url, [proxy.url]), timeout=5)
+    assert asyncio.get_running_loop().time() - started < 4.0
     assert len(proxy.requests) == 1
     assert origin.connections == 0
 
@@ -67,10 +70,12 @@ async def test_proxy_display_prompt_does_not_consume_retry_budget(servers, monke
     origin = await servers.origin()
     proxy = await servers.http_proxy()
     monkeypatch.setattr(tools_handler, "show_message", None)
-    monkeypatch.setattr(tools_handler, "PROXY_REQUEST_TIMEOUT", 0.5)
+    monkeypatch.setattr(tools_handler, "PROXY_REQUEST_TIMEOUT", 1.5)
 
     async def delayed_answer():
-        await asyncio.sleep(0.6)
+        # Longer than the network budget: if the prompt were inside the budget
+        # the request could never succeed.
+        await asyncio.sleep(2.0)
         return False
 
     monkeypatch.setattr(tools_handler, "ask_to_show_message", delayed_answer)

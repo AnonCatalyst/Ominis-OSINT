@@ -1,6 +1,24 @@
 build/
 dist/
+*.egg-info/
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .venv/
 venv/
+
+# Generated at runtime
+Results/*
+!Results/.gitkeep
+config/valid_proxies.txt
+*.log
+profiles.json
+profiles.csv
+mentions.json
+
+# Local secrets and editor files
+.env
+.env.*
+.idea/
+.vscode/
+*.swp

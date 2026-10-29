@@ -1,2 +1,2 @@
 [console_scripts]
-ominis = ominis:run
+ominis = ominis_src.cli:main

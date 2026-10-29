@@ -10,27 +10,29 @@ import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from aiohttp import ClientSession, ClientConnectorError, ClientProxyConnectionError, TCPConnector
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
 from colorama import Fore, Style
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Suppress fake_useragent warnings
-logging.getLogger('fake_useragent').setLevel(logging.ERROR)
+# User agents are a fixed local list: importing the package must not make a
+# network request, and a fake-useragent download is one more thing to fail.
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0",
+]
 
-# Initialize UserAgent
-try:
-    ua = UserAgent()
-    ua.random  # Test generation
-except:
-    USER_AGENTS = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-    ]
-    ua = type('', (), {'random': lambda: random.choice(USER_AGENTS)})()
+
+class _LocalAgents:
+    @property
+    def random(self) -> str:
+        return random.choice(USER_AGENTS)
+
+
+ua = _LocalAgents()
 
 # Configuration
 PROXY_SOURCES = [
@@ -153,8 +155,13 @@ def validate_proxy_wrapper(proxy_batch):
     """Wrapper for multiprocessing."""
     return asyncio.run(validate_proxy_batch(proxy_batch))
 
-async def scrape_proxies():
-    """Main function to scrape and validate proxies with multiprocessing."""
+async def scrape_proxies(output: str | os.PathLike = "config/valid_proxies.txt",
+                         validate: bool = True, limit: int | None = None):
+    """Harvest proxies, optionally validate them, and save the pool.
+
+    Nothing calls this unless the user asks for proxies: a fresh install must
+    search without downloading a third-party list first.
+    """
     logger.info(f"{Fore.CYAN}Starting proxy scraping with {CPU_CORES} processes...{Style.RESET_ALL}")
     
     # Step 1: Fetch all proxies
@@ -167,32 +174,40 @@ async def scrape_proxies():
         
         if not all_proxies:
             return []
-        
-        # Step 2: Prepare for multiprocessing validation
+
         proxy_list = list(all_proxies)
         random.shuffle(proxy_list)
-        validation_proxies = proxy_list[:MAX_VALIDATION_PROXIES]
-        
-        # Split proxies into batches for each process
-        batch_size = max(1, len(validation_proxies) // CPU_CORES)
-        batches = [validation_proxies[i:i + batch_size] for i in range(0, len(validation_proxies), batch_size)]
-        
-        logger.info(f"Validating {len(validation_proxies)} proxies across {CPU_CORES} processes...")
-        
-        # Step 3: Parallel processing
-        with ProcessPoolExecutor(max_workers=CPU_CORES) as executor:
-            results = list(executor.map(validate_proxy_wrapper, batches))
-        
-        # Combine results
-        valid_proxies = []
-        for batch_result in results:
-            valid_proxies.extend(batch_result)
-        
+        if limit is not None:
+            proxy_list = proxy_list[:max(1, int(limit))]
+
+        if not validate:
+            valid_proxies = proxy_list
+        else:
+            # Step 2: Prepare for multiprocessing validation
+            validation_proxies = proxy_list[:MAX_VALIDATION_PROXIES]
+
+            # Split proxies into batches for each process
+            batch_size = max(1, len(validation_proxies) // CPU_CORES)
+            batches = [validation_proxies[i:i + batch_size] for i in range(0, len(validation_proxies), batch_size)]
+
+            logger.info(f"Validating {len(validation_proxies)} proxies across {CPU_CORES} processes...")
+
+            # Step 3: Parallel processing
+            with ProcessPoolExecutor(max_workers=CPU_CORES) as executor:
+                results = list(executor.map(validate_proxy_wrapper, batches))
+
+            # Combine results
+            valid_proxies = []
+            for batch_result in results:
+                valid_proxies.extend(batch_result)
+
         logger.info(f"{Fore.GREEN}Found {len(valid_proxies)} valid proxies{Style.RESET_ALL}")
-        
+
         # Save valid proxies
-        os.makedirs("config", exist_ok=True)
-        with open("config/valid_proxies.txt", "w") as f:
+        target = os.fspath(output)
+        parent = os.path.dirname(os.path.abspath(target))
+        os.makedirs(parent, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as f:
             f.write("\n".join(valid_proxies))
-        
+
         return valid_proxies

@@ -8,30 +8,20 @@ import urllib.parse
 import httpx
 from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
 from httpx import TimeoutException, RequestError
 from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
 
 # Load utility functions from ominis_src/utils.py
-from ominis_src.utils import find_social_profiles, is_potential_forum, extract_mentions
+from ominis_src.utils import (extract_mentions, find_social_profiles,
+                              is_potential_forum, unwrap_bing_url,
+                              unwrap_duckduckgo_url)
 
 # Initialize colorama for colored output
 init(autoreset=True)
 
-# Set up error logger
-error_logger = logging.getLogger('gfetcherror')
-error_logger.setLevel(logging.ERROR)
-error_handler = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gfetcherror.log'))
-error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-error_logger.addHandler(error_handler)
-
-# Configure logging
+# Configure logging. A library must not create files in its own package
+# directory, and a CLI decides where its own output goes.
 logging.getLogger('httpx').setLevel(logging.WARNING)
-logging.basicConfig(
-    level=logging.INFO,
-    filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gfetcherror.log'),
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 # Global variables
@@ -42,6 +32,15 @@ MAX_PROXY_RETRY_COUNT = 3
 PROXY_REQUEST_TIMEOUT = 30.0
 MAX_REDIRECTS = 5
 show_message = None
+
+# Fixed local list: no download at import time.
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0",
+]
 
 # Load social platform patterns
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r") as json_file:
@@ -181,7 +180,7 @@ async def _make_request_with_retries(url, proxies, max_retries):
             ) as client:
                 # Advanced evasion techniques
                 headers = random.choice(EVASION_HEADERS).copy()
-                headers["User-Agent"] = UserAgent().random.strip()
+                headers["User-Agent"] = random.choice(USER_AGENTS)
                 
                 # JA3/JA4 evasion simulation
                 headers["Sec-Ch-Ua"] = '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
@@ -208,7 +207,8 @@ async def _make_request_with_retries(url, proxies, max_retries):
                 return response.text
 
         except (TimeoutException, RequestError, httpx.HTTPStatusError) as e:
-            logger.error(f"Connection error ({retry_count + 1}/{max_retries}): {_safe_proxy_error(e, proxy)}")
+            detail = _safe_proxy_error(e, proxy) or type(e).__name__
+            logger.error(f"Connection error ({retry_count + 1}/{max_retries}): {detail}")
             retry_count += 1
             if retry_count < max_retries:
                 print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{max_retries})...{Style.RESET_ALL}")
@@ -257,24 +257,17 @@ async def fetch_engine_results(engine, query, start=0, proxies=None):
                     continue
                     
                 # Extract URL from DuckDuckGo's redirect link
-                href = title_elem.get('href', '')
-                if href.startswith('/l/?'):
-                    # Parse query parameters from redirect URL
-                    parsed = urlparse(href)
-                    query_params = parse_qs(parsed.query)
-                    real_url = query_params.get('uddg', [''])[0]
-                    if real_url:
-                        real_url = urllib.parse.unquote(real_url)
-                else:
-                    real_url = href
-                    
-                # Skip if we couldn't extract a valid URL
-                if not real_url or not real_url.startswith('http'):
+                href = unwrap_duckduckgo_url(title_elem.get('href', ''))
+                if not href or not href.startswith('http'):
+                    continue
+                tracked = urlparse(href)
+                if ((tracked.hostname or '').endswith('duckduckgo.com')
+                        and tracked.path.startswith('/y.js')):
                     continue
                     
                 results.append({
                     'title': title_elem.get_text(strip=True),
-                    'url': real_url
+                    'url': href
                 })
                 
         elif engine == "bing":
@@ -284,7 +277,7 @@ async def fetch_engine_results(engine, query, start=0, proxies=None):
                 if title_elem and link_elem:
                     results.append({
                         'title': title_elem.get_text(strip=True),
-                        'url': link_elem['href']
+                        'url': unwrap_bing_url(link_elem['href'])
                     })
         
         return results
@@ -318,7 +311,10 @@ async def dual_engine_search(query, proxies=None, max_results=100):
     
     # Create results directory if not exists
     os.makedirs("Results", exist_ok=True)
-    output_file = f"Results/{query}_dual-engine_results.txt"
+    # The query is free text; slug it so it cannot escape Results/.
+    from . import report
+
+    output_file = report.results_path("Results", query, "dual-engine_results.txt")
     
     with open(output_file, 'w', encoding='utf-8') as file:
         print(f"Search Query: {query}\n{'='*80}", file=file)
@@ -397,53 +393,3 @@ async def dual_engine_search(query, proxies=None, max_results=100):
         print(f"Social profiles discovered: {len(all_unique_social_profiles)}", file=file)
     
     return len(all_results), all_mention_links, list(all_unique_social_profiles)
-
-# Utility functions (reused from original)
-def find_social_profiles(url):
-    if not isinstance(url, str):
-        raise ValueError("URL must be a string")
-
-    profiles = []
-
-    if url in visited_urls:
-        return profiles
-
-    for platform, pattern in social_platforms.items():
-        match = re.search(pattern, url)
-        if match:
-            profile_url = match.group(0)
-            profiles.append({"platform": platform, "profile_url": profile_url})
-
-    if is_potential_forum(url):
-        profiles.append({"platform": "Forum", "profile_url": url})
-
-    visited_urls.add(url)
-    return profiles
-
-def is_potential_forum(url):
-    forum_keywords = [
-        r"forum[s]?",
-        r"community",
-        r"discussion[s]?",
-        r"board[s]?",
-        r"chat",
-        r"hub"
-    ]
-    url_parts = urllib.parse.urlparse(url)
-    path = url_parts.path.lower()
-    subdomain = url_parts.hostname.split('.')[0].lower() if url_parts.hostname else ""
-    path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
-    subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
-    return path_keywords or subdomain_keywords
-
-def extract_mentions(text, query):
-    if not isinstance(text, str) or not text:
-        raise ValueError("Input 'text' must be a non-empty string.")
-
-    if isinstance(query, str):
-        query = [query]
-    elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
-        raise ValueError("Input 'query' must be a string or a list of strings.")
-
-    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
-    return mention_count

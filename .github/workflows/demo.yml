@@ -1,0 +1,132 @@
+name: Ominis demo
+
+# Run Ominis on GitHub's runners without cloning or installing anything.
+# Every value is passed through the environment, never interpolated into a
+# shell command, so a query with quotes or `$(...)` is just text.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "What to run"
+        type: choice
+        options:
+          - search
+          - username
+          - both
+        default: search
+        required: true
+      query:
+        description: "Search query (required for search or both)"
+        type: string
+        required: false
+      username:
+        description: "Username (required for username or both)"
+        type: string
+        required: false
+      engines:
+        description: "Engines for search"
+        type: choice
+        options:
+          - duckduckgo,bing
+          - duckduckgo
+          - bing
+        default: duckduckgo,bing
+      language:
+        description: "Language code, e.g. en (optional)"
+        type: string
+        required: false
+      country:
+        description: "Country code, e.g. US (optional)"
+        type: string
+        required: false
+      max_results:
+        description: "Maximum search results (1-1000)"
+        type: string
+        default: "25"
+        required: false
+      formats:
+        description: "Report formats"
+        type: choice
+        options:
+          - txt,json,md
+          - txt,json
+          - txt
+        default: txt,json,md
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  demo:
+    name: Run Ominis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Ominis
+        run: python -m pip install -r requirements.txt
+
+      - name: Search
+        if: ${{ inputs.mode == 'search' || inputs.mode == 'both' }}
+        env:
+          QUERY: ${{ inputs.query }}
+          ENGINES: ${{ inputs.engines }}
+          LANGUAGE: ${{ inputs.language }}
+          COUNTRY: ${{ inputs.country }}
+          MAX_RESULTS: ${{ inputs.max_results }}
+          FORMATS: ${{ inputs.formats }}
+        run: |
+          if [ -z "$QUERY" ]; then
+            echo "::error::The query input is required for a search."
+            exit 2
+          fi
+          args=(search "$QUERY" --engine "$ENGINES" --max-results "$MAX_RESULTS" --format "$FORMATS" --out Results)
+          if [ -n "$LANGUAGE" ]; then args+=(--lang "$LANGUAGE"); fi
+          if [ -n "$COUNTRY" ]; then args+=(--country "$COUNTRY"); fi
+          python ominis.py "${args[@]}"
+
+      - name: Username search
+        if: ${{ inputs.mode == 'username' || inputs.mode == 'both' }}
+        env:
+          USERNAME: ${{ inputs.username }}
+          FORMATS: ${{ inputs.formats }}
+        run: |
+          if [ -z "$USERNAME" ]; then
+            echo "::error::The username input is required for a username search."
+            exit 2
+          fi
+          python ominis.py username "$USERNAME" --format "$FORMATS" --out Results
+
+      - name: Show the reports
+        if: always()
+        run: |
+          if [ -d Results ]; then
+            find Results -type f -maxdepth 1 -print
+          else
+            echo "No reports were written."
+          fi
+
+      - name: Upload the reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ominis-results
+          path: Results/
+          if-no-files-found: warn
+          retention-days: 14
