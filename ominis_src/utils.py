@@ -51,7 +51,7 @@ def is_potential_forum(url):
     ]
     url_parts = urllib.parse.urlparse(url)
     path = url_parts.path.lower()
-    subdomain = url_parts.hostname.split('.')[0].lower()  # Extract subdomain
+    subdomain = url_parts.hostname.split('.')[0].lower() if url_parts.hostname else ""
     path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
     subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
     return path_keywords or subdomain_keywords

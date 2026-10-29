@@ -1,169 +1,75 @@
-># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
+# Ominis-OSINT: Web Hunter — legacy 0.5.x
 
-- ``This Project Will Re-enter development`` **WINTERGATEIC WILL BE EXPANDING THIS PROJECT**
-  **NOTICE**: ``WIC has finalized core development of its infrastructure and operational model and will now begin to focus on refining this tool for the OSINT & Security communities`` 
+The original interactive build, kept alive for people who prefer the guided
+prompts over the new `v1.0.0` subcommand suite. The prompts and result layout
+are the same; proxies are now optional and the transport/parsers are fixed.
 
-# **Github Actions**
+The original releases remain available untouched. For the new modular suite,
+use `v1.0.0` on `main`.
 
+Maintained by AnonCatalyst with the WinterGate Intelligence Collective (WIC),
+an independent privacy-first collective. <https://wintergate.org>
 
-Visit actions/workflows and chose any of the 3 options to try out Ominis OSINT right from github!
-- ``Web Search``
-  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/web-search.yml
-- ``Ominis Search``
-  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/ominis-search.yml
-- ``Username Search``
-  : https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/search-username.yml
+## Install
 
-**Information Obtained**
-    Discover online mentions of a query or username.
-    Identify potential social profiles and forums.
-
-
--- **Support Server** `Help us grow our discord server or contact support by joining up with us today!` 
-- [Support Discord Server](https://discord.gg/vGajPbwhdA)
-
-**Contributing**
-Contributions are welcome! Fork the repository, make changes, and submit a pull request.
-
-> **License**
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-🚀 Happy OSINTing! 🕵️‍♂️
-
-<img src="src/img/kmc_20241009_145637.png" alt="Ominis Osint Project - screenshot" width="550" height="430"/>
-
-## Features
-
-    Google Search Filtering: 🖇 Take advantage of Google search by using the filtering features Country, Language, and date range.
-    Enhanced User Interface: 🚀 Enjoy a redesigned interface for a seamless experience, suitable for both novice and experienced users.
-    Expanded Digital Reconnaissance: 🔎 Conduct thorough investigations with advanced tools to gather and analyze publicly available information from diverse online sources.
-    Threading Optimization: 💡 Experience faster execution times with optimized threading, improving efficiency and reducing waiting periods during username searches.
-    Detailed Results: 📊 Gain comprehensive insights from search results, including detailed information extracted from various sources such as social profiles, mentions, and potential forum links.
-    Proxy Validation: ⚙️ The tool validates proxies for secure and efficient web requests, ensuring anonymity and privacy during the search process. This feature enhances the reliability of the search results by utilizing a pool of validated proxies, mitigating the risk of IP blocking and ensuring seamless execution of the search queries.
-    Human-like Behavior Mimicking: 🕵️‍♂️ To mimic human-like behavior and avoid detection by anti-bot mechanisms, the tool randomizes user agents for each request. This helps in making the requests appear more natural and reduces the likelihood of being flagged as automated activity.
-    Randomized User Agents: 🛡️ In addition to proxy validation, the tool utilizes randomized user agents for each request, further enhancing user anonymity. By rotating through a pool of proxies, the tool reduces the chances of being tracked or identified by websites, thus safeguarding user privacy throughout the reconnaissance process.
-    Username Search: 🔍 Searches a list of URLs for a specific username. Utilizes threading for parallel execution. Provides detailed results with URL and HTTP status code.
-
-
-These measures collectively contribute to ensuring user anonymity and privacy, providing a secure environment for conducting digital reconnaissance activities.
-
-- **Username Search:**
-  - Searches a list of URLs for a specific username.
-  - Utilizes threading for parallel execution.
-  - Provides detailed results with URL and HTTP status code.
-
-🌐 Premier Digital Reconnaissance Solution
-
-Ominis OSINT Secure Web-Hunter stands as a premier solution for digital reconnaissance, offering unparalleled capabilities in gathering, analyzing, and interpreting publicly available information sourced from diverse online platforms. With its comprehensive suite of features, Ominis equips users to navigate through the expansive digital landscape with precision and efficiency, enabling the extraction of valuable insights from a myriad of sources.
-
-🔍 Comprehensive Data Gathering
-
-From scouring social media platforms and forums to parsing through web pages and search engine results, Ominis OSINT leaves no stone unturned in the quest for relevant data. Its robust functionality encompasses advanced techniques for data collection, including scraping proxies, asynchronous HTTP requests, and intelligent pattern matching. This ensures that users can access a wealth of information while adhering to the highest standards of data integrity and security.
-
-📊 Sophisticated Analysis Capabilities
-
-Moreover, Ominis OSINT goes beyond mere data retrieval, providing sophisticated analysis tools to uncover hidden connections, identify emerging trends, and discern actionable intelligence from vast troves of digital content. Whether it's investigating potential threats, conducting due diligence, or gathering competitive intelligence, Ominis empowers users with the insights they need to make informed decisions and stay ahead in an increasingly complex digital landscape.
-
-🛠️ Cutting-edge Technology
-
-In essence, Ominis OSINT redefines digital reconnaissance, offering a comprehensive solution that combines cutting-edge technology with intuitive functionality. By harnessing the power of publicly available data, Ominis enables users to unlock new opportunities, mitigate risks, and navigate the digital realm with confidence and precision.
-
-## Targetable and Actionable Results 🎯
-
-Ominis OSINT provides a wealth of targetable and actionable results, empowering users with valuable insights and intelligence from the digital landscape. Here are some key areas where Ominis excels:
-
-### 1. Identifying Potential Threats 🚨
-
-   - Monitoring online chatter to identify security breaches, cyberattacks, or malicious activities.
-   - Proactively mitigating risks and safeguarding assets.
-
-### 2. Monitoring Competitors 🕵️‍♂️
-
-   - Tracking competitors' online presence, social media activities, and product launches.
-   - Identifying market trends, assessing competitor strategies, and capitalizing on opportunities.
-
-### 3. Gathering Human Intelligence 👥
-
-   - Collecting human intelligence from forums, social media, and online discussions.
-   - Staying informed about emerging trends, sentiment analysis, and public opinion.
-
-### 4. Detecting Brand Mentions 📣
-
-   - Tracking brand mentions, reviews, and sentiment across social media and news articles.
-   - Analyzing customer feedback, addressing concerns, and managing online reputation.
-
-### 5. Investigating Individuals 🔍
-
-   - Conducting background checks, investigating individuals, and gathering public information.
-   - Identifying relationships, affiliations, employment history, and online activities.
-
-### 6. Uncovering Financial Insights 💰
-
-   - Monitoring business news, financial reports, and regulatory filings.
-   - Assessing financial health, identifying investment opportunities, and detecting fraud.
-
-### 7. Mapping Digital Footprints 🗺️
-
-   - Aggregating data to create comprehensive profiles of individuals, organizations, or events.
-   - Tracking geolocation, online activities, social connections, and historical data.
-
-### 8. Tracking Online Campaigns 📊
-
-   - Monitoring online campaigns, social media trends, and digital marketing efforts.
-   - Analyzing engagement metrics, identifying influencers, and optimizing marketing strategies.
-
-### 9. Monitoring Regulatory Compliance 📝
-
-   - Tracking industry regulations, legal developments, and enforcement actions.
-   - Staying informed about compliance requirements and implementing proactive measures.
-
-### 10. Forecasting Emerging Risks 📈
-
-   - Leveraging predictive analytics to forecast emerging risks and market shifts.
-   - Anticipating vulnerabilities, seizing opportunities, and staying ahead of the curve.
-
-### 11. Google Search Filtering 🖇
-   - Adjust your search by using the filtering features (Language, Country, and Date-range).
-
-Ominis OSINT Tools delivers actionable insights that enable users to make informed decisions, mitigate risks, and capitalize on opportunities in a rapidly evolving digital landscape.
-
-
-![Watch the video](src/img/video.gif)
-
-## Configuration
-
-- Web search uses Google by default.
-- Configure the list of URLs in `src/urls.txt` for username searches.
-
-## Installation
-**Optional PIP install:** ``pip install Ominis-OSINT``
-
-   ```
-   git clone https://github.com/AnonCatalyst/Ominis-OSINT
-   pip install -r requirements.txt
-   ```
-- Run the following command at your own risk if your having installation issues when using pip 
-``` 
-pip install -r requirements.txt --break-system-packages
+```sh
+git clone https://github.com/AnonCatalyst/Ominis-OSINT.git
+cd Ominis-OSINT
+git checkout v0.5.0
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# POSIX:   . .venv/bin/activate
+python -m pip install -r requirements.txt
+python ominis.py
 ```
 
-- Install using default install script
-```
-chmod +x install.sh
-sudo sh install.sh
+## Usage
+
+Run `python ominis.py` and answer the prompts:
+
+1. Query text.
+2. Language (optional, e.g. `en`).
+3. Country (optional, e.g. `US`).
+4. Start and end dates (optional, `YYYY-MM-DD`).
+5. **Use proxies?** Defaults to **no**. If you answer `y`, the tool harvests and
+   validates a pool before searching; if none validate, it continues directly.
+6. After the search you can run a username check across `ominis_src/urls.txt`.
+
+Reports are written to `Results/`:
+
+- `Results/<query>_dual-engine_results.txt`
+- `Results/<query>_dual-engine_results.json`
+- `Results/username-<name>_results.txt`
+
+`<query>` is reduced to letters, digits, `.`, `-` and `_`, at most 60
+characters, so it cannot choose a parent directory.
+
+## Optional SerpBase engine
+
+The legacy build searches DuckDuckGo and Bing. Set a SerpBase key and it adds a
+Google results API leg as a third engine:
+
+```sh
+export SERPBASE_API_KEY=...          # PowerShell: $env:SERPBASE_API_KEY="..."
+python ominis.py
 ```
 
-- Install for windows
-```
-Simply double-click the install.bat file or run it from Command Prompt.
-```
-    
-> **Usage**
+The request is `POST https://api.serpbase.dev/google/search` with `X-API-Key`
+and a JSON body of `q`, `page`, `gl`, `hl`. No key means no API call and no
+extra dependency. Date filters are folded into the query for that provider.
 
-1. Navigate to the script's directory:
-   - `cd Ominis-OSINT`
-2. Run on Windows:
-   - Simply double-click the `ominis` __exe__ file or run it from Command Prompt.
-4. Run the script normally:
-   - `python3 ominis.py`
+## What changed in 0.5.0
 
+- Proxies are opt-in and off by default; TLS verification is on.
+- Fixed `httpx` proxy wiring and removed `fake_useragent`.
+- DuckDuckGo redirects and Bing `ck/a` links are unwrapped; ads are skipped.
+- Optional SerpBase Google leg.
+- Safe output names; no package-local logs or committed proxy list.
+- Username checks use `httpx` instead of `requests-html`, with the hard-coded
+  interpreter path removed.
+- Fixed `is_potential_forum` when a URL has no hostname.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE). This release is unsigned; verify the SHA-256 digest
+published with the release.

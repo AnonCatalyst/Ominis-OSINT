@@ -1,237 +1,161 @@
-import sys
-import os
-import concurrent.futures
-import logging
-import random
-import time
-import threading
-from colorama import Fore, Style, init
-from requests_html import HTMLSession
-from bs4 import BeautifulSoup
+"""Username checks for the legacy build.
 
-# Initialize colorama
+Replaces the old requests-html path with httpx, keeps the interactive prompts,
+and writes one sanitised report instead of a package-local log.
+"""
+
+from __future__ import annotations
+
+import concurrent.futures
+import os
+import random
+import re
+import sys
+from pathlib import Path
+
+import httpx
+from bs4 import BeautifulSoup
+from colorama import Fore, Style, init
+
 init(autoreset=True)
 
-# Set up logging
-logging.basicConfig(filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'username_search.log'), level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
-
-# Set up file for saving results
-os.makedirs("Results", exist_ok=True)
-results_file = open("Results/username-search_results.txt", "w")
-
-# Keep track of visited URLs to prevent duplicates
-visited_urls = set()
-visited_html_content = set()
-
-# Progress tracking
-_progress_lock = threading.Lock()
-_progress_done = 0
-_progress_total = 0
+USER_AGENTS = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0",
+)
+URLS_FILE = Path(__file__).with_name("urls.txt")
 
 
-# Function to search for username on a single URL
-def search_username_on_url(username: str, url: str, include_titles=True, include_descriptions=True, include_html_content=True):
-    global visited_urls, visited_html_content, _progress_done, _progress_total
+def _slug(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-._")
+    return (cleaned or "username")[:60]
+
+
+def _profile_url(template: str, username: str) -> str:
+    if "{username}" in template:
+        return template.replace("{username}", username)
+    if template.endswith(("/", "@", "=", "?")):
+        return template + username
+    return template.rstrip("/") + f"/{username}"
+
+
+def _title(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.title.get_text(" ", strip=True) if soup.title else ""
+
+
+def search_username_on_url(username: str, template: str, *,
+                           include_titles: bool = True,
+                           include_descriptions: bool = True,
+                           timeout: float = 15.0) -> dict[str, object]:
+    url = _profile_url(template, username)
     try:
-        if username.lower() not in url.lower():
-            url += f'/{username}' if url.endswith('/') else f'/{username}'
-
-        if url in visited_urls:
-            with _progress_lock:
-                _progress_done += 1
-                print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate URL: {Fore.WHITE}{url} {Fore.LIGHTBLACK_EX}[{_progress_done}/{_progress_total}]")
-            return
-
-        visited_urls.add(url)
-
-        session = HTMLSession()
-        time.sleep(random.uniform(0.5, 1.5))  # Introduce a random delay to mimic human behavior
-        response = session.get(url, timeout=15)
-
-        with _progress_lock:
-            _progress_done += 1
-            done = _progress_done
-            total = _progress_total
-
-        if response.status_code == 200:
-            if response.html.raw_html in visited_html_content:
-                print(f"{Fore.YELLOW}⚠️ {Fore.RED}Skipping duplicate HTML content for URL: {Fore.WHITE}{url} {Fore.LIGHTBLACK_EX}[{done}/{total}]")
-                return
-
-            visited_html_content.add(response.html.raw_html)
-
-            print(f"{Fore.CYAN}🔍 {Fore.BLUE}{username} {Fore.RED}| {Fore.YELLOW}[{Fore.GREEN}✅{Fore.YELLOW}]{Fore.WHITE} URL{Fore.YELLOW}: {Fore.LIGHTGREEN_EX}{url}{Fore.WHITE} {response.status_code} {Fore.LIGHTBLACK_EX}[{done}/{total}]")
-
-            # Always check for query in URL, title, description, and HTML content
-            print_query_detection(username, url, response.html.raw_html)
-
-            # Write results to file
-            write_to_file(username, url, response.status_code, response.html.raw_html, include_titles, include_descriptions, include_html_content)
-
-            # Print HTML content with organized formatting if requested
-            if include_titles or include_descriptions or include_html_content:
-                print_html(response.html.raw_html, url, username, include_titles, include_descriptions, include_html_content)
-
-        else:
-            # Skip processing for non-200 status codes
-            return
-    except UnicodeEncodeError:
-        logging.error(f"UnicodeEncodeError occurred while printing to console for {username} on {url}")
-        with _progress_lock:
-            _progress_done += 1
-    except Exception as e:
-        logging.error(f"Error occurred while searching for {username} on {url}: {e}")
-        with _progress_lock:
-            _progress_done += 1
-            done = _progress_done
-            total = _progress_total
-        print(f"{Fore.RED}⚠️ Timeout/error for {Fore.WHITE}{url} {Fore.LIGHTBLACK_EX}[{done}/{total}]")
-
-def print_query_detection(username, url, html_content):
-    query_detected = False
-    try:
-        # Check if username is detected in URL
-        if username.lower() in url.lower():
-            #print(f"{Fore.YELLOW}🔸 Query detected in URL: {Fore.WHITE}{url}")
-            query_detected = True
-
-        # Check if username is detected in HTML content
-        if html_content and username.lower() in html_content.decode('utf-8').lower():
-            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in 'HTML content'{Fore.RED}... {Fore.WHITE}")
-            query_detected = True
-
-        # Check if username is detected in meta description
-        soup = BeautifulSoup(html_content, 'html.parser')
-        meta_description = soup.find("meta", attrs={"name": "description"})
-        description = meta_description['content'] if meta_description else ""
-        if username.lower() in description.lower():
-            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in 'description'{Fore.RED}... {Fore.WHITE}")
-            query_detected = True
-
-        if not query_detected:
-            print(f"{Fore.YELLOW}🔸 Query not detected in URL, description, or HTML content for URL: {Fore.WHITE}{url}")
-
-  # Check if username is detected in title
-        title = soup.title.get_text(strip=True) if soup.title else ""
-        if username.lower() in title.lower():
-            print(f"{Fore.YELLOW}🔸 {Fore.LIGHTBLACK_EX}Query detected in 'title'{Fore.RED}... {Fore.WHITE}")
-            query_detected = True
-
-        if not query_detected:
-            print(f"{Fore.YELLOW}🔸 Query not detected in URL, title, description, or HTML content for URL: {Fore.WHITE}{url}")
-
-    except Exception as e:
-        print(f"{Fore.RED}Error occurred while checking for query in URL, title, description, or HTML content for URL: {Fore.WHITE}{url}: {str(e)}")
-
-
-def write_to_file(username, url, status_code, html_content, include_titles=True, include_descriptions=True, include_html_content=True):
-    try:
-        results_file.write(f"Username: {username}\n")
-        results_file.write(f"URL: {url}\n")
-        results_file.write(f"Status Code: {status_code}\n")
-        if include_titles or include_descriptions or include_html_content:
-            results_file.write("Details:\n")
+        with httpx.Client(timeout=timeout, follow_redirects=True,
+                          headers={"User-Agent": random.choice(USER_AGENTS)}) as client:
+            response = client.get(url)
+        record: dict[str, object] = {
+            "url": url, "status": response.status_code,
+            "found": response.status_code == 200,
+        }
+        if include_titles or include_descriptions:
+            soup = BeautifulSoup(response.text, "html.parser")
             if include_titles:
-                results_file.write("Title: ...\n")  # Placeholder, will be replaced if available
+                record["title"] = soup.title.get_text(" ", strip=True) if soup.title else ""
             if include_descriptions:
-                results_file.write("Description: ...\n")  # Placeholder, will be replaced if available
-            if include_html_content:
-                results_file.write("HTML Content: ...\n")  # Placeholder, will be replaced if available
-        results_file.write("\n")
-    except Exception as e:
-        logging.error(f"Error occurred while writing to file for {username} on {url}: {e}")
+                tag = soup.find("meta", attrs={"name": "description"})
+                record["description"] = tag.get("content", "") if tag else ""
+        return record
+    except httpx.HTTPError as exc:
+        return {"url": url, "status": 0, "found": False,
+                "error": f"{type(exc).__name__}: {exc}"}
 
 
-def print_html(html_content, url, query, include_titles=True, include_descriptions=True, include_html_content=True):
-    try:
-        if not html_content:
-            print(f"{Fore.YELLOW}HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW} Empty")
-            return
-
-        soup = BeautifulSoup(html_content, 'html.parser')
-        if soup:
-            if include_titles:
-                title = soup.title.get_text(strip=True) if soup.title else "No title found"
-                if query.lower() in title.lower():
-                    print(f"{Fore.YELLOW}🔸 TITLE: {Fore.WHITE}{title}")
-            if include_descriptions:
-                meta_description = soup.find("meta", attrs={"name": "description"})
-                description = meta_description['content'] if meta_description else "No meta description found"
-                if query.lower() in description.lower():
-                    print(f"{Fore.YELLOW}🔸 DESCRIPTION: {Fore.WHITE}{description}")
-
-            if include_html_content:
-                print(f"{Fore.YELLOW}🔸 HTML Content for URL {Fore.WHITE}{url}:{Fore.YELLOW}")
-                # Decode bytes to string
-                html_content_str = html_content.decode('utf-8')
-                # Check if query is in HTML content
-                if query.lower() in html_content_str.lower():
-                    # Print a snippet of the HTML content with line breaks for better readability
-                    snippet_length = 300  # Adjust as needed
-                    html_snippet = html_content_str[:snippet_length] + ("..." if len(html_content_str) > snippet_length else "")
-                    print("\n".join([f"{Fore.CYAN}{line}" for line in html_snippet.split("\n")]))
-
-        else:
-            print(f"{Fore.YELLOW}HTML Content for URL {Fore.WHITE}{url}:{Fore.RED} Empty")
-    except Exception as e:
-        print(f"{Fore.RED}Error occurred while parsing HTML content for URL {Fore.WHITE}{url}:{Fore.RED} {str(e)}")
+def _write(username: str, hits: list[dict[str, object]]) -> Path:
+    out_dir = Path("Results")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"username-{_slug(username)}_results.txt"
+    found = [hit for hit in hits if hit.get("found")]
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(f"Username: {username}\nChecked: {len(hits)}\n")
+        handle.write(f"Matches: {len(found)}\n")
+        for hit in found:
+            handle.write(f"[found] {hit['url']} ({hit['status']})\n")
+            if hit.get("title"):
+                handle.write(f"  title: {hit['title']}\n")
+            if hit.get("description"):
+                handle.write(f"  description: {hit['description']}\n")
+        errors = [hit for hit in hits if hit.get("error")]
+        if errors:
+            handle.write("\nErrors:\n")
+            for hit in errors:
+                handle.write(f"- {hit['url']}: {hit['error']}\n")
+    return path
 
 
-
-
-def main(username):
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'urls.txt'), "r") as f:
-        url_list = [x.strip() for x in f.readlines()]
-
+def main(username: str) -> None:
+    username = (username or "").strip()
     if not username:
-        print("❌ Error: Username cannot be empty.")
+        print("Error: username cannot be empty.")
+        return
+    if not URLS_FILE.exists():
+        print(f"Error: platform list not found: {URLS_FILE}")
+        return
+    templates = [line.strip() for line in URLS_FILE.read_text(
+        encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")]
+    if not templates:
+        print("Error: platform list is empty.")
         return
 
+    print(f"{Fore.RED}_" * 80)
+    include_titles = input(
+        f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include titles? "
+        f"(y/n): {Style.RESET_ALL}").strip().lower() == "y"
+    include_descriptions = input(
+        f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include descriptions? "
+        f"(y/n): {Style.RESET_ALL}").strip().lower() == "y"
+    print(f"{Fore.RED}_" * 80)
 
-    print(f"{Fore.RED}_" * 80 + "\n")
-    include_titles = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include titles? (y/n): {Style.RESET_ALL}").lower() == 'y'
-    include_descriptions = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include descriptions? (y/n):{Style.RESET_ALL} ").lower() == 'y'
-    include_html_content = input(f" {Fore.RED}[{Fore.YELLOW}!{Fore.RED}]{Fore.WHITE} Include HTML content? (y/n):{Style.RESET_ALL} ").lower() == 'y'
-    print(f"{Fore.RED}_" * 80 + "\n")
-
-    global _progress_done, _progress_total
-    _progress_done = 0
-    _progress_total = len(url_list)
-    print(f"{Fore.LIGHTBLACK_EX}Checking {_progress_total} platforms...\n")
-
+    hits: list[dict[str, object]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(search_username_on_url, username, url, include_titles, include_descriptions, include_html_content) for url in url_list]
-        concurrent.futures.wait(futures)
+        futures = {
+            executor.submit(search_username_on_url, username, template,
+                            include_titles=include_titles,
+                            include_descriptions=include_descriptions): template
+            for template in templates
+        }
+        for future in concurrent.futures.as_completed(futures):
+            hit = future.result()
+            hits.append(hit)
+            if hit.get("found"):
+                print(f"{Fore.CYAN}[found] {Fore.WHITE}{hit['url']} "
+                      f"{hit['status']}{Style.RESET_ALL}")
+            print(f"{Fore.LIGHTBLACK_EX}Checked {len(hits)}/{len(templates)}",
+                  end="\r")
+    print()
+    found = [hit for hit in hits if hit.get("found")]
+    path = _write(username, hits)
+    print(f"{len(found)} match(es) out of {len(hits)}; saved to {path}")
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Error: invalid number of arguments.")
+        raise SystemExit(1)
+    if sys.argv[1] == "--skip":
+        print(f" {Fore.RED}- {Fore.LIGHTBLACK_EX}src/usr.py[ Skipping the "
+              f"username search{Fore.RED}...{Style.RESET_ALL}")
+        raise SystemExit(0)
     try:
-        if len(sys.argv) != 2:
-            print("❌ Error: Invalid number of arguments.")
-            sys.exit(1)
-
-        if sys.argv[1] == '--skip':
-            print(f" {Fore.RED}- {Fore.LIGHTBLACK_EX}src/usr.py[ Skipping the username search{Fore.RED}...{Style.RESET_ALL}")
-            sys.exit(0)
-
-        input_text = sys.argv[1]
-
-        try:
-            confirmation = input(f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want to run a username search{Fore.RED}? {Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: {Style.RESET_ALL}")
-        except EOFError:
-            confirmation = "n"
-        if confirmation.lower() != 'y':
-            #print("Script execution aborted.")
-            sys.exit(0)
-
-        # Uncomment the line below if you want to display input_text before running main
-        # print(f" \n〘 Username Search: {input_text} 〙\n")
-
-        main(input_text)
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        print("❌ Error: An unexpected error occurred.")
-
-# Close the results file
-results_file.close()
+        confirmation = input(
+            f"\n {Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Do you want "
+            f"to run a username search{Fore.RED}? "
+            f"{Fore.LIGHTBLACK_EX}({Fore.WHITE}y{Fore.LIGHTBLACK_EX}/"
+            f"{Fore.WHITE}n{Fore.LIGHTBLACK_EX}){Fore.YELLOW}: "
+            f"{Style.RESET_ALL}")
+    except EOFError:
+        confirmation = "n"
+    if confirmation.strip().lower() != "y":
+        raise SystemExit(0)
+    main(sys.argv[1])

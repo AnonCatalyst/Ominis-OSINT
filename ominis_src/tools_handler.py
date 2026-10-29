@@ -1,381 +1,390 @@
-import random
+"""Search transport for the legacy 0.5.x build.
+
+The interactive flow is unchanged. Proxies are passed only when the user opts
+in, and the Google-style SerpBase API is an optional third engine.
+"""
+
+from __future__ import annotations
+
 import asyncio
-import os
-import re
+import base64
 import json
-import logging
-import urllib.parse
+import os
+import random
+import re
+from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qs, quote_plus, unquote, urlparse
+
 import httpx
-from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
-from httpx import TimeoutException, RequestError
-from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
-import urllib3
-import ssl
+from colorama import Fore, Style
 
-# Load utility functions from ominis_src/utils.py
-from ominis_src.utils import find_social_profiles, is_potential_forum, extract_mentions
+from ominis_src.utils import (extract_mentions, find_social_profiles,
+                              is_potential_forum)
 
-# Initialize colorama for colored output
-init(autoreset=True)
-
-# Disable SSL warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-ssl._create_default_https_context = ssl._create_unverified_context
-
-# Set up error logger
-error_logger = logging.getLogger('gfetcherror')
-error_logger.setLevel(logging.ERROR)
-error_handler = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gfetcherror.log'))
-error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-error_logger.addHandler(error_handler)
-
-# Configure logging
-logging.getLogger('httpx').setLevel(logging.WARNING)
-logging.basicConfig(
-    level=logging.INFO,
-    filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gfetcherror.log'),
-    format='%(asctime)s - %(levelname)s - %(message)s'
+USER_AGENTS = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+    "(KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0",
 )
-logger = logging.getLogger(__name__)
+MAX_RETRIES = 3
+SERPBASE_ENDPOINT = "https://api.serpbase.dev/google/search"
+COUNTER_EMOJIS = ["*", "+", ">", "#", "~", "=", ":", "|"]
 
-# Global variables
-visited_urls = set()
-counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
-MAX_RETRY_COUNT = 20
-MAX_REDIRECTS = 5
-show_message = None
 
-# Load social platform patterns
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r") as json_file:
-    social_platforms = json.load(json_file)
+class SearchError(RuntimeError):
+    """A provider could not be queried."""
 
-# Advanced evasion headers
-EVASION_HEADERS = [
-    {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "DNT": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1"
-    },
-    {
+
+def _normalise_proxy(value: str) -> str:
+    value = value.strip()
+    return value if "://" in value else f"http://{value}"
+
+
+def _pick_proxy(proxies: tuple[str, ...] | list[str] | None) -> str | None:
+    if not proxies:
+        return None
+    return _normalise_proxy(random.choice(list(proxies)))
+
+
+def _headers() -> dict[str, str]:
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cache-Control": "max-age=0",
-        "Connection": "keep-alive",
-        "TE": "Trailers",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1"
-    },
-    {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.7",
-        "Connection": "keep-alive",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1"
+        "Accept-Language": "en-US,en;q=0.8",
     }
-]
 
-# JA4 fingerprint evasion
-JA4_STRINGS = [
-    "t13d1516h2_8daaf6152771_0275b9b5b656",  # Chrome-like
-    "t13d1516h2_8daaf6152771_61e2afb5b656",  # Firefox-like
-    "t13d1516h2_8daaf6152771_9d3b5b5b656"    # Safari-like
-]
 
-async def make_request_async(url, proxies=None):
-    retry_count = 0
-    global show_message
-    
-    while retry_count < MAX_RETRY_COUNT:
+async def make_request_async(url: str, proxies: tuple[str, ...] | None = None,
+                             *, timeout: float = 15.0,
+                             verify_tls: bool = True) -> str:
+    last_error: Exception | None = None
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
-            # Create custom SSL context for JA3 evasion
-            ssl_context = ssl.create_default_context()
-            ssl_context.set_ciphers("ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256")
-            
             async with httpx.AsyncClient(
-                http2=True,
-                verify=False,
-                timeout=10.0,
-                follow_redirects=True,
-                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
-            ) as client:
-                # Advanced evasion techniques
-                headers = random.choice(EVASION_HEADERS).copy()
-                headers["User-Agent"] = UserAgent().random.strip()
-                
-                # JA3/JA4 evasion simulation
-                headers["Sec-Ch-Ua"] = '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
-                headers["Sec-Ch-Ua-Mobile"] = "?0"
-                headers["Sec-Ch-Ua-Platform"] = '"Windows"'
-                headers["X-Evasion-Fingerprint"] = random.choice(JA4_STRINGS)
-                
-                if proxies:
-                    proxy = random.choice(proxies)
-                    if show_message is None:
-                        show_message = await ask_to_show_message()
-                    if show_message:
-                        print(f"  {Fore.LIGHTBLACK_EX}Rotated Proxy{Fore.YELLOW}:{Fore.LIGHTBLACK_EX} {proxy} {Fore.RED}| ", end='')
-                    client.proxies = {"http://": proxy, "https://": proxy}
-
-                # Add random delay to simulate human behavior
-                await asyncio.sleep(random.uniform(0.1, 0.5))
-                
-                response = await client.get(
-                    url,
-                    headers=headers,
-                )
-                
-                if response.status_code in [403, 429]:
-                    raise httpx.HTTPStatusError(f"Blocked by server (HTTP {response.status_code})", request=response.request, response=response)
-                
+                proxy=_pick_proxy(proxies), timeout=timeout,
+                verify=verify_tls, follow_redirects=True,
+                headers=_headers()) as client:
+                response = await client.get(url)
+                if response.status_code in (403, 429):
+                    raise SearchError(f"blocked with HTTP {response.status_code}")
                 response.raise_for_status()
                 return response.text
+        except (httpx.HTTPError, SearchError) as exc:
+            last_error = exc
+            if attempt < MAX_RETRIES:
+                await asyncio.sleep(min(2 ** attempt, 8))
+    raise SearchError(f"request failed after {MAX_RETRIES} attempts: {last_error}")
 
-        except (TimeoutException, RequestError, httpx.HTTPStatusError) as e:
-            logger.error(f"Connection error ({retry_count + 1}/{MAX_RETRY_COUNT}): {e}")
-            retry_count += 1
-            if retry_count < MAX_RETRY_COUNT:
-                print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{MAX_RETRY_COUNT})...{Style.RESET_ALL}")
-                # Exponential backoff with jitter
-                sleep_time = min(2 ** retry_count + random.uniform(0, 1), 30)
-                await asyncio.sleep(sleep_time)
-            else:
-                logger.error(f"Max retries exceeded for {url}")
-                raise RuntimeError(f"Request failed after {MAX_RETRY_COUNT} retries")
-    
-    logger.error("All evasion attempts failed")
-    return None
 
-async def ask_to_show_message():
-    global show_message
-    if show_message is None:
-        response = await asyncio.to_thread(
-            input, 
-            f'{Fore.RED}_'*80 + f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Enable proxy rotation display? {Fore.LIGHTBLACK_EX}(y/n){Fore.YELLOW}:{Style.RESET_ALL} "
-        )
-        show_message = response.strip().lower() == 'y'
-    return show_message
+def _unwrap_ddg(href: str) -> str:
+    if not href:
+        return ""
+    if href.startswith("//"):
+        href = "https:" + href
+    if "duckduckgo.com/l/" in href or href.startswith("/l/"):
+        parsed = urlparse(href)
+        target = parse_qs(parsed.query).get("uddg", [""])[0]
+        if target:
+            return unquote(target)
+    return href
 
-async def fetch_engine_results(engine, query, start=0, proxies=None):
+
+def _unwrap_bing(href: str) -> str:
+    if not href:
+        return ""
+    if "bing.com/ck/a" in href:
+        parsed = urlparse(href)
+        encoded = parse_qs(parsed.query).get("u", [""])[0]
+        if encoded.startswith("a1"):
+            encoded = encoded[2:]
+        try:
+            padded = encoded + "=" * (-len(encoded) % 4)
+            return base64.urlsafe_b64decode(padded).decode("utf-8", "replace")
+        except (ValueError, UnicodeDecodeError):
+            return ""
+    return href
+
+
+def _valid(url: str) -> bool:
+    return isinstance(url, str) and url.startswith("http")
+
+
+def _result(engine: str, title: str, url: str, snippet: str,
+            position: int) -> dict[str, Any]:
+    return {"engine": engine, "title": title or url, "url": url,
+            "snippet": snippet, "position": position}
+
+
+def parse_duckduckgo(html: str) -> list[dict[str, Any]]:
+    soup = BeautifulSoup(html, "html.parser")
+    rows: list[dict[str, Any]] = []
+    for block in soup.select("div.result"):
+        link = block.select_one("a.result__a")
+        if not link:
+            continue
+        href = _unwrap_ddg(link.get("href", ""))
+        if not _valid(href) or "duckduckgo.com/y.js" in href:
+            continue
+        snippet = block.select_one(".result__snippet")
+        rows.append(_result("duckduckgo", link.get_text(" ", strip=True),
+                            href, snippet.get_text(" ", strip=True)
+                            if snippet else "", len(rows) + 1))
+    return rows
+
+
+def parse_bing(html: str) -> list[dict[str, Any]]:
+    soup = BeautifulSoup(html, "html.parser")
+    rows: list[dict[str, Any]] = []
+    for block in soup.select("li.b_algo"):
+        heading = block.find("h2")
+        link = heading.find("a", href=True) if heading else None
+        if not link:
+            continue
+        href = _unwrap_bing(link.get("href", ""))
+        if not _valid(href):
+            continue
+        snippet = block.select_one(".b_caption p") or block.select_one("p")
+        rows.append(_result("bing", heading.get_text(" ", strip=True),
+                            href, snippet.get_text(" ", strip=True)
+                            if snippet else "", len(rows) + 1))
+    return rows
+
+
+def _find_items(payload: Any) -> list[Any]:
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, dict):
+        return []
+    for key in ("organic", "results", "organic_results", "items", "data"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return value
+        if isinstance(value, dict):
+            nested = _find_items(value)
+            if nested:
+                return nested
+    return []
+
+
+def parse_serpbase(payload: Any) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for index, item in enumerate(_find_items(payload), start=1):
+        if not isinstance(item, dict):
+            continue
+        url = item.get("link") or item.get("url") or item.get("href") or ""
+        if not _valid(url):
+            continue
+        rows.append(_result(
+            "serpbase",
+            str(item.get("title") or item.get("name") or url),
+            url,
+            str(item.get("snippet") or item.get("description") or ""),
+            int(item.get("position") or index),
+        ))
+    return rows
+
+
+async def fetch_serpbase(query: str, key: str, *, language: str = "",
+                         country: str = "", date_range: tuple[str, str] = ("", ""),
+                         page: int = 1, proxies: tuple[str, ...] = (),
+                         timeout: float = 15.0,
+                         verify_tls: bool = True) -> list[dict[str, Any]]:
+    if not key:
+        raise SearchError("no SerpBase API key configured")
+    body: dict[str, Any] = {"q": query, "page": max(1, page)}
+    if country:
+        body["gl"] = country.lower()
+    if language:
+        body["hl"] = language.lower()
+    start, end = date_range
+    if start or end:
+        start = start.replace("-", "/")
+        end = end.replace("-", "/")
+        body["q"] = f"{query} after:{start} before:{end}".replace("  ", " ").strip()
+    try:
+        async with httpx.AsyncClient(proxy=_pick_proxy(proxies), timeout=timeout,
+                                     verify=verify_tls,
+                                     follow_redirects=True) as client:
+            response = await client.post(
+                SERPBASE_ENDPOINT, json=body,
+                headers={"Accept": "application/json",
+                         "Content-Type": "application/json",
+                         "X-API-Key": key})
+            response.raise_for_status()
+            payload = response.json()
+    except httpx.HTTPStatusError as exc:
+        raise SearchError(
+            f"SerpBase returned HTTP {exc.response.status_code}") from None
+    except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc:
+        raise SearchError(f"SerpBase request failed: {exc}") from None
+    if isinstance(payload, dict):
+        status = payload.get("status")
+        if status not in (None, 0, "0"):
+            detail = payload.get("error") or payload.get("message") or status
+            raise SearchError(f"SerpBase returned status {detail}")
+    return parse_serpbase(payload)
+
+
+async def fetch_engine_results(engine: str, query: str, start: int = 0,
+                               proxies: tuple[str, ...] | None = None,
+                               *, language: str = "", country: str = "",
+                               date_range: tuple[str, str] = ("", ""),
+                               serpbase_key: str = "", timeout: float = 15.0,
+                               verify_tls: bool = True) -> list[dict[str, Any]]:
     if engine == "duckduckgo":
         url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}&s={start}"
+        parser = parse_duckduckgo
     elif engine == "bing":
-        url = f"https://www.bing.com/search?q={quote_plus(query)}&first={start}"
+        url = f"https://www.bing.com/search?q={quote_plus(query)}&first={max(1, start)}"
+        parser = parse_bing
+    elif engine == "serpbase":
+        return await fetch_serpbase(
+            query, serpbase_key, language=language, country=country,
+            date_range=date_range, page=max(1, start // 10 + 1),
+            proxies=tuple(proxies or ()), timeout=timeout,
+            verify_tls=verify_tls)
     else:
-        raise ValueError("Unsupported search engine")
-    
-    try:
-        response_text = await make_request_async(url, proxies)
-        if not response_text:
-            return []
-        
-        soup = BeautifulSoup(response_text, 'html.parser')
-        results = []
-        
-        if engine == "duckduckgo":
-            for result in soup.select('.result'):
-                title_elem = result.find('a', class_='result__a')
-                if not title_elem:
-                    continue
-                    
-                # Extract URL from DuckDuckGo's redirect link
-                href = title_elem.get('href', '')
-                if href.startswith('/l/?'):
-                    # Parse query parameters from redirect URL
-                    parsed = urlparse(href)
-                    query_params = parse_qs(parsed.query)
-                    real_url = query_params.get('uddg', [''])[0]
-                    if real_url:
-                        real_url = urllib.parse.unquote(real_url)
-                else:
-                    real_url = href
-                    
-                # Skip if we couldn't extract a valid URL
-                if not real_url or not real_url.startswith('http'):
-                    continue
-                    
-                results.append({
-                    'title': title_elem.get_text(strip=True),
-                    'url': real_url
-                })
-                
-        elif engine == "bing":
-            for result in soup.select('.b_algo'):
-                title_elem = result.find('h2')
-                link_elem = result.find('a', href=True)
-                if title_elem and link_elem:
-                    results.append({
-                        'title': title_elem.get_text(strip=True),
-                        'url': link_elem['href']
-                    })
-        
-        return results
-    
-    except Exception as e:
-        logger.error(f"{engine.upper()} search failed: {e}")
-        return []
+        raise SearchError(f"unsupported search engine: {engine}")
+    html = await make_request_async(url, proxies, timeout=timeout,
+                                    verify_tls=verify_tls)
+    return parser(html)
 
-async def fetch_dual_engine_results(query, language=None, country=None, date_range=None, proxies=None, max_results=100):
-    """
-    Main function for dual-engine search that matches the import expectation in ominis.py
-    Accepts language, country, and date_range parameters for future compatibility
-    """
-    # Currently language, country, and date_range are not implemented
-    # They are accepted for future compatibility and API consistency
-    print(f"{Fore.YELLOW}Note:{Fore.WHITE} Language, country, and date filters are not yet implemented{Style.RESET_ALL}")
-    
-    # Run the dual-engine search
-    return await dual_engine_search(query, proxies, max_results)
+
+def _slug(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-._")
+    return (cleaned or "query")[:60]
+
+
+def _write(records: list[dict[str, Any]], query: str,
+           profiles: set[str], errors: list[str], out_dir: Path) -> dict[str, str]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = _slug(query)
+    txt = out_dir / f"{stem}_dual-engine_results.txt"
+    data = out_dir / f"{stem}_dual-engine_results.json"
+    with txt.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(f"Search Query: {query}\n{'=' * 80}\n")
+        handle.write(f"Total results: {len(records)}\n")
+        for item in records:
+            handle.write("\n" + "-" * 80 + "\n")
+            handle.write(f"[{item['engine']}] {item['title']}\n{item['url']}\n")
+        if profiles:
+            handle.write("\nSocial profiles:\n")
+            handle.write("\n".join(sorted(profiles)) + "\n")
+        if errors:
+            handle.write("\nErrors:\n")
+            handle.write("\n".join(f"- {error}" for error in errors) + "\n")
+    data.write_text(json.dumps(
+        {"query": query, "results": records, "profiles": sorted(profiles),
+         "errors": errors, "total": len(records)},
+        ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {"txt": str(txt), "json": str(data)}
+
+
+async def fetch_dual_engine_results(query, language=None, country=None,
+                                    date_range=None, proxies=None,
+                                    max_results=100, **kwargs):
+    """Keep the original entry point, with an optional SerpBase engine."""
+    query = (query or "").strip()
+    if not query:
+        raise ValueError("query cannot be empty")
+    date_range = date_range or ("", "")
+    if isinstance(proxies, str):
+        proxies = (proxies,)
+    proxies = tuple(proxies or ())
+    key = kwargs.get("serpbase_key") or os.environ.get("SERPBASE_API_KEY", "")
+    timeout = float(kwargs.get("timeout", 15.0))
+    verify_tls = bool(kwargs.get("verify_tls", True))
+    out_dir = Path(kwargs.get("out_dir", "Results"))
+    engines = ["duckduckgo", "bing"]
+    if key:
+        engines.append("serpbase")
+
+    seen: set[str] = set()
+    records: list[dict[str, Any]] = []
+    mentions: list[dict[str, Any]] = []
+    profiles: set[str] = set()
+    errors: list[str] = []
+    per_engine = max(1, int(max_results) // len(engines))
+
+    print(f"{Fore.YELLOW}Starting search:{Fore.CYAN} "
+          f"{', '.join(engines)}{Style.RESET_ALL}")
+    print(f"{Fore.LIGHTBLACK_EX}Maximum results set to:{Fore.WHITE} "
+          f"{max_results}{Style.RESET_ALL}")
+
+    for engine in engines:
+        start = 0
+        engine_count = 0
+        print(f"\n{Fore.YELLOW}Searching{Fore.LIGHTBLACK_EX}:{Fore.CYAN} "
+              f"{engine.upper()}{Style.RESET_ALL}")
+        while engine_count < per_engine and len(records) < max_results:
+            try:
+                rows = await fetch_engine_results(
+                    engine, query, start, proxies, language=language or "",
+                    country=country or "", date_range=date_range,
+                    serpbase_key=key, timeout=timeout, verify_tls=verify_tls)
+            except SearchError as exc:
+                errors.append(f"{engine}: {exc}")
+                print(f"{Fore.RED}{engine.upper()}: {exc}{Style.RESET_ALL}")
+                break
+            if not rows:
+                break
+            added = 0
+            for row in rows:
+                if row["url"] in seen:
+                    continue
+                seen.add(row["url"])
+                records.append(row)
+                added += 1
+                engine_count += 1
+                print("_" * 80)
+                print(f"{random.choice(COUNTER_EMOJIS)} {Fore.YELLOW}Engine"
+                      f"{Fore.LIGHTBLACK_EX}:{Fore.CYAN} {engine.upper()}"
+                      f"{Style.RESET_ALL}")
+                print(f"{random.choice(COUNTER_EMOJIS)} {Fore.YELLOW}Title"
+                      f"{Fore.LIGHTBLACK_EX}: {Fore.BLUE}{row['title']}"
+                      f"{Style.RESET_ALL}")
+                print(f"{random.choice(COUNTER_EMOJIS)} {Fore.YELLOW}URL"
+                      f"{Fore.LIGHTBLACK_EX}: {row['url']}{Style.RESET_ALL}")
+                text = f"{row['title']} {row['url']}"
+                for term, count in extract_mentions(text, query).items():
+                    if count:
+                        mentions.append({"url": row["url"], "term": term,
+                                         "count": count})
+                for profile in find_social_profiles(row["url"]):
+                    profiles.add(profile["profile_url"])
+                if engine_count >= per_engine or len(records) >= max_results:
+                    break
+                await asyncio.sleep(random.uniform(0.2, 0.6))
+            if not added:
+                break
+            start += 10
+            await asyncio.sleep(random.uniform(0.8, 1.6))
+
+    paths = _write(records, query, profiles, errors, out_dir)
+    print(f"\n{Fore.GREEN}Search completed!{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}Total results:{Fore.WHITE} {len(records)}")
+    print(f"{Fore.YELLOW}Unique mentions found:{Fore.WHITE} {len(mentions)}")
+    print(f"{Fore.YELLOW}Social profiles discovered:{Fore.WHITE} {len(profiles)}")
+    for name, path in paths.items():
+        print(f"{Fore.LIGHTBLACK_EX}{name}:{Fore.WHITE} {path}")
+    if errors:
+        print(f"{Fore.RED}{len(errors)} provider error(s); see the report."
+              f"{Style.RESET_ALL}")
+    return len(records), mentions, sorted(profiles)
+
 
 async def dual_engine_search(query, proxies=None, max_results=100):
-    """
-    Actual implementation of the dual-engine search
-    """
-    engines = ["duckduckgo", "bing"]
-    seen_urls = set()
-    all_results = []
-    all_mention_links = []
-    all_unique_social_profiles = set()
-    
-    # Create results directory if not exists
-    os.makedirs("Results", exist_ok=True)
-    output_file = f"Results/{query}_dual-engine_results.txt"
-    
-    with open(output_file, 'w', encoding='utf-8') as file:
-        print(f"Search Query: {query}\n{'='*80}", file=file)
-        print(f"{Fore.YELLOW}Starting dual-engine search:{Fore.CYAN} DuckDuckGo & Bing{Style.RESET_ALL}")
-        print(f"{Fore.LIGHTBLACK_EX}Maximum results set to:{Fore.WHITE} {max_results}{Style.RESET_ALL}")
-        
-        for engine in engines:
-            start = 0
-            engine_results_count = 0
-            print(f"\n{Fore.YELLOW}Searching{Fore.LIGHTBLACK_EX}:{Fore.CYAN} {engine.upper()}{Style.RESET_ALL}")
-            
-            while engine_results_count < max_results / len(engines):
-                results = await fetch_engine_results(engine, query, start, proxies)
-                if not results:
-                    print(f"{Fore.LIGHTBLACK_EX}No more results from {engine.upper()}{Style.RESET_ALL}")
-                    break
-                
-                new_results = 0
-                for result in results:
-                    if result['url'] in seen_urls:
-                        continue
-                    
-                    seen_urls.add(result['url'])
-                    all_results.append(result)
-                    new_results += 1
-                    engine_results_count += 1
-                    
-                    # Write to file
-                    print(f"[{engine.upper()}] Title: {result['title']}\nURL: {result['url']}\n{'-'*80}", file=file)
-                    
-                    # Console output
-                    print('_' * 80)
-                    print(f"{random.choice(counter_emojis)} {Fore.YELLOW}Engine{Fore.LIGHTBLACK_EX}:{Fore.CYAN} {engine.upper()}{Style.RESET_ALL}")
-                    print(f"{random.choice(counter_emojis)} {Fore.YELLOW}Title{Fore.LIGHTBLACK_EX}: {Fore.BLUE}{result['title']}{Style.RESET_ALL}")
-                    print(f"{random.choice(counter_emojis)} {Fore.YELLOW}URL{Fore.LIGHTBLACK_EX}: {Fore.LIGHTBLACK_EX}{result['url']}{Style.RESET_ALL}")
-                    
-                    # Extract mentions
-                    text = f"{result['title']} {result['url']}"
-                    mentions = extract_mentions(text, query)
-                    for term, count in mentions.items():
-                        if count > 0:
-                            print(f"{random.choice(counter_emojis)} {Fore.BLUE}{term}{Fore.YELLOW} mentioned {Fore.WHITE}{count}x{Style.RESET_ALL}")
-                            all_mention_links.append({"url": result['url'], "count": count})
-                    
-                    # Find social profiles
-                    social_profiles = find_social_profiles(result['url'])
-                    if social_profiles:
-                        for profile in social_profiles:
-                            print(f"{random.choice(counter_emojis)} {Fore.GREEN}{profile['platform']}{Fore.YELLOW}:{Fore.GREEN} {profile['profile_url']}{Style.RESET_ALL}")
-                            all_unique_social_profiles.add(profile['profile_url'])
-                    
-                    # Random delay between processing results
-                    await asyncio.sleep(random.uniform(0.3, 1.2))
-                
-                if new_results == 0:
-                    print(f"{Fore.LIGHTBLACK_EX}No new results from {engine.upper()}, moving on...{Style.RESET_ALL}")
-                    break
-                
-                # Update start position for next page
-                start += len(results)
-                print(f"{Fore.LIGHTBLACK_EX}Page completed for {engine.upper()}. Total: {engine_results_count}{Style.RESET_ALL}")
-                
-                # Random delay between pages
-                await asyncio.sleep(random.uniform(1.5, 3.5))
-        
-        # Final statistics
-        print(f"\n{Fore.GREEN}Search completed!{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Total results:{Fore.WHITE} {len(all_results)}{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Unique mentions found:{Fore.WHITE} {len(all_mention_links)}{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Social profiles discovered:{Fore.WHITE} {len(all_unique_social_profiles)}{Style.RESET_ALL}")
-        
-        # Write summary to file
-        print(f"\nSummary\n{'='*30}", file=file)
-        print(f"Total results: {len(all_results)}", file=file)
-        print(f"Unique mentions found: {len(all_mention_links)}", file=file)
-        print(f"Social profiles discovered: {len(all_unique_social_profiles)}", file=file)
-    
-    return len(all_results), all_mention_links, list(all_unique_social_profiles)
+    return await fetch_dual_engine_results(query, proxies=proxies,
+                                           max_results=max_results)
 
-# Utility functions (reused from original)
-def find_social_profiles(url):
-    if not isinstance(url, str):
-        raise ValueError("URL must be a string")
 
-    profiles = []
-
-    if url in visited_urls:
-        return profiles
-
-    for platform, pattern in social_platforms.items():
-        match = re.search(pattern, url)
-        if match:
-            profile_url = match.group(0)
-            profiles.append({"platform": platform, "profile_url": profile_url})
-
-    if is_potential_forum(url):
-        profiles.append({"platform": "Forum", "profile_url": url})
-
-    visited_urls.add(url)
-    return profiles
-
-def is_potential_forum(url):
-    forum_keywords = [
-        r"forum[s]?",
-        r"community",
-        r"discussion[s]?",
-        r"board[s]?",
-        r"chat",
-        r"hub"
-    ]
-    url_parts = urllib.parse.urlparse(url)
-    path = url_parts.path.lower()
-    subdomain = url_parts.hostname.split('.')[0].lower() if url_parts.hostname else ""
-    path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
-    subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
-    return path_keywords or subdomain_keywords
-
-def extract_mentions(text, query):
-    if not isinstance(text, str) or not text:
-        raise ValueError("Input 'text' must be a non-empty string.")
-
-    if isinstance(query, str):
-        query = [query]
-    elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
-        raise ValueError("Input 'query' must be a string or a list of strings.")
-
-    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
-    return mention_count
+__all__ = [
+    "SearchError", "fetch_dual_engine_results", "fetch_engine_results",
+    "fetch_serpbase", "parse_bing", "parse_duckduckgo", "parse_serpbase",
+    "make_request_async", "extract_mentions", "find_social_profiles",
+    "is_potential_forum",
+]
