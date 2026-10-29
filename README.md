@@ -4,7 +4,7 @@
 > **Status:** In Progress  
 > **Estimated Completion:** 1-3 days
 > 
-> **Notice:** This project is currently in its final development cycle. During this sprint, our focus is strictly on resolving existing reported bugs. New issues will not be triaged or replied to until the current bug backlog is cleared. Thank you for your support!
+> **Notice:** This project is currently in its final development cycle. During this sprint, our focus is strictly on resolving existing reported bugs. Thank you for your support!
 
 
 Discover online mentions of a query or username, and map the social profiles
