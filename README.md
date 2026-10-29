@@ -1,6 +1,7 @@
 ># Ominis-OSINT: Web Hunter 🌐🕵️‍♂️
 
 - ``This Project Will Re-enter development`` **WINTERGATEIC WILL BE EXPANDING THIS PROJECT**
+  **NOTICE**: ``WIC has finalized core development of its infrastructure and operational model and will now begin to focus on refining this tool for the OSINT & Security communities`` 
 
 # **Github Actions**
 
