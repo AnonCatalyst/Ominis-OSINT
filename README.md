@@ -174,8 +174,9 @@ python -m pytest -q
 
 The suite is offline. Transport tests run against loopback proxies and locally
 generated certificates; engine and report tests parse fixed fixtures. CI runs
-the same command on Python 3.10, 3.11, and 3.12. CodeQL and Dependabot also run
-from `.github/workflows/codeql.yml` and `.github/dependabot.yml`.
+the same command on Python 3.10, 3.11, and 3.12. CodeQL runs through the
+repository default setup, with dependency updates from
+`.github/dependabot.yml`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, style, and pull-request
 expectations, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community rules.
