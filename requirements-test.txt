@@ -2,7 +2,8 @@
 beautifulsoup4==4.15.0
 colorama==0.4.6
 httpx[http2,socks]==0.28.1
-validators==0.36.0
+validators==0.35.0; python_version < "3.11"
+validators==0.36.0; python_version >= "3.11"
 pytest==9.2.0
 pytest-asyncio==1.4.1
 build==1.6.1
