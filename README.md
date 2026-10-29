@@ -210,4 +210,7 @@ tests/                 offline tests
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). This release is not code-signed; see
+[CODE_SIGNING.md](CODE_SIGNING.md) for the SHA-256 verification steps and why
+there is no self-signed certificate. The WinterGate names and logos are covered
+by [TRADEMARKS.md](TRADEMARKS.md), not by the MIT licence.
