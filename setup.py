@@ -23,7 +23,10 @@ setup(
         "colorama>=0.4.6",
         "httpx[http2,socks]>=0.28.1",
         "aiohttp>=3.10",
-        "validators>=0.34",
+        # 0.36.0 dropped Python 3.10, so keep the last 3.10-compatible release
+        # there and use the current line everywhere else.
+        "validators==0.35.0; python_version < '3.11'",
+        "validators>=0.36.0; python_version >= '3.11'",
     ],
     extras_require={
         "test": [
@@ -51,7 +54,12 @@ setup(
         "Issues": "https://github.com/AnonCatalyst/Ominis-OSINT/issues",
     },
     license="MIT",
+    license_files=["LICENSE", "TRADEMARKS.md"],
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: Information Technology",
+        "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",

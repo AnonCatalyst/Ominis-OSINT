@@ -1,0 +1,6 @@
+include LICENSE
+include TRADEMARKS.md
+include CODE_SIGNING.md
+include README.md
+include requirements.txt
+recursive-include ominis_src *.json *.txt
