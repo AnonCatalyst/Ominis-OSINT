@@ -44,10 +44,12 @@ cd Ominis-OSINT
 python -m pip install -r requirements.txt
 ```
 
-Or install the package:
+The package name on PyPI still points at the 2024 build (`0.4.8`). The
+repository and the release archives are the supported source for v1.0.0. To
+install it as a package, install from the checkout:
 
 ```sh
-python -m pip install Ominis-OSINT
+python -m pip install .
 ```
 
 Python 3.10 or newer is required.
