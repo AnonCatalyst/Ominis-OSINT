@@ -12,7 +12,7 @@ HERE = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd(
 README = (HERE / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="Ominis-OSINT",
+    name="ominis-osint-suite",
     version="1.0.0",
     packages=find_packages(include=["ominis_src", "ominis_src.*"]),
     package_data={"ominis_src": ["*.json", "*.txt"]},
@@ -51,7 +51,9 @@ setup(
     url="https://github.com/AnonCatalyst/Ominis-OSINT",
     project_urls={
         "Homepage": "https://wintergate.org",
+        "Source": "https://github.com/AnonCatalyst/Ominis-OSINT",
         "Issues": "https://github.com/AnonCatalyst/Ominis-OSINT/issues",
+        "Changelog": "https://github.com/AnonCatalyst/Ominis-OSINT/releases",
     },
     license="MIT",
     license_files=["LICENSE", "TRADEMARKS.md"],
