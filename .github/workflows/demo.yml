@@ -82,8 +82,20 @@ jobs:
       - name: Install Ominis
         run: python -m pip install -r requirements.txt
 
+      - name: Check the inputs
+        env:
+          MODE: ${{ inputs.mode }}
+          QUERY: ${{ inputs.query }}
+          USERNAME: ${{ inputs.username }}
+        run: |
+          case "$MODE" in
+            search)   [ -n "$QUERY" ] || { echo "::error::Set 'query' for a search."; exit 2; } ;;
+            username) [ -n "$USERNAME" ] || { echo "::error::Set 'username' for a username search."; exit 2; } ;;
+            both)     [ -n "$QUERY" ] || [ -n "$USERNAME" ] || { echo "::error::Set 'query', 'username', or both."; exit 2; } ;;
+          esac
+
       - name: Search
-        if: ${{ inputs.mode == 'search' || inputs.mode == 'both' }}
+        if: ${{ inputs.query != '' && (inputs.mode == 'search' || inputs.mode == 'both') }}
         env:
           QUERY: ${{ inputs.query }}
           ENGINES: ${{ inputs.engines }}
@@ -102,7 +114,7 @@ jobs:
           python ominis.py "${args[@]}"
 
       - name: Username search
-        if: ${{ inputs.mode == 'username' || inputs.mode == 'both' }}
+        if: ${{ inputs.username != '' && (inputs.mode == 'username' || inputs.mode == 'both') }}
         env:
           USERNAME: ${{ inputs.username }}
           FORMATS: ${{ inputs.formats }}
@@ -116,10 +128,10 @@ jobs:
       - name: Show the reports
         if: always()
         run: |
-          if [ -d Results ]; then
-            find Results -type f -maxdepth 1 -print
+          if [ -d Results ] && [ -n "$(find Results -maxdepth 1 -type f ! -name '.gitkeep' -print -quit)" ]; then
+            find Results -maxdepth 1 -type f ! -name '.gitkeep' -printf '%f (%s bytes)\n'
           else
-            echo "No reports were written."
+            echo "::warning::No reports were written. Check the inputs and the step log above."
           fi
 
       - name: Upload the reports
