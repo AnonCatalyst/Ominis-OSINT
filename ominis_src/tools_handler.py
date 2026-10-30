@@ -27,9 +27,11 @@ logger = logging.getLogger(__name__)
 # Global variables
 visited_urls = set()
 counter_emojis = ['🍻', '📑', '📌', '🌐', '🔰', '💀', '🔍', '📮', 'ℹ️', '📂', '📜', '📋', '📨', '🌟', '💫', '✨', '🔥', '🆔', '🎲']
-MAX_RETRY_COUNT = 20
+MAX_RETRY_COUNT = 5
 MAX_PROXY_RETRY_COUNT = 3
 PROXY_REQUEST_TIMEOUT = 30.0
+REQUEST_TIMEOUT = 60.0
+MAX_BACKOFF = 15.0
 MAX_REDIRECTS = 5
 show_message = None
 
@@ -148,7 +150,18 @@ def _safe_proxy_error(error, proxy):
 async def make_request_async(url, proxies=None):
     proxies = _normalize_proxy_pool(proxies)
     if proxies is None:
-        return await _make_request_with_retries(url, proxies, MAX_RETRY_COUNT)
+        # A blocked or stalled host must not consume the whole run: the retry
+        # loop, its backoff and every request share one wall-clock budget.
+        try:
+            return await asyncio.wait_for(
+                _make_request_with_retries(url, proxies, MAX_RETRY_COUNT),
+                timeout=REQUEST_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logger.error("Request exceeded %g-second budget for %s", REQUEST_TIMEOUT, url)
+            raise RuntimeError(
+                f"Request failed: network budget of {REQUEST_TIMEOUT:g} seconds exceeded"
+            ) from None
 
     # User input must not consume the network retry budget.
     global show_message
@@ -212,8 +225,9 @@ async def _make_request_with_retries(url, proxies, max_retries):
             retry_count += 1
             if retry_count < max_retries:
                 print(f"{Fore.LIGHTBLACK_EX}Retrying ({retry_count}/{max_retries})...{Style.RESET_ALL}")
-                # Exponential backoff with jitter
-                sleep_time = min(2 ** retry_count + random.uniform(0, 1), 30)
+                # Exponential backoff with jitter, capped so a blocked host
+                # cannot spend minutes asleep between attempts.
+                sleep_time = min(2 ** retry_count + random.uniform(0, 1), MAX_BACKOFF)
                 await asyncio.sleep(sleep_time)
             else:
                 logger.error(f"Max retries exceeded for {url}")

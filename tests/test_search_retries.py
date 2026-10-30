@@ -66,6 +66,23 @@ async def test_explicit_proxy_budget_includes_requests_and_backoff(servers, monk
 
 
 @pytest.mark.asyncio
+async def test_direct_request_budget_bounds_retries(servers, monkeypatch):
+    async def stall(reader, writer, endpoint):
+        endpoint.requests.append(await reader.readuntil(b"\r\n\r\n"))
+        # Accept the request but never answer; stop when the client disconnects.
+        await reader.read()
+
+    target = await servers.start(stall)
+    monkeypatch.setattr(tools_handler, "MAX_RETRY_COUNT", 100)
+    monkeypatch.setattr(tools_handler, "REQUEST_TIMEOUT", 1.5)
+    started = asyncio.get_running_loop().time()
+    with pytest.raises(RuntimeError, match="budget"):
+        await asyncio.wait_for(tools_handler.make_request_async(target.url), timeout=5)
+    assert asyncio.get_running_loop().time() - started < 4.0
+    assert len(target.requests) == 1
+
+
+@pytest.mark.asyncio
 async def test_proxy_display_prompt_does_not_consume_retry_budget(servers, monkeypatch):
     origin = await servers.origin()
     proxy = await servers.http_proxy()

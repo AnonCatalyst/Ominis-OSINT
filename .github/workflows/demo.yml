@@ -66,6 +66,9 @@ jobs:
     name: Run Ominis
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # Stream progress instead of buffering it until the step ends.
+      PYTHONUNBUFFERED: "1"
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -96,6 +99,7 @@ jobs:
 
       - name: Search
         if: ${{ inputs.query != '' && (inputs.mode == 'search' || inputs.mode == 'both') }}
+        timeout-minutes: 8
         env:
           QUERY: ${{ inputs.query }}
           ENGINES: ${{ inputs.engines }}
@@ -115,6 +119,7 @@ jobs:
 
       - name: Username search
         if: ${{ inputs.username != '' && (inputs.mode == 'username' || inputs.mode == 'both') }}
+        timeout-minutes: 5
         env:
           USERNAME: ${{ inputs.username }}
           FORMATS: ${{ inputs.formats }}
