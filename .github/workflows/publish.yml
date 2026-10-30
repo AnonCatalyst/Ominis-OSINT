@@ -1,8 +1,9 @@
 name: Release
 
 # Runs only for version tags, so a broken publish job cannot fail every push.
-# The Docker image goes to GitHub Container Registry; the Python package goes
-# to PyPI when PYPI_API_TOKEN is configured.
+# The Docker image goes to GitHub Container Registry on every tag. PyPI is
+# manual-only: run this workflow with "publish" enabled once a valid
+# PYPI_API_TOKEN is configured, so a missing or expired token cannot fail a tag.
 
 on:
   push:
@@ -51,7 +52,7 @@ jobs:
 
   pypi:
     name: Publish the Python package
-    if: startsWith(github.ref, 'refs/tags/') || inputs.publish
+    if: inputs.publish
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
