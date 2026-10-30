@@ -1,5 +1,9 @@
 # Ominis-OSINT: Web Hunter
 
+[![PyPI](https://img.shields.io/pypi/v/ominis-osint-suite.svg)](https://pypi.org/project/ominis-osint-suite/)
+[![Tests](https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/tests.yml/badge.svg)](https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Discover online mentions of a query or username, and map the social profiles
 and forums that surface with them. Ominis searches public web results, reports
 what it finds, and gets out of the way.
