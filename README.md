@@ -1,12 +1,5 @@
 # Ominis-OSINT: Web Hunter
 
-### 🚧 Project Status: Active Development
-> **Status:** In Progress  
-> **Estimated Completion:** 1-3 days
-> 
-> **Notice:** This project is currently in its final development cycle. During this sprint, our focus is strictly on resolving existing reported bugs. Thank you for your support!
-
-
 Discover online mentions of a query or username, and map the social profiles
 and forums that surface with them. Ominis searches public web results, reports
 what it finds, and gets out of the way.
