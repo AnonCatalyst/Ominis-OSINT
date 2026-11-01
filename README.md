@@ -15,6 +15,15 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 > pages, but a search can still be intrusive. You are responsible for the law,
 > the site's terms, and the people whose data you touch.
 
+# 🔗 **Official WIC Support Server**
+
+• **Need Help?** Get assistance with our tools and services.
+• **Want Access?** Request your StyxNet token here.
+• **Stay Updated:** Track our latest releases and operations.
+
+**Join now**: __https://discord.gg/tu5CynxjZq__
+
+
 ## Version 1.1
 
 This is the full suite. It is published alongside the patched original
@@ -111,7 +120,7 @@ Access is free during the preview but needs a key. Resolve it in this order:
 4. `~/.config/ominis/styxnet-key.txt`
    (`%APPDATA%\ominis\styxnet-key.txt` on Windows)
 
-Request a key at <https://wintergate.org/styxnet/>. The key is never printed
+Request a key at <https://discord.gg/tu5CynxjZq>. The key is never printed
 or written to a report; environment and file loading both mask it in output.
 
 `--styxnet-engines N` (default 35, maximum 200) caps one request, and
