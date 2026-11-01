@@ -15,19 +15,6 @@ We are prioritizing stability, precision, and quality over speed. The recent `v1
 
 ---
 
-## 🛠️ WHY THE EXTENSION?
-
-After the initial 48-hour launch window (which saw **586 clones** and **230 unique cloners**), we received a wave of actionable feedback. Rather than rush a patch, we are taking the necessary time to ensure the next release is bulletproof.
-
-**Key areas being addressed during this extension:**
-
-1.  **Proxy & API Edge Cases:** Hardening the logic for the `SERPBASE_API_KEY` integration and fallback mechanisms. We want to ensure the dual-engine path (DuckDuckGo + Bing) and the API path work flawlessly under heavy load.
-2.  **Filtering Precision:** Adding deeper, more granular filters for country, language, and date ranges. We want the search results to be surgical, not noisy.
-3.  **CLI Stability:** Refining the automation pipeline so developers can rely on the exit codes and output formats (JSON, CSV, MD) for automated reconnaissance workflows.
-4.  **Community Requests:** Implementing some highly requested features that were submitted via GitHub issues.
-
----
-
 ## 📅 THE NEW TIMELINE
 
 | **Phase** | **Original Timeline** | **New Timeline** |
