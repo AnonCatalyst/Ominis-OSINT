@@ -90,8 +90,11 @@ def test_txt_and_markdown_include_the_summary(tmp_path):
     assert "timed out" in text
     markdown = written["md"].read_text(encoding="utf-8")
     assert markdown.startswith("# Ominis search: `Acme Corp`")
-    assert "github.com/acme" not in markdown  # profiles are counted, not linked
     assert "- Results: **2**" in markdown
+    # Detected profiles are listed with their platform and category.
+    assert "## Detected platforms" in markdown
+    assert "**GitHub**" in markdown
+    assert "github.com/acme" in markdown
 
 
 def test_unknown_format_is_rejected(tmp_path):

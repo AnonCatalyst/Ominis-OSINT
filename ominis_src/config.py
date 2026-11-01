@@ -14,6 +14,8 @@ import os
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from . import styxnet as styxnet_api
+
 DEFAULT_ENGINES = ("duckduckgo", "bing")
 SERP_ENGINES = ("duckduckgo", "bing", "serpbase")
 
@@ -28,6 +30,10 @@ def _split(value: str | None) -> tuple[str, ...]:
     if not value:
         return ()
     return tuple(part.strip() for part in value.split(",") if part.strip())
+
+
+def _env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def parse_date(value: str | None) -> str:
@@ -82,6 +88,12 @@ class Settings:
     timeout: float = 15.0
     verify_tls: bool = True
     user_agent: str = ""
+    #: Search through WinterGate's StyxNet service instead of scraping.
+    styxnet: bool = False
+    styxnet_key: str = ""
+    styxnet_endpoint: str = styxnet_api.DEFAULT_ENDPOINT
+    styxnet_engines: int = 35
+    styxnet_scopes: tuple[str, ...] = styxnet_api.DEFAULT_SCOPES
 
     def __post_init__(self) -> None:
         if not str(self.query or "").strip():
@@ -93,6 +105,19 @@ class Settings:
         unknown = [name for name in self.formats if name not in OUTPUT_FORMATS]
         if unknown:
             raise ValueError(f"unknown output format(s): {', '.join(unknown)}")
+        if self.styxnet:
+            if not 1 <= int(self.styxnet_engines) <= styxnet_api.MAX_ENGINES:
+                raise ValueError(
+                    "styxnet_engines must be between 1 and "
+                    f"{styxnet_api.MAX_ENGINES}")
+            if not self.styxnet_scopes:
+                raise ValueError("choose at least one StyxNet scope")
+            if not str(self.styxnet_key or "").strip():
+                raise ValueError(styxnet_api.ACCESS_NOTE)
+            if not str(self.styxnet_key).startswith("sgn_"):
+                raise ValueError(
+                    "that does not look like a StyxNet access key (expected "
+                    "sgn_...); " + styxnet_api.ACCESS_NOTE)
 
     @property
     def proxy_enabled(self) -> bool:
@@ -124,6 +149,14 @@ class Settings:
             "formats": _split(os.environ.get("OMINIS_FORMATS")) or ("txt", "json"),
             "timeout": float(os.environ.get("OMINIS_TIMEOUT", "15")),
             "user_agent": os.environ.get("OMINIS_USER_AGENT", ""),
+            "styxnet": _env_flag("OMINIS_STYXNET"),
+            "styxnet_key": styxnet_api.load_key(),
+            "styxnet_endpoint": os.environ.get(
+                "OMINIS_STYXNET_ENDPOINT", styxnet_api.DEFAULT_ENDPOINT),
+            "styxnet_engines": int(
+                os.environ.get("OMINIS_STYXNET_ENGINES", "35")),
+            "styxnet_scopes": _split(os.environ.get("OMINIS_STYXNET_SCOPES"))
+            or styxnet_api.DEFAULT_SCOPES,
         }
         base.update({key: value for key, value in overrides.items()
                      if value is not None})

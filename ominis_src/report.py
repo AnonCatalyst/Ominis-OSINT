@@ -59,13 +59,15 @@ class SearchReport:
                          .isoformat(timespec="seconds"))
     records: list[SearchRecord] = field(default_factory=list)
     mentions: dict[str, int] = field(default_factory=dict)
-    profiles: list[dict[str, str]] = field(default_factory=list)
+    profiles: list[dict[str, object]] = field(default_factory=list)
     engines: list[str] = field(default_factory=list)
     proxies_used: bool = False
+    styxnet: bool = False
+    styxnet_meta: dict[str, object] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
     def summary(self) -> dict[str, object]:
-        return {
+        summary: dict[str, object] = {
             "query": self.query,
             "started": self.started,
             "results": len(self.records),
@@ -73,8 +75,12 @@ class SearchReport:
             "profiles": len(self.profiles),
             "engines": self.engines,
             "proxies_used": self.proxies_used,
+            "styxnet": self.styxnet,
             "errors": self.errors,
         }
+        if self.styxnet_meta:
+            summary["styxnet_meta"] = self.styxnet_meta
+        return summary
 
 
 def write_json(report: SearchReport, path: Path) -> Path:
@@ -110,6 +116,21 @@ def write_txt(report: SearchReport, path: Path) -> Path:
     lines.append(f"Total results: {len(report.records)}")
     lines.append(f"Unique mentions: {len(report.mentions)}")
     lines.append(f"Social profiles: {len(report.profiles)}")
+    if report.styxnet:
+        lines.append("Source: StyxNet"
+                     + (f" ({report.styxnet_meta.get('engines')} engine(s), "
+                        f"{report.styxnet_meta.get('elapsed_ms')} ms)"
+                        if report.styxnet_meta else ""))
+    if report.profiles:
+        lines.append("")
+        lines.append("Detected platforms")
+        lines.append("-" * 30)
+        for profile in report.profiles:
+            category = str(profile.get("category") or "other")
+            confidence = profile.get("confidence")
+            suffix = f" (confidence {confidence})" if confidence else ""
+            lines.append(f"{profile.get('platform')} [{category}]{suffix}")
+            lines.append(f"  {profile.get('profile_url')}")
     if report.errors:
         lines.append("Errors:")
         lines.extend(f"  {error}" for error in report.errors)
@@ -129,9 +150,25 @@ def write_markdown(report: SearchReport, path: Path) -> Path:
     lines += ["", "## Summary", "",
               f"- Results: **{len(report.records)}**",
               f"- Social profiles: **{len(report.profiles)}**"]
+    if report.styxnet:
+        meta = report.styxnet_meta
+        source = "StyxNet"
+        if meta:
+            source += (f" ({meta.get('engines')} engine(s), "
+                       f"{meta.get('elapsed_ms')} ms)")
+        lines.append(f"- Source: **{source}**")
     if report.mentions:
         lines.append("- Mentions: " + ", ".join(
             f"`{name}` x{count}" for name, count in report.mentions.items()))
+    if report.profiles:
+        lines += ["", "## Detected platforms", ""]
+        for profile in report.profiles:
+            category = str(profile.get("category") or "other")
+            confidence = profile.get("confidence")
+            suffix = f" _(confidence {confidence})_" if confidence else ""
+            lines.append(
+                f"- **{profile.get('platform')}** `{category}` "
+                f"<{profile.get('profile_url')}>{suffix}")
     if report.errors:
         lines += ["", "## Errors", ""]
         lines.extend(f"- {error}" for error in report.errors)

@@ -1,5 +1,4 @@
 import re
-import os
 import urllib.parse
 import json
 import csv
@@ -7,12 +6,10 @@ import base64
 import logging
 import validators
 
+from . import platforms
+
 # Initialize logging
 logger = logging.getLogger(__name__)
-
-# Load social platform patterns from a JSON file
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'social_platforms.json'), "r", encoding="utf-8") as json_file:
-    social_platforms = json.load(json_file)
 
 
 def host_matches(url, domain):
@@ -75,38 +72,26 @@ def unwrap_bing_url(url):
 
 
 def find_social_profiles(url):
+    """Detect profile-shaped URLs across the full platform table.
+
+    The precise registry is tried first, then the wide table that earlier
+    releases shipped, then the generic forum check. The returned records keep
+    the original ``platform`` and ``profile_url`` keys and add ``category``
+    and ``confidence`` for ranking.
+    """
     if not isinstance(url, str):
         raise ValueError("URL must be a string")
 
-    profiles = []
-
-    for platform, pattern in social_platforms.items():
-        match = re.search(pattern, url)
-        if match:
-            profile_url = match.group(0)
-            profiles.append({"platform": platform, "profile_url": profile_url})
-
-    if is_potential_forum(url):
-        profiles.append({"platform": "Forum", "profile_url": url})
-
+    profiles = platforms.detect_profiles(url)
+    if not profiles and platforms.is_forum_url(url):
+        profiles = [{"platform": "Forum", "profile_url": url,
+                     "category": "forum", "confidence": 30}]
     return profiles
 
-# Define the is_potential_forum function
+
 def is_potential_forum(url):
-    forum_keywords = [
-        r"forum[s]?",
-        r"community",
-        r"discussion[s]?",
-        r"board[s]?",
-        r"chat",
-        r"hub"
-    ]
-    url_parts = urllib.parse.urlparse(url)
-    path = url_parts.path.lower()
-    subdomain = (url_parts.hostname or "").split('.')[0].lower()
-    path_keywords = any(re.search(keyword, path) for keyword in forum_keywords)
-    subdomain_keywords = any(re.search(keyword, subdomain) for keyword in forum_keywords)
-    return path_keywords or subdomain_keywords
+    """True for obvious forum/community URLs (whole words, not substrings)."""
+    return platforms.is_forum_url(url)
 
 # Define the extract_mentions function
 def extract_mentions(text, query):

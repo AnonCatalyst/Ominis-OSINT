@@ -93,6 +93,45 @@ def test_from_env_ignores_empty_overrides(monkeypatch):
     assert settings.language == "de"
 
 
+def test_styxnet_is_off_by_default_and_needs_a_key_when_enabled():
+    settings = config.Settings(query="acme")
+    assert settings.styxnet is False
+    assert settings.styxnet_engines == 35
+    assert settings.styxnet_endpoint == "https://wintergate.org/styxnet/api"
+
+    with pytest.raises(ValueError, match="needs a key"):
+        config.Settings(query="acme", styxnet=True)
+    with pytest.raises(ValueError, match="sgn_"):
+        config.Settings(query="acme", styxnet=True, styxnet_key="secret")
+
+    enabled = config.Settings(query="acme", styxnet=True,
+                              styxnet_key="sgn_test")
+    assert enabled.styxnet is True
+
+
+@pytest.mark.parametrize("kwargs,message", [
+    ({"styxnet_engines": 0}, "styxnet_engines"),
+    ({"styxnet_engines": 201}, "styxnet_engines"),
+    ({"styxnet_scopes": ()}, "scope"),
+])
+def test_styxnet_settings_validate_ranges(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        config.Settings(query="acme", styxnet=True, styxnet_key="sgn_test",
+                        **kwargs)
+
+
+def test_from_env_reads_styxnet_variables(monkeypatch):
+    monkeypatch.setenv("OMINIS_STYXNET", "1")
+    monkeypatch.setenv("OMINIS_STYXNET_KEY", "sgn_from_env")
+    monkeypatch.setenv("OMINIS_STYXNET_ENGINES", "12")
+    monkeypatch.setenv("OMINIS_STYXNET_SCOPES", "surface,deep")
+    settings = config.Settings.from_env("acme")
+    assert settings.styxnet is True
+    assert settings.styxnet_key == "sgn_from_env"
+    assert settings.styxnet_engines == 12
+    assert settings.styxnet_scopes == ("surface", "deep")
+
+
 def test_load_proxy_file_skips_comments_and_blanks(tmp_path):
     path = tmp_path / "proxies.txt"
     path.write_text("# comment\n\n127.0.0.1:8080\n  socks5://127.0.0.1:1080  # inline\n",

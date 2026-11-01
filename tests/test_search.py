@@ -117,6 +117,77 @@ async def test_profiles_are_collected_once(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_styxnet_replaces_the_local_engines(monkeypatch):
+    async def must_not_run(engine, settings, page):
+        raise AssertionError("local engines should not run")
+
+    def fake_styxnet(query, **kwargs):
+        assert kwargs["key"] == "sgn_test"
+        assert kwargs["max_engines"] == 9
+        return search.styxnet.StyxNetAnswer(
+            query=query,
+            results=[{"title": "Acme", "url": "https://acme.example/",
+                      "snippet": "official", "engine": "duckduckgo"}],
+            profiles=[{"platform": "GitHub", "profile_url":
+                       "https://github.com/acme", "category": "dev",
+                       "confidence": 90, "source": "styxnet"}],
+            engines_used=25, elapsed_ms=1200, archive_id="arc-1")
+
+    monkeypatch.setattr(engines, "fetch_engine", must_not_run)
+    monkeypatch.setattr(search.styxnet, "search", fake_styxnet)
+    outcome = await search.run(config.Settings(
+        query="acme", styxnet=True, styxnet_key="sgn_test",
+        styxnet_engines=9))
+
+    assert outcome.styxnet is True
+    assert outcome.engines == ["styxnet"]
+    assert [record.url for record in outcome.records] == ["https://acme.example/"]
+    assert outcome.records[0].engine == "styxnet"
+    assert outcome.styxnet_meta == {"engines": 25, "elapsed_ms": 1200,
+                                    "archive_id": "arc-1"}
+    assert outcome.profiles[0]["platform"] == "GitHub"
+    assert outcome.errors == []
+
+
+@pytest.mark.asyncio
+async def test_styxnet_profiles_deduplicate_against_result_detection(monkeypatch):
+    def fake_styxnet(query, **kwargs):
+        return search.styxnet.StyxNetAnswer(
+            query=query,
+            results=[{"title": "acme", "url": "https://x.com/acme",
+                      "snippet": "", "engine": "styxnet"}],
+            profiles=[{"platform": "X (Twitter)", "profile_url":
+                       "https://twitter.com/acme/", "category": "social",
+                       "confidence": 80, "source": "styxnet"}],
+            engines_used=3)
+
+    monkeypatch.setattr(search.styxnet, "search", fake_styxnet)
+    outcome = await search.run(config.Settings(
+        query="acme", styxnet=True, styxnet_key="sgn_test"))
+
+    assert len(outcome.profiles) == 1
+    assert outcome.profiles[0]["profile_url"] == "https://twitter.com/acme/"
+
+
+@pytest.mark.asyncio
+async def test_styxnet_failure_falls_back_to_local_search(monkeypatch):
+    async def fake_fetch(engine, settings, page):
+        return [_result("https://local.example/")] if page == 1 else []
+
+    def fake_styxnet(query, **kwargs):
+        raise search.styxnet.StyxNetRateLimited("wait", 8)
+
+    monkeypatch.setattr(engines, "fetch_engine", fake_fetch)
+    monkeypatch.setattr(search.styxnet, "search", fake_styxnet)
+    outcome = await search.run(config.Settings(
+        query="acme", styxnet=True, styxnet_key="sgn_test"))
+
+    assert outcome.styxnet is False
+    assert [record.url for record in outcome.records] == ["https://local.example/"]
+    assert outcome.errors and "styxnet" in outcome.errors[0].lower()
+
+
+@pytest.mark.asyncio
 async def test_write_uses_the_configured_formats(monkeypatch, tmp_path):
     async def fake_fetch(engine, settings, page):
         return [_result("https://a.example/")] if page == 1 else []

@@ -4,17 +4,60 @@ import pytest
 
 from ominis_src import cli, config, username
 
+_ENV_NAMES = (
+    "OMINIS_ENGINES", "OMINIS_LANGUAGE", "OMINIS_COUNTRY", "OMINIS_SINCE",
+    "OMINIS_UNTIL", "OMINIS_MAX_RESULTS", "OMINIS_PROXY_POOL",
+    "OMINIS_TIMEOUT", "OMINIS_FORMATS", "OMINIS_OUTPUT_DIR", "OMINIS_STYXNET",
+    "OMINIS_STYXNET_KEY", "OMINIS_STYXNET_ENDPOINT",
+    "OMINIS_STYXNET_ENGINES", "OMINIS_STYXNET_SCOPES", "SERPBASE_API_KEY",
+)
+
+
+@pytest.fixture(autouse=True)
+def clean_ominis_environment(monkeypatch):
+    for name in _ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+
 
 def test_search_parser_defaults_keep_proxies_off():
     args = cli.build_parser().parse_args(["search", "acme", "corp"])
     assert args.command == "search"
     assert args.query == ["acme", "corp"]
     assert args.engine == config.DEFAULT_ENGINES
-    assert args.proxy == []
+    assert args.proxy is None
     assert args.proxy_file is None
     assert args.format == ("txt", "json")
     assert args.max_results == 50
     assert args.no_verify is False
+
+
+def test_search_parser_styxnet_defaults_are_off():
+    args = cli.build_parser().parse_args(["search", "acme"])
+    assert args.styxnet is False
+    assert args.styxnet_key == ""
+    assert args.styxnet_engines == 35
+    assert args.styxnet_scopes == ("surface", "onion", "deep")
+
+
+def test_search_parser_accepts_styxnet_options():
+    args = cli.build_parser().parse_args([
+        "search", "acme", "--styxnet", "--styxnet-key", "sgn_test",
+        "--styxnet-engines", "12", "--styxnet-scopes", "surface,deep"])
+    assert args.styxnet is True
+    assert args.styxnet_key == "sgn_test"
+    assert args.styxnet_engines == 12
+    assert args.styxnet_scopes == ("surface", "deep")
+
+
+@pytest.mark.parametrize("argv", [
+    ["search", "acme", "--styxnet-engines", "0"],
+    ["search", "acme", "--styxnet-engines", "201"],
+    ["search", "acme", "--styxnet-scopes", "surface,clearnet"],
+])
+def test_bad_styxnet_arguments_exit_with_usage(argv):
+    with pytest.raises(SystemExit) as exc:
+        cli.build_parser().parse_args(argv)
+    assert exc.value.code == 2
 
 
 def test_search_parser_accepts_filters_and_repeated_proxies():
@@ -63,6 +106,71 @@ def test_gather_proxies_combines_arguments_and_file(tmp_path):
         "127.0.0.1:9090", "127.0.0.1:8080")
 
 
+def test_documented_environment_variables_are_defaults(monkeypatch, tmp_path):
+    monkeypatch.setenv("OMINIS_ENGINES", "bing")
+    monkeypatch.setenv("OMINIS_LANGUAGE", "en")
+    monkeypatch.setenv("OMINIS_COUNTRY", "US")
+    monkeypatch.setenv("OMINIS_SINCE", "2026-01-01")
+    monkeypatch.setenv("OMINIS_UNTIL", "2026-02-01")
+    monkeypatch.setenv("OMINIS_MAX_RESULTS", "7")
+    monkeypatch.setenv("OMINIS_TIMEOUT", "7.5")
+    monkeypatch.setenv("OMINIS_FORMATS", "json,md")
+    monkeypatch.setenv("OMINIS_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setenv("OMINIS_STYXNET", "1")
+    monkeypatch.setenv("OMINIS_STYXNET_ENGINES", "9")
+    monkeypatch.setenv("OMINIS_STYXNET_SCOPES", "surface")
+
+    args = cli.build_parser().parse_args(["search", "acme"])
+    assert args.engine == ("bing",)
+    assert args.lang == "en"
+    assert args.country == "US"
+    assert args.since == "2026-01-01"
+    assert args.until == "2026-02-01"
+    assert args.max_results == 7
+    assert args.timeout == 7.5
+    assert args.format == ("json", "md")
+    assert args.out == str(tmp_path)
+    assert args.styxnet is True
+    assert args.styxnet_engines == 9
+    assert args.styxnet_scopes == ("surface",)
+
+    # An explicit argument always wins over the environment.
+    args = cli.build_parser().parse_args([
+        "search", "acme", "--engine", "duckduckgo", "--max-results", "3",
+        "--no-styxnet", "--styxnet-engines", "4"])
+    assert args.engine == ("duckduckgo",)
+    assert args.max_results == 3
+    assert args.styxnet is False
+    assert args.styxnet_engines == 4
+
+
+def test_invalid_environment_values_fall_back_to_defaults(monkeypatch):
+    monkeypatch.setenv("OMINIS_ENGINES", "google")
+    monkeypatch.setenv("OMINIS_MAX_RESULTS", "many")
+    monkeypatch.setenv("OMINIS_TIMEOUT", "soon")
+    monkeypatch.setenv("OMINIS_FORMATS", "xml")
+    monkeypatch.setenv("OMINIS_STYXNET_ENGINES", "lots")
+    monkeypatch.setenv("OMINIS_STYXNET_SCOPES", "clearnet")
+    args = cli.build_parser().parse_args(["search", "acme"])
+    assert args.engine == config.DEFAULT_ENGINES
+    assert args.max_results == 50
+    assert args.timeout == 15.0
+    assert args.format == ("txt", "json")
+    assert args.styxnet_engines == 35
+    assert args.styxnet_scopes == ("surface", "onion", "deep")
+
+
+def test_proxy_pool_environment_is_used_only_without_cli_proxies(monkeypatch):
+    monkeypatch.setenv("OMINIS_PROXY_POOL",
+                       "127.0.0.1:8080, socks5://127.0.0.1:1080")
+    args = cli.build_parser().parse_args(["search", "acme"])
+    assert cli._gather_proxies(args) == (
+        "127.0.0.1:8080", "socks5://127.0.0.1:1080")
+    args = cli.build_parser().parse_args([
+        "search", "acme", "--proxy", "127.0.0.1:9090"])
+    assert cli._gather_proxies(args) == ("127.0.0.1:9090",)
+
+
 def test_no_command_prints_help_and_returns_usage(monkeypatch, capsys):
     monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     assert cli.main([]) == cli.EXIT_USAGE
@@ -100,6 +208,12 @@ def test_username_command_writes_a_report(monkeypatch, tmp_path, capsys):
     assert "1 match(es) out of 1 checked." in capsys.readouterr().out
 
 
+def test_print_hit_can_show_checked_platforms(capsys):
+    hit = username.Hit(username="acme", url="https://a.example/acme", status=404)
+    cli._print_hit(hit, show_all=True)
+    assert "[checked] https://a.example/acme - HTTP 404" in capsys.readouterr().out
+
+
 def test_search_command_returns_success_for_results(monkeypatch, tmp_path, capsys):
     from ominis_src import engines, report
 
@@ -117,6 +231,30 @@ def test_search_command_returns_success_for_results(monkeypatch, tmp_path, capsy
     code = cli.main(["search", "acme", "--quiet", "--out", str(tmp_path)])
     assert code == cli.EXIT_OK
     assert "1 result(s), 0 social profile(s)." in capsys.readouterr().out
+
+
+def test_search_command_uses_styxnet_settings(monkeypatch, tmp_path, capsys):
+    from ominis_src import report
+
+    captured = {}
+
+    async def fake_run(settings, progress):
+        captured["settings"] = settings
+        return report.SearchReport(query="acme")
+
+    monkeypatch.setattr(cli.search, "run", fake_run)
+    monkeypatch.setattr(cli.search, "write", lambda result, settings: {})
+    code = cli.main([
+        "search", "acme", "--quiet", "--out", str(tmp_path), "--styxnet",
+        "--styxnet-key", "sgn_test", "--styxnet-engines", "7",
+        "--styxnet-scopes", "surface"])
+    assert code == cli.EXIT_OK
+    settings = captured["settings"]
+    assert settings.styxnet is True
+    assert settings.styxnet_key == "sgn_test"
+    assert settings.styxnet_engines == 7
+    assert settings.styxnet_scopes == ("surface",)
+    assert "Searching via StyxNet" in capsys.readouterr().out
 
 
 def test_search_command_fails_only_when_every_engine_failed(monkeypatch, tmp_path):

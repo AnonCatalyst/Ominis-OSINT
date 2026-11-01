@@ -19,6 +19,14 @@ def _client(handler):
     ("https://example.com/@", "https://example.com/@acme"),
     ("https://example.com/user/", "https://example.com/user/acme"),
     ("https://example.com/u", "https://example.com/u/acme"),
+    ("https://example.com/profile?gamertag=",
+     "https://example.com/profile?gamertag=acme"),
+    ("https://example.com/search?u=", "https://example.com/search?u=acme"),
+    ("https://example.com/{username}", "https://example.com/acme"),
+    ("https://wikipedia.org/wiki/user:", "https://wikipedia.org/wiki/user:acme"),
+    ("https://pinboard.in/u:", "https://pinboard.in/u:acme"),
+    ("https://example.com/photodb/user?",
+     "https://example.com/photodb/user?acme"),
 ])
 def test_profile_url_handles_templates(base, expected):
     assert username.profile_url(base, "acme") == expected
@@ -65,6 +73,46 @@ async def test_check_one_falls_back_to_the_body():
     async with _client(handler) as client:
         hit = await username.check_one(client, "acme", "https://example.com/")
     assert hit.found
+
+
+@pytest.mark.asyncio
+async def test_check_one_ignores_substrings_and_canonical_links():
+    def handler(request):
+        return httpx.Response(
+            200,
+            text='<title>AcmeCorp news</title>'
+                 '<link rel="canonical" href="https://example.com/acme">'
+                 "<p>AcmeCorp is hiring</p>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://example.com/")
+    assert hit.found is False
+
+
+@pytest.mark.asyncio
+async def test_check_one_rejects_a_soft_404_with_a_canonical_link():
+    def handler(request):
+        return httpx.Response(
+            200,
+            text='<title>Profile</title>'
+                 '<link rel="canonical" href="https://example.com/acme">'
+                 "<p>User not found</p>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://example.com/")
+    assert hit.found is False
+
+
+@pytest.mark.asyncio
+async def test_check_one_does_not_treat_a_trailing_slash_as_a_redirect():
+    def handler(request):
+        return httpx.Response(
+            200, text="<title>Reddit</title>",
+            request=httpx.Request("GET", "https://example.com/acme/"))
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://example.com/")
+    assert hit.found is False
 
 
 @pytest.mark.asyncio
@@ -176,3 +224,34 @@ def test_write_produces_every_requested_format(tmp_path):
 def test_write_defaults_to_txt(tmp_path):
     written = username.write(_report(), tmp_path, ("txt",))
     assert Path(written["txt"]).name == "username-acme.txt"
+
+
+def test_write_keeps_dots_in_a_username(tmp_path):
+    outcome = username.UsernameReport(username="john.doe", hits=[])
+    written = username.write(outcome, tmp_path, ("txt", "json"))
+    assert Path(written["txt"]).name == "username-john.doe.txt"
+    assert Path(written["json"]).name == "username-john.doe.json"
+
+
+@pytest.mark.asyncio
+async def test_check_one_labels_an_unregistered_host():
+    def handler(request):
+        return httpx.Response(200, text="<title>acme</title>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://bionluk.com/")
+    assert hit.found
+    assert hit.platform == "Bionluk"
+    assert hit.category == ""
+
+
+@pytest.mark.asyncio
+async def test_check_one_labels_the_detected_platform():
+    def handler(request):
+        return httpx.Response(200, text="<title>acme</title>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://github.com/")
+    assert hit.platform == "GitHub"
+    assert hit.category == "dev"
+    assert hit.confidence == 90

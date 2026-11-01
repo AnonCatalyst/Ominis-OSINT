@@ -15,11 +15,17 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 > pages, but a search can still be intrusive. You are responsible for the law,
 > the site's terms, and the people whose data you touch.
 
-## Version 1.0
+## Version 1.1
 
 This is the full suite. It is published alongside the patched original
 (`v0.5.0`) so anyone relying on the old layout can keep it. Highlights:
 
+- **Optional StyxNet search.** `--styxnet` sends the query to WinterGate's
+  engine pool instead of scraping; local DuckDuckGo/Bing remain the fallback.
+- **Deep detection.** A curated platform registry runs first, then the original
+  wide `social_platforms.json` table (still shipped), then generic
+  Discourse/Fediverse/forum rules. False positives from substrings, reserved
+  words, and canonical links are rejected.
 - **Proxies are off by default.** No proxy list is downloaded or validated
   unless you ask for it.
 - **Real filters.** Language, country, and date ranges are passed to each
@@ -86,6 +92,39 @@ JSON body of `q`, `page`, `gl`, `hl`. Override the endpoint in
 into the query for this provider (`after:YYYY/MM/DD before:YYYY/MM/DD`), so the
 other engines keep their native date parameters.
 
+### StyxNet search (optional)
+
+`--styxnet` is the only StyxNet feature switch (pass `--no-styxnet` to override
+`OMINIS_STYXNET`). It sends the query to WinterGate's StyxNet service, which
+searches its own engine pool, and writes the same report shape. Nothing else in
+Ominis contacts StyxNet.
+
+```sh
+python ominis.py search "acme corp" --styxnet --max-results 20
+```
+
+Access is free during the preview but needs a key. Resolve it in this order:
+
+1. `--styxnet-key KEY`
+2. `STYXNET_ACCESS_KEY` in the environment
+3. `OMINIS_STYXNET_KEY` in the environment
+4. `~/.config/ominis/styxnet-key.txt`
+   (`%APPDATA%\ominis\styxnet-key.txt` on Windows)
+
+Request a key at <https://wintergate.org/styxnet/>. The key is never printed
+or written to a report; environment and file loading both mask it in output.
+
+`--styxnet-engines N` (default 35, maximum 200) caps one request, and
+`--styxnet-scopes` takes a comma-separated subset of `surface`, `onion`, and
+`deep` (default all three).
+
+StyxNet is shared, so the client enforces courtesy limits for every terminal
+on the machine: one search at a time, at least 10 seconds apart, 20 per rolling
+hour, and 100 per rolling day. The counters live under `~/.config/ominis/`
+and cannot be raised from the CLI. If StyxNet is rate limited, rejects the key,
+or errors, Ominis prints the reason and falls back to the local engines rather
+than returning nothing.
+
 ### Username search
 
 ```sh
@@ -94,7 +133,25 @@ python ominis.py username acme --format txt,json,md
 
 The platform list lives in `ominis_src/urls.txt`, one URL template per line.
 `--urls FILE` points at your own list. Checks run concurrently (default 8),
-each with its own timeout. `--all` records non-matches too.
+each with its own timeout. `--all` prints and records non-matches too. Every
+match is labelled with a platform and category where the registry knows it,
+and with a readable host label otherwise.
+
+### Platform detection
+
+Search reports classify result URLs in this order:
+
+1. A curated registry of common profile shapes (GitHub, X, Reddit, Mastodon,
+   forums, and so on), with category and confidence.
+2. The original wide table in `ominis_src/social_platforms.json`, matched on
+   an anchored host and the full path, so `github.com/features` is not a
+   profile.
+3. Generic Discourse, Fediverse, and forum rules.
+
+Reserved words (`about`, `login`, `search`, `features`, `settings`, …),
+substring matches, and links that only appear in a canonical tag do not count
+as profiles. Both original data files, `social_platforms.json` and `urls.txt`,
+remain part of the package.
 
 ### Proxies (opt-in)
 
@@ -152,6 +209,12 @@ than interpolating them into shell code, and does not use sudo or Tor.
 | `OMINIS_MAX_RESULTS` | total results to keep | `50` |
 | `OMINIS_PROXY_POOL` | comma-separated proxy endpoints | off |
 | `SERPBASE_API_KEY` | optional results API key | none |
+| `STYXNET_ACCESS_KEY` | StyxNet key; only used with `--styxnet` | none |
+| `OMINIS_STYXNET` | set truthy to enable StyxNet | off |
+| `OMINIS_STYXNET_KEY` | alternate StyxNet key variable | none |
+| `OMINIS_STYXNET_ENDPOINT` | StyxNet API base URL | WinterGate |
+| `OMINIS_STYXNET_ENGINES` | engines per StyxNet request | `35` |
+| `OMINIS_STYXNET_SCOPES` | `surface,onion,deep` | all |
 | `OMINIS_OUTPUT_DIR` | report directory | `Results` |
 | `OMINIS_FORMATS` | `txt,json,csv,md` | `txt,json` |
 | `OMINIS_TIMEOUT` | seconds per request | `15` |

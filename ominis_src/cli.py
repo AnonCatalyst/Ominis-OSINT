@@ -15,7 +15,8 @@ import os
 import sys
 from pathlib import Path
 
-from . import __version__, config, engines, report, search, username as username_mod
+from . import (__version__, config, engines, report, search, styxnet,
+               username as username_mod)
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -35,11 +36,79 @@ def _formats(value: str) -> tuple[str, ...]:
     return formats
 
 
+def _env(name: str, fallback: str = "") -> str:
+    return os.environ.get(name, fallback).strip()
+
+
+def _env_flag(name: str) -> bool:
+    return _env(name).lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, fallback: int) -> int:
+    try:
+        return int(_env(name) or fallback)
+    except ValueError:
+        return fallback
+
+
+def _env_float(name: str, fallback: float) -> float:
+    try:
+        return float(_env(name) or fallback)
+    except ValueError:
+        return fallback
+
+
+def _env_engines() -> tuple[str, ...]:
+    try:
+        return config.parse_engines(_env("OMINIS_ENGINES") or None)
+    except ValueError:
+        return config.DEFAULT_ENGINES
+
+
+def _env_formats() -> tuple[str, ...]:
+    try:
+        return _formats(_env("OMINIS_FORMATS") or "txt,json")
+    except argparse.ArgumentTypeError:
+        return ("txt", "json")
+
+
+def _env_scopes() -> tuple[str, ...]:
+    try:
+        return _styxnet_scopes(_env("OMINIS_STYXNET_SCOPES")
+                               or ",".join(styxnet.DEFAULT_SCOPES))
+    except argparse.ArgumentTypeError:
+        return styxnet.DEFAULT_SCOPES
+
+
+def _env_proxies() -> tuple[str, ...]:
+    return tuple(part.strip() for part in
+                 _env("OMINIS_PROXY_POOL").split(",") if part.strip())
+
+
 def _positive(value: str) -> int:
     number = int(value)
     if number < 1:
         raise argparse.ArgumentTypeError("must be at least 1")
     return number
+
+
+def _styxnet_engines(value: str) -> int:
+    number = int(value)
+    if not 1 <= number <= styxnet.MAX_ENGINES:
+        raise argparse.ArgumentTypeError(
+            f"must be between 1 and {styxnet.MAX_ENGINES}")
+    return number
+
+
+def _styxnet_scopes(value: str) -> tuple[str, ...]:
+    chosen = tuple(part.strip() for part in value.split(",") if part.strip())
+    unknown = [scope for scope in chosen
+               if scope not in styxnet.DEFAULT_SCOPES]
+    if unknown:
+        raise argparse.ArgumentTypeError(
+            f"unknown scope(s): {', '.join(unknown)} "
+            f"(choose from {', '.join(styxnet.DEFAULT_SCOPES)})")
+    return chosen or styxnet.DEFAULT_SCOPES
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -52,33 +121,56 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
 
     def common(p: argparse.ArgumentParser) -> None:
-        p.add_argument("--proxy", action="append", default=[], metavar="URL",
+        p.add_argument("--proxy", action="append", default=None, metavar="URL",
                        help="proxy endpoint (repeatable); off by default")
         p.add_argument("--proxy-file", metavar="FILE",
                        help="read proxy endpoints from a file")
-        p.add_argument("--timeout", type=float, default=15.0,
+        p.add_argument("--timeout", type=float,
+                       default=_env_float("OMINIS_TIMEOUT", 15.0),
                        help="seconds per request (default: 15)")
         p.add_argument("--no-verify", action="store_true",
                        help="skip TLS verification (not recommended)")
-        p.add_argument("--format", type=_formats, default=("txt", "json"),
+        p.add_argument("--format", type=_formats, default=_env_formats(),
                        help="comma-separated: txt,json,csv,md")
-        p.add_argument("--out", default="Results", metavar="DIR",
+        p.add_argument("--out", default=_env("OMINIS_OUTPUT_DIR") or "Results",
+                       metavar="DIR",
                        help="results directory (default: Results)")
 
     search_cmd = sub.add_parser("search", help="search the web for a query")
     search_cmd.add_argument("query", nargs="+", help="query text")
     search_cmd.add_argument("--engine", type=_engine_list,
-                            default=config.DEFAULT_ENGINES,
+                            default=_env_engines(),
                             help="comma-separated engines: duckduckgo,bing,serpbase")
-    search_cmd.add_argument("--lang", default="", metavar="CODE",
-                            help="language code, e.g. en")
-    search_cmd.add_argument("--country", default="", metavar="CODE",
-                            help="country code, e.g. US")
-    search_cmd.add_argument("--since", default="", metavar="YYYY-MM-DD")
-    search_cmd.add_argument("--until", default="", metavar="YYYY-MM-DD")
-    search_cmd.add_argument("--max-results", type=_positive, default=50)
+    search_cmd.add_argument("--lang", default=_env("OMINIS_LANGUAGE"),
+                            metavar="CODE", help="language code, e.g. en")
+    search_cmd.add_argument("--country", default=_env("OMINIS_COUNTRY"),
+                            metavar="CODE", help="country code, e.g. US")
+    search_cmd.add_argument("--since", default=_env("OMINIS_SINCE"),
+                            metavar="YYYY-MM-DD")
+    search_cmd.add_argument("--until", default=_env("OMINIS_UNTIL"),
+                            metavar="YYYY-MM-DD")
+    search_cmd.add_argument("--max-results", type=_positive,
+                            default=_env_int("OMINIS_MAX_RESULTS", 50))
     search_cmd.add_argument("--serpbase-key", default="",
                             help="SerpBase API key (or SERPBASE_API_KEY)")
+    search_cmd.add_argument(
+        "--styxnet", action=argparse.BooleanOptionalAction,
+        default=_env_flag("OMINIS_STYXNET"),
+        help="search through WinterGate's StyxNet engine pool instead of "
+             "scraping DuckDuckGo/Bing")
+    search_cmd.add_argument(
+        "--styxnet-key", default="", metavar="KEY",
+        help="StyxNet access key (or STYXNET_ACCESS_KEY, or "
+             "~/.config/ominis/styxnet-key.txt)")
+    search_cmd.add_argument(
+        "--styxnet-engines", type=_styxnet_engines,
+        default=_env_int("OMINIS_STYXNET_ENGINES", 35), metavar="N",
+        help=f"engines per StyxNet search, 1-{styxnet.MAX_ENGINES} "
+             "(default: 35)")
+    search_cmd.add_argument(
+        "--styxnet-scopes", type=_styxnet_scopes,
+        default=_env_scopes(), metavar="LIST",
+        help="comma-separated: surface,onion,deep (default: all)")
     search_cmd.add_argument("--quiet", action="store_true",
                             help="do not print each result")
     common(search_cmd)
@@ -106,9 +198,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _gather_proxies(args: argparse.Namespace) -> tuple[str, ...]:
-    entries = list(getattr(args, "proxy", []) or [])
-    if getattr(args, "proxy_file", None):
-        entries.extend(config.load_proxy_file(args.proxy_file))
+    entries = list(getattr(args, "proxy", None) or [])
+    proxy_file = getattr(args, "proxy_file", None)
+    if not entries and not proxy_file:
+        entries.extend(_env_proxies())
+    if proxy_file:
+        entries.extend(config.load_proxy_file(proxy_file))
     return tuple(entries)
 
 
@@ -135,9 +230,17 @@ def cmd_search(args: argparse.Namespace) -> int:
         formats=args.format,
         timeout=args.timeout,
         verify_tls=not args.no_verify,
+        styxnet=args.styxnet,
+        styxnet_key=styxnet.load_key(args.styxnet_key),
+        styxnet_endpoint=(_env("OMINIS_STYXNET_ENDPOINT")
+                          or styxnet.DEFAULT_ENDPOINT),
+        styxnet_engines=args.styxnet_engines,
+        styxnet_scopes=args.styxnet_scopes,
     )
     if settings.proxy_enabled:
         print(f"Using {len(settings.proxies)} proxy endpoint(s).")
+    if settings.styxnet:
+        print("Searching via StyxNet (WinterGate).")
     outcome = asyncio.run(search.run(
         settings, None if args.quiet else _print_record))
     paths = search.write(outcome, settings)
@@ -154,11 +257,15 @@ def cmd_username(args: argparse.Namespace) -> int:
     settings_proxies = _gather_proxies(args)
     platforms = (username_mod.load_platforms(args.urls)
                  if args.urls else None)
+
+    def progress(hit: username_mod.Hit) -> None:
+        _print_hit(hit, show_all=args.all)
+
     outcome = asyncio.run(username_mod.run(
         args.username, platforms, concurrency=args.concurrency,
         timeout=args.timeout, proxies=settings_proxies,
         verify_tls=not args.no_verify,
-        progress=None if args.quiet else _print_hit))
+        progress=None if args.quiet else progress))
     shown = outcome.hits if args.all else outcome.found
     if shown:
         print(f"{len(outcome.found)} match(es) out of {len(outcome.hits)} checked.")
@@ -170,11 +277,14 @@ def cmd_username(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _print_hit(hit: username_mod.Hit) -> None:
+def _print_hit(hit: username_mod.Hit, *, show_all: bool = False) -> None:
     if hit.found:
-        print(f"[found] {hit.url}")
+        label = f" ({hit.platform})" if hit.platform else ""
+        print(f"[found] {hit.url}{label}")
     elif hit.error:
         print(f"[error] {hit.url}: {hit.error}")
+    elif show_all:
+        print(f"[checked] {hit.url} - HTTP {hit.status or 'no response'}")
 
 
 def cmd_proxy(args: argparse.Namespace) -> int:
