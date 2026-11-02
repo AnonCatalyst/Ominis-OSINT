@@ -30,15 +30,18 @@ from typing import Iterable, Mapping
 #: table.
 RESERVED = frozenset({
     "about", "account", "accounts", "admin", "api", "apps", "blog", "business",
-    "careers", "category", "collections", "community", "company", "contact",
-    "create", "dashboard", "developers", "discover", "docs", "download",
-    "downloads", "edit", "explore", "features", "feed", "help", "home",
+    "careers", "category", "clips", "collections", "community", "company",
+    "contact", "create", "dashboard", "developers", "discover", "docs",
+    "download", "downloads", "edit", "events", "explore", "features", "feed",
+    "followers", "following", "friends", "gaming", "groups", "help", "home",
     "index", "investors", "jobs", "join", "legal", "login", "logout",
-    "marketplace", "messages", "new", "news", "notifications", "p", "partners",
-    "press", "pricing", "privacy", "products", "profile", "register", "rss",
-    "search", "security", "settings", "shop", "signin", "signup", "sitemap",
-    "sponsors", "status", "store", "support", "tags", "team", "terms",
-    "topics", "trending", "upload", "user", "users", "watch",
+    "marketplace", "media", "members", "messages", "new", "news",
+    "notifications", "p", "pages", "partners", "photos", "playlists", "press",
+    "pricing", "privacy", "products", "profile", "reels", "register", "rss",
+    "saved", "search", "security", "settings", "shop", "signin", "signup",
+    "sitemap", "sponsors", "status", "stories", "store", "support", "tags",
+    "team", "terms", "topics", "trending", "upload", "user", "users", "videos",
+    "watch",
 })
 
 _HANDLE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._@-]{0,63}")
@@ -643,12 +646,33 @@ FORUM_WORDS = frozenset({
     "board", "boards", "bbs", "discourse", "phpbb", "vbulletin", "xenforo",
 })
 _FORUM_PATH_WORDS = FORUM_WORDS | {
-    "topic", "topics", "thread", "threads", "post", "posts", "viewtopic",
+    "topic", "topics", "thread", "threads", "viewtopic",
     "showthread", "viewforum",
 }
 _DISCOURSE = re.compile(r"^/u/([A-Za-z0-9._-]{2,64})/?$")
 _FEDIVERSE = re.compile(
     r"^/@([A-Za-z0-9_][A-Za-z0-9_.-]{1,63})(?:@[A-Za-z0-9.-]+)?/?$")
+
+#: Profile subpages that are only a view of the parent channel/profile.
+#: Canonicalising them keeps ``youtube.com/@name/posts`` from being reported as
+#: a forum and from creating a second, near-duplicate profile.
+_YOUTUBE_SUBPAGE = re.compile(
+    r"^/(@[A-Za-z0-9._-]{3,30}|c/[A-Za-z0-9._-]+|user/[A-Za-z0-9._-]+|"
+    r"channel/UC[A-Za-z0-9_-]{20,})/"
+    r"(?:featured|videos|shorts|streams|playlists|community|about|posts|search)"
+    r"/?$", re.IGNORECASE)
+_TWITCH_SUBPAGE = re.compile(
+    r"^/([A-Za-z0-9_]{3,25})/"
+    r"(?:videos|about|schedule|clips|chat|followers|following|collections)"
+    r"/?$", re.IGNORECASE)
+
+#: Click-tracking query parameters, kept in sync with ``utils.TRACKING_PARAMS``
+#: without importing ``utils`` (it imports this module).
+_TRACKING_QUERY = frozenset({
+    "fbclid", "gclid", "dclid", "msclkid", "mc_cid", "mc_eid", "igshid",
+    "yclid", "twclid", "ttclid", "ref", "ref_src", "ref_url", "referrer",
+    "source", "spm",
+})
 
 
 def host_matches(url: str, domain: str) -> bool:
@@ -686,8 +710,14 @@ def profile_key(profile: Mapping[str, object]) -> str:
         host = "x.com"
     path = parts.path.rstrip("/").replace("/$", "/")
     key = f"{host}{path}"
-    if parts.query:
-        key += "?" + parts.query
+    pairs = [(name, value)
+             for name, value in urllib.parse.parse_qsl(parts.query,
+                                                       keep_blank_values=True)
+             if name.casefold() not in _TRACKING_QUERY
+             and not name.casefold().startswith("utm_")]
+    if pairs:
+        pairs.sort()
+        key += "?" + urllib.parse.urlencode(pairs)
     return key.casefold() or url.casefold()
 
 
@@ -713,7 +743,7 @@ def host_label(url: str) -> str:
 
 
 def _valid_handle(value: str) -> bool:
-    if not value or value.lower() in RESERVED:
+    if not value or value.casefold() in _CONTENT_WORDS:
         return False
     if _NUMERIC.fullmatch(value):
         return True
@@ -785,9 +815,62 @@ def detect_profiles(url: str) -> list[dict[str, object]]:
             "category": platform.category,
             "confidence": platform.confidence,
         }]
+    subpage = _known_subpage(host, path)
+    if subpage:
+        return [subpage]
     for profile in _fallbacks(host, path):
         return [profile]
     return _extended_profiles(host, path, parsed.query)
+
+
+def _known_subpage(host: str, path: str) -> dict[str, object] | None:
+    """Canonicalise a channel subpage back to its parent profile."""
+    if _host_ok(host, ("youtube.com",)):
+        match = _YOUTUBE_SUBPAGE.match(path)
+        if match:
+            segment = match.group(1)
+            handle = segment.rsplit("/", 1)[-1].lstrip("@")
+            if _valid_handle(handle):
+                return {
+                    "platform": "YouTube",
+                    "profile_url": f"https://{host}/{segment}",
+                    "category": "video",
+                    "confidence": 90,
+                }
+    if _host_ok(host, ("twitch.tv",)):
+        match = _TWITCH_SUBPAGE.match(path)
+        if match and _valid_handle(match.group(1)):
+            return {
+                "platform": "Twitch",
+                "profile_url": f"https://{host}/{match.group(1)}",
+                "category": "video",
+                "confidence": 85,
+            }
+    return None
+
+
+@lru_cache(maxsize=1)
+def _known_hosts() -> frozenset[str]:
+    hosts = {host for platform in PLATFORMS for host in platform.hosts}
+    for _, pattern, _ in _extended_table():
+        prefix = pattern.split("/", 1)[0].replace("\\.", ".")
+        hosts.add(prefix.casefold())
+    return frozenset(host for host in hosts if host)
+
+
+def is_known_host(url: str) -> bool:
+    """True when the URL belongs to a host the platform tables already know.
+
+    Known sites get their profile rules applied; the generic forum fallback
+    must not second-guess a platform page such as ``youtube.com/@x/posts``.
+    """
+    if not isinstance(url, str):
+        return False
+    host = (urllib.parse.urlsplit(url).hostname or "").lower().rstrip(".")
+    if not host:
+        return False
+    return any(host == known or host.endswith("." + known)
+               for known in _known_hosts())
 
 
 def _fallbacks(host: str, path: str) -> list[dict[str, object]]:

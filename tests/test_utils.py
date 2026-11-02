@@ -71,6 +71,34 @@ def test_extract_mentions_counts_case_insensitively():
     assert utils.extract_mentions("acme", ["acme", "other"]) == {"acme": 1, "other": 0}
 
 
+def test_extract_mentions_is_token_aware_for_phrases():
+    # The whole phrase is absent, but the individual names are still counted,
+    # and a name inside another word is not a mention.
+    counts = utils.extract_mentions(
+        "Acme is hiring; Corp is unrelated; acmecorp.example is a domain",
+        "acme corp")
+    assert counts["acme corp"] == 0
+    assert counts["acme"] == 1
+    assert counts["corp"] == 1
+
+
+def test_extract_mentions_ignores_word_internal_hits():
+    assert utils.extract_mentions("acmecorp and acme.", "acme") == {"acme": 1}
+
+
+def test_clean_text_decodes_double_escaped_entities():
+    assert utils.clean_text("acme&amp;#39;s page") == "acme's page"
+    assert utils.clean_text("  two\n lines  ") == "two lines"
+
+
+def test_canonical_url_strips_tracking_and_aliases():
+    left = "https://www.example.com/acme/?utm_source=x&fbclid=1"
+    right = "https://example.com/acme"
+    assert utils.canonical_url(left) == utils.canonical_url(right)
+    assert (utils.canonical_url("https://twitter.com/acme")
+            == utils.canonical_url("https://x.com/acme/"))
+
+
 def test_extract_mentions_rejects_empty_text():
     with pytest.raises(ValueError, match="non-empty"):
         utils.extract_mentions("", "acme")

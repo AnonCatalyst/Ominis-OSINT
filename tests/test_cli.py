@@ -194,17 +194,19 @@ def test_username_command_writes_a_report(monkeypatch, tmp_path, capsys):
 
     written = {}
 
-    def fake_write(report, out_dir, formats):
+    def fake_write(report, out_dir, formats, include_all=False):
         written["out_dir"] = out_dir
         written["formats"] = formats
+        written["include_all"] = include_all
         return {"txt": str(tmp_path / "username-acme.txt")}
 
     monkeypatch.setattr(cli.username_mod, "run", fake_run)
     monkeypatch.setattr(cli.username_mod, "write", fake_write)
     code = cli.main(["username", "acme", "--out", str(tmp_path),
-                     "--format", "json"])
+                     "--format", "json", "--all"])
     assert code == cli.EXIT_OK
-    assert written == {"out_dir": str(tmp_path), "formats": ("json",)}
+    assert written == {"out_dir": str(tmp_path), "formats": ("json",),
+                       "include_all": True}
     assert "1 match(es) out of 1 checked." in capsys.readouterr().out
 
 
@@ -212,6 +214,31 @@ def test_print_hit_can_show_checked_platforms(capsys):
     hit = username.Hit(username="acme", url="https://a.example/acme", status=404)
     cli._print_hit(hit, show_all=True)
     assert "[checked] https://a.example/acme - HTTP 404" in capsys.readouterr().out
+
+
+def test_configure_stdio_uses_utf8_and_replaces_unprintable_glyphs(monkeypatch):
+    class Stream:
+        def __init__(self):
+            self.calls = []
+
+        def reconfigure(self, **kwargs):
+            self.calls.append(kwargs)
+
+    out, err = Stream(), Stream()
+    monkeypatch.setattr(cli.sys, "stdout", out)
+    monkeypatch.setattr(cli.sys, "stderr", err)
+    cli._configure_stdio()
+    assert out.calls == [{"encoding": "utf-8", "errors": "replace"}]
+    assert err.calls == [{"encoding": "utf-8", "errors": "replace"}]
+
+
+def test_configure_stdio_tolerates_wrapped_streams(monkeypatch):
+    class Wrapped:
+        def reconfigure(self, **kwargs):
+            raise ValueError("not supported")
+
+    monkeypatch.setattr(cli.sys, "stdout", Wrapped())
+    cli._configure_stdio()  # must not raise
 
 
 def test_search_command_returns_success_for_results(monkeypatch, tmp_path, capsys):

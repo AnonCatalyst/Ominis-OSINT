@@ -175,12 +175,16 @@ def test_search_normalises_results_and_filters_dead_profiles(monkeypatch):
     assert [item["url"] for item in answer.results] == [
         "https://acme.example/", "https://other.example/"]
     assert answer.results[0]["snippet"] == "official"
+    # Dead profiles, login walls and search pages are dropped; the channel
+    # subpage is canonicalised to the channel; strongest lead first.
     assert [item["platform"] for item in answer.profiles] == [
-        "Reddit", "Gettr", "Xbox", "X (Twitter)", "GitHub"]
-    assert answer.profiles[0]["profile_url"] == (
+        "GitHub", "Reddit", "X (Twitter)", "Twitch", "Gettr", "Xbox"]
+    by_name = {item["platform"]: item for item in answer.profiles}
+    assert by_name["Reddit"]["profile_url"] == (
         "https://www.reddit.com/user/acme")
-    assert answer.profiles[1]["source"] == "styxnet"
-    assert answer.profiles[1]["confidence"] <= 60
+    assert by_name["Twitch"]["profile_url"] == "https://www.twitch.tv/acme"
+    assert by_name["Gettr"]["source"] == "styxnet"
+    assert by_name["Gettr"]["confidence"] <= 60
     assert seen["path"].endswith("/search")
     assert seen["key"] == "Bearer sgn_test"
     assert seen["body"]["query"] == "acme"

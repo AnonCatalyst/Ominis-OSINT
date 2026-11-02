@@ -24,13 +24,19 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
-## Version 1.1
+## Version 1.2
 
 This is the full suite. It is published alongside the patched original
 (`v0.5.0`) so anyone relying on the old layout can keep it. Highlights:
 
 - **Optional StyxNet search.** `--styxnet` sends the query to WinterGate's
   engine pool instead of scraping; local DuckDuckGo/Bing remain the fallback.
+- **Cleaner results.** Canonical URLs collapse duplicate engine hits, engines
+  are paged in lockstep, search plumbing is filtered out, and mentions are
+  counted as whole words (including multi-word queries).
+- **Better profile checks.** Username checks also read Open Graph metadata,
+  canonical links, and structured handle fields, so valid TikTok, Twitch, and
+  YouTube profiles are found without trusting a footer mention or a soft 404.
 - **Deep detection.** A curated platform registry runs first, then the original
   wide `social_platforms.json` table (still shipped), then generic
   Discourse/Fediverse/forum rules. False positives from substrings, reserved
@@ -47,6 +53,19 @@ This is the full suite. It is published alongside the patched original
 - **Reports in four formats.** `txt`, `json`, `csv`, and `md`, with file names
   that are safe for any query.
 - **A real CLI.** Scriptable subcommands, exit codes, and a `doctor` check.
+
+### See it run
+
+Every image below comes from a real run on Windows, generated from the JSON
+reports in [`docs/captures`](docs/captures). There is no mocked data.
+
+| | |
+|---|---|
+| [![Doctor](https://raw.githubusercontent.com/AnonCatalyst/Ominis-OSINT/main/docs/screenshots/01-doctor.png)](https://github.com/AnonCatalyst/Ominis-OSINT/blob/main/docs/screenshots/01-doctor.png) | [![Local search](https://raw.githubusercontent.com/AnonCatalyst/Ominis-OSINT/main/docs/screenshots/02-local-search.png)](https://github.com/AnonCatalyst/Ominis-OSINT/blob/main/docs/screenshots/02-local-search.png) |
+| [![Username search](https://raw.githubusercontent.com/AnonCatalyst/Ominis-OSINT/main/docs/screenshots/03-username-search.png)](https://github.com/AnonCatalyst/Ominis-OSINT/blob/main/docs/screenshots/03-username-search.png) | [![StyxNet](https://raw.githubusercontent.com/AnonCatalyst/Ominis-OSINT/main/docs/screenshots/04-styxnet.png)](https://github.com/AnonCatalyst/Ominis-OSINT/blob/main/docs/screenshots/04-styxnet.png) |
+
+Full gallery: [`docs/screenshots/index.html`](docs/screenshots/index.html).
+How each capture was produced: [`docs/captures/README.md`](docs/captures/README.md).
 
 ## Install
 
@@ -112,7 +131,12 @@ Ominis contacts StyxNet.
 python ominis.py search "acme corp" --styxnet --max-results 20
 ```
 
-Access is free during the preview but needs a key. Resolve it in this order:
+Access is free during the preview but needs a key. **Join the WinterGate
+Discord at <https://discord.gg/tu5CynxjZq> and request StyxNet access** from
+AnonCatalyst there; keys are issued by hand. Access is free for now and will
+stay free for a while as the user base grows.
+
+Resolve a key in this order:
 
 1. `--styxnet-key KEY`
 2. `STYXNET_ACCESS_KEY` in the environment
@@ -120,8 +144,9 @@ Access is free during the preview but needs a key. Resolve it in this order:
 4. `~/.config/ominis/styxnet-key.txt`
    (`%APPDATA%\ominis\styxnet-key.txt` on Windows)
 
-Request a key at <https://discord.gg/tu5CynxjZq>. The key is never printed
-or written to a report; environment and file loading both mask it in output.
+Request a key at <https://discord.gg/tu5CynxjZq>. The service is described at
+<https://wintergate.org/styxnet/>. The key is never printed or written to a
+report; environment and file loading both mask it in output.
 
 `--styxnet-engines N` (default 35, maximum 200) caps one request, and
 `--styxnet-scopes` takes a comma-separated subset of `surface`, `onion`, and

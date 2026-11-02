@@ -137,6 +137,37 @@ def test_discourse_and_fediverse_fallbacks():
     assert fediverse[0]["platform"] == "Fediverse (Mastodon-compatible)"
 
 
+@pytest.mark.parametrize("url,platform,expected", [
+    ("https://youtube.com/@acme/posts", "YouTube",
+     "https://youtube.com/@acme"),
+    ("https://www.youtube.com/@acme/videos", "YouTube",
+     "https://www.youtube.com/@acme"),
+    ("https://twitch.tv/acme/clips", "Twitch", "https://twitch.tv/acme"),
+    ("https://www.twitch.tv/acme/about", "Twitch",
+     "https://www.twitch.tv/acme"),
+])
+def test_channel_subpages_canonicalise_to_the_parent_profile(
+        url, platform, expected):
+    found = platforms.detect_profiles(url)
+    assert found[0]["platform"] == platform
+    assert found[0]["profile_url"] == expected
+
+
+def test_known_hosts_do_not_fall_back_to_a_generic_forum():
+    # ``github.com/community/thread`` looks like a forum by path word, but the
+    # host is already known, so the generic fallback must stay out of the way.
+    assert utils.find_social_profiles("https://github.com/community/thread") == []
+    youtube = utils.find_social_profiles("https://youtube.com/@acme/posts")
+    assert youtube[0]["platform"] == "YouTube"
+
+
+def test_profile_key_ignores_tracking_parameters():
+    left = platforms.profile_key({
+        "profile_url": "https://github.com/acme?utm_source=newsletter"})
+    right = platforms.profile_key({"profile_url": "https://github.com/acme"})
+    assert left == right
+
+
 def test_utils_delegates_and_keeps_the_original_shape():
     profiles = utils.find_social_profiles("https://github.com/acme")
     assert profiles[0]["platform"] == "GitHub"

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ominis 1.2.0 verification gallery</title>
+<style>
+  :root {
+    --ink: #dbe7ff;
+    --muted: #8fa3c8;
+    --line: #223352;
+    --panel: #0d1730;
+    --panel-2: #101d3b;
+    --glow: #58e1ff;
+    --ember: #ffb45c;
+    --green: #7ef0b2;
+    --bg: #070d1b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 36px; width: 1240px;
+    background:
+      radial-gradient(900px 500px at 85% -10%, #16305c 0%, transparent 60%),
+      radial-gradient(700px 400px at -10% 100%, #2a1533 0%, transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
+  }
+  .hero { padding: 18px 4px 30px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .mark {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(145deg, #1c3f78, #0b1730);
+    border: 1px solid #2d5a9e; display: grid; place-items: center;
+    color: var(--glow); font-weight: 700; letter-spacing: .5px;
+    box-shadow: 0 0 24px #1b4f8a66;
+  }
+  .brand small { color: var(--muted); display: block; letter-spacing: .12em;
+    text-transform: uppercase; font-size: 10px; }
+  .brand b { font-size: 19px; letter-spacing: .02em; }
+  h1 { font-size: 38px; line-height: 1.1; margin: 26px 0 10px;
+    letter-spacing: -.02em; }
+  h1 span { color: var(--glow); }
+  .hero p { color: var(--muted); max-width: 820px; margin: 0; }
+  .badges { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .badge { border: 1px solid var(--line); background: #0b1428;
+    padding: 5px 11px; border-radius: 999px; color: var(--muted);
+    font-size: 12px; }
+  .shot { padding: 34px 0 30px; border-bottom: 1px solid var(--line); }
+  .eyebrow { margin: 0 0 6px; color: var(--ember); font-size: 11px;
+    letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
+  h2 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.01em; }
+  .lede { margin: 0 0 18px; color: var(--muted); max-width: 900px; }
+  h3 { margin: 24px 0 9px; font-size: 13px; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--glow); }
+  .command { display: flex; gap: 10px; align-items: baseline;
+    background: #0a1326; border: 1px solid var(--line);
+    border-bottom: 0; border-radius: 12px 12px 0 0; padding: 12px 14px;
+    font: 13px/1.4 "Cascadia Code", Consolas, monospace; color: #bfd4ff;
+    overflow-wrap: anywhere; }
+  .prompt { color: var(--ember); font-weight: 700; }
+  .term { margin: 0; padding: 16px; overflow: hidden;
+    background: #070f21; border: 1px solid var(--line); border-radius: 0 0 12px 12px;
+    color: #c9d8f5; font: 12.5px/1.6 "Cascadia Code", Consolas, monospace;
+    white-space: pre-wrap; word-break: break-word; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin: 18px 0 4px; }
+  .metric { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 13px 15px; }
+  .metric .value { display: block; font-size: 25px; font-weight: 700;
+    color: var(--green); letter-spacing: -.02em; }
+  .metric .label { color: var(--muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .1em; }
+  .mentions { margin: 13px 0 2px; padding: 10px 13px; border-radius: 10px;
+    background: #0b1428; border: 1px solid var(--line); color: var(--muted);
+    font-size: 12.5px; }
+  .mentions b { color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 0;
+    font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font-size: 10.5px;
+    letter-spacing: .1em; text-transform: uppercase;
+    border-bottom: 1px solid var(--line); padding: 7px 9px; }
+  td { vertical-align: top; padding: 9px; border-bottom: 1px solid #17243f; }
+  tr:last-child td { border-bottom: 0; }
+  td.rank { color: var(--muted); width: 26px; }
+  td.confidence { width: 52px; color: var(--green); font-weight: 700;
+    text-align: right; }
+  .engine { display: inline-block; margin-right: 8px; padding: 1px 7px;
+    border-radius: 999px; background: #132849; color: var(--glow);
+    border: 1px solid #234a7d; font-size: 10px; text-transform: uppercase;
+    letter-spacing: .06em; }
+  strong { display: block; font-weight: 600;
+    font-family: "Segoe UI", "Leelawadee UI", "Cambria Math",
+      "Segoe UI Symbol", sans-serif; font-synthesis: none; }
+  a { color: #8db8ff; text-decoration: none; overflow-wrap: anywhere; }
+  .snippet { color: var(--muted); width: 46%; }
+  .category, .source, .reason { display: inline-block; margin-left: 7px;
+    padding: 1px 7px; border-radius: 999px; background: #0f1c36;
+    border: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+  .reason { margin-left: 0; color: var(--green); border-color: #1f5b45; }
+  .title { display: block; color: var(--muted); font-size: 11.5px;
+    margin-top: 2px; }
+  .source { color: var(--ember); border-color: #5a3a1e; }
+  .caption { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
+  .caption code, .lede code { color: var(--glow); font-family:
+    "Cascadia Code", Consolas, monospace; font-size: .92em; }
+  footer { padding: 26px 4px 4px; color: var(--muted); font-size: 12px;
+    display: flex; justify-content: space-between; gap: 20px; }
+  footer b { color: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <div class="brand">
+      <div class="mark">WI</div>
+      <div><b>WinterGate Intelligence Collective</b>
+        <small>Ominis OSINT &middot; verification gallery</small></div>
+    </div>
+    <h1>Ominis <span>1.2.0</span><br>real runs, real reports</h1>
+    <p>Every panel below is generated from the captured JSON reports in
+    <code>docs/captures</code>. No mocked data, no proxy pool, and no
+    credentials are included.</p>
+    <div class="badges">
+      <span class="badge">MIT licensed</span>
+      <span class="badge">Windows &middot; Python 3.12.10</span>
+      <span class="badge">Unsigned artifacts</span>
+      <span class="badge">wintergate.org</span>
+    </div>
+  </div>
+  
+<section class="shot" id="shot-doctor">
+  <header class="shot-head">
+    <p class="eyebrow">01 &middot; Install check</p>
+    <h2>Doctor</h2>
+    <p class="lede">Dependencies, TLS store, and a live HTTPS request.</p>
+  </header>
+  <div class="command"><span class="prompt">PS&gt;</span>
+    <code>python -m ominis_src.cli doctor</code></div>
+  <pre class="term"><code>Python: 3.12.10
+import httpx: ok
+import bs4: ok
+import colorama: ok
+import validators: ok
+TLS CA bundle: system store
+HTTPS check: HTTP 200</code></pre>
+</section>
+
+<section class="shot" id="shot-search">
+  <header class="shot-head">
+    <p class="eyebrow">02 &middot; Local search</p>
+    <h2>DuckDuckGo + Bing, deduplicated</h2>
+    <p class="lede">Canonical URLs merge duplicate engine hits; mentions are
+    counted as whole words; subpages collapse to the parent profile.</p>
+  </header>
+  <div class="command"><span class="prompt">PS&gt;</span>
+    <code>ominis search AnonCatalyst --max-results 20
+    --format txt,json,md</code></div>
+  <div class="metrics">
+    <div class="metric"><span class="value">10</span><span class="label">results</span></div>
+    <div class="metric"><span class="value">7</span><span class="label">profiles</span></div>
+    <div class="metric"><span class="value">off</span><span class="label">proxies</span></div>
+    <div class="metric"><span class="value">2</span><span class="label">engines</span></div>
+  </div>
+  <div class="mentions">Mentions:
+    <b>AnonCatalyst</b> &times;27
+  </div>
+  <h3>Top results</h3>
+  <table class="results"><thead><tr><th>#</th><th>Result</th><th>Snippet</th></tr></thead>
+  <tbody><tr><td class="rank">1</td><td><span class="engine">bing</span><strong>AnonCatalyst (Istoleyourbutter) · GitHub</strong><a href="https://github.com/AnonCatalyst">https://github.com/AnonCatalyst</a></td><td class="snippet">Istoleyourbutter AnonCatalyst Follow 🌐 - Osint Specialist 🏆 - Best Open Source Osint Tools! 💬 - Software Developer 182 followers · 9 … Read more</td></tr><tr><td class="rank">2</td><td><span class="engine">bing</span><strong>GitHub - AnonCatalyst /DepthSearch: DepthSearch is a deep web …</strong><a href="https://github.com/AnonCatalyst/DepthSearch/">https://github.com/AnonCatalyst/DepthSearch/</a></td><td class="snippet">DepthSearch is a deep web OSINT tool that enables powerful, anonymous searches across deep web search engines. It features …</td></tr><tr><td class="rank">3</td><td><span class="engine">bing</span><strong>Tony Kincaid / AnonCatalyst · GitLab</strong><a href="https://gitlab.com/AnonCatalyst/AnonCatalyst">https://gitlab.com/AnonCatalyst/AnonCatalyst</a></td><td class="snippet">Config files for my GitHub profile.</td></tr><tr><td class="rank">4</td><td><span class="engine">bing</span><strong>istoleyourbutter (@ AnonCatalyst ) / Posts / X</strong><a href="https://x.com/anoncatalyst">https://x.com/anoncatalyst</a></td><td class="snippet">Jun 26, 2024 · istoleyourbutter (@AnonCatalyst) - Posts - 🔍 OSINT Specialist | Uncovering hidden truths through open-source …</td></tr><tr><td class="rank">5</td><td><span class="engine">bing</span><strong>AnonCatalyst - YouTube</strong><a href="https://www.youtube.com/@AnonCatalyst">https://www.youtube.com/@AnonCatalyst</a></td><td class="snippet">AnonCatalyst 🔍 Uncovering the Digital World Welcome to AnonCatalyst! Your one-stop destination for mastering Open Source …</td></tr></tbody></table>
+  <h3>Detected profiles</h3>
+  <table class="profiles"><thead><tr><th>Platform</th><th>Profile</th><th>Conf.</th></tr></thead>
+  <tbody><tr><td><strong>GitHub</strong><span class="category">dev</span></td><td><a href="https://github.com/AnonCatalyst">https://github.com/AnonCatalyst</a></td><td class="confidence">90</td></tr><tr><td><strong>X (Twitter)</strong><span class="category">social</span></td><td><a href="https://x.com/anoncatalyst">https://x.com/anoncatalyst</a></td><td class="confidence">90</td></tr><tr><td><strong>YouTube</strong><span class="category">video</span></td><td><a href="https://www.youtube.com/@AnonCatalyst">https://www.youtube.com/@AnonCatalyst</a></td><td class="confidence">90</td></tr><tr><td><strong>Instagram</strong><span class="category">social</span></td><td><a href="https://www.instagram.com/anoncatalyst">https://www.instagram.com/anoncatalyst</a></td><td class="confidence">85</td></tr><tr><td><strong>Medium</strong><span class="category">blog</span></td><td><a href="https://medium.com/@hard2find.co.01">https://medium.com/@hard2find.co.01</a></td><td class="confidence">85</td></tr><tr><td><strong>GitLab</strong><span class="category">dev</span></td><td><a href="https://gitlab.com/AnonCatalyst">https://gitlab.com/AnonCatalyst</a></td><td class="confidence">80</td></tr><tr><td><strong>Linktree</strong><span class="category">links</span></td><td><a href="https://linktr.ee/istoleyourbutter">https://linktr.ee/istoleyourbutter</a></td><td class="confidence">75</td></tr></tbody></table>
+  <p class="caption">Report files: 10 results and
+  7 profiles, written as txt, json, and md.</p>
+</section>
+
+<section class="shot" id="shot-username">
+  <header class="shot-head">
+    <p class="eyebrow">03 &middot; Username search</p>
+    <h2>154 platform templates</h2>
+    <p class="lede">Metadata, canonical links, and structured handles are used
+    as positive signals; login walls and soft 404s are rejected.</p>
+  </header>
+  <div class="command"><span class="prompt">PS&gt;</span>
+    <code>ominis username AnonCatalyst --all --format txt,json,md,csv</code></div>
+  <div class="metrics">
+    <div class="metric"><span class="value">154</span><span class="label">checked</span></div>
+    <div class="metric"><span class="value">10</span><span class="label">matches</span></div>
+    <div class="metric"><span class="value">9</span><span class="label">errors</span></div>
+    <div class="metric"><span class="value">4</span><span class="label">formats</span></div>
+  </div>
+  <h3>Confirmed profiles</h3>
+  <table class="profiles"><thead><tr><th>Platform</th><th>Signal</th><th>Profile</th><th>Conf.</th></tr></thead>
+  <tbody><tr><td><strong>TikTok</strong></td><td><span class="reason">structured</span></td><td><a href="https://www.tiktok.com/@AnonCatalyst">https://www.tiktok.com/@AnonCatalyst</a><span class="title">TikTok - Make Your Day</span></td><td class="confidence">95</td></tr><tr><td><strong>GitHub</strong></td><td><span class="reason">metadata</span></td><td><a href="https://github.com/AnonCatalyst">https://github.com/AnonCatalyst</a><span class="title">AnonCatalyst (Istoleyourbutter) · GitHub</span></td><td class="confidence">90</td></tr><tr><td><strong>X (Twitter)</strong></td><td><span class="reason">metadata</span></td><td><a href="https://x.com/AnonCatalyst">https://x.com/AnonCatalyst</a><span class="title">istoleyourbutter (@AnonCatalyst) / X</span></td><td class="confidence">90</td></tr><tr><td><strong>YouTube</strong></td><td><span class="reason">metadata</span></td><td><a href="https://www.youtube.com/@AnonCatalyst">https://www.youtube.com/@AnonCatalyst</a><span class="title">AnonCatalyst - YouTube</span></td><td class="confidence">90</td></tr><tr><td><strong>PayPal.me</strong></td><td><span class="reason">redirect</span></td><td><a href="https://www.paypal.com/paypalme/AnonCatalyst">https://www.paypal.com/paypalme/AnonCatalyst</a><span class="title">PayPal.Me</span></td><td class="confidence">85</td></tr><tr><td><strong>Trakt</strong></td><td><span class="reason">redirect</span></td><td><a href="https://app.trakt.tv/profile/AnonCatalyst">https://app.trakt.tv/profile/AnonCatalyst</a><span class="title">Trakt Web: Profile</span></td><td class="confidence">85</td></tr><tr><td><strong>Twitch</strong></td><td><span class="reason">canonical</span></td><td><a href="https://www.twitch.tv/AnonCatalyst">https://www.twitch.tv/AnonCatalyst</a><span class="title">Twitch</span></td><td class="confidence">85</td></tr><tr><td><strong>GitLab</strong></td><td><span class="reason">body</span></td><td><a href="https://gitlab.com/AnonCatalyst">https://gitlab.com/AnonCatalyst</a><span class="title">Tony Kincaid · GitLab</span></td><td class="confidence">80</td></tr><tr><td><strong>Telegram</strong></td><td><span class="reason">metadata</span></td><td><a href="https://t.me/AnonCatalyst">https://t.me/AnonCatalyst</a><span class="title">Telegram: Contact @AnonCatalyst</span></td><td class="confidence">80</td></tr><tr><td><strong>Pbase</strong></td><td><span class="reason">body</span></td><td><a href="https://www.pbase.com/AnonCatalyst">https://www.pbase.com/AnonCatalyst</a><span class="title">PBase.com</span></td><td class="confidence"></td></tr></tbody></table>
+  <p class="caption">TikTok was confirmed from its structured <code>uniqueId</code>,
+  Twitch from its canonical URL, and YouTube through the modern
+  <code>@handle</code> template. A Russian-language soft 404 was rejected.</p>
+</section>
+
+<section class="shot" id="shot-styxnet">
+  <header class="shot-head">
+    <p class="eyebrow">04 &middot; StyxNet</p>
+    <h2>WinterGate engine pool</h2>
+    <p class="lede">One switch, <code>--styxnet</code>. Results and username
+    candidates keep the same report shape as local search.</p>
+  </header>
+  <div class="command"><span class="prompt">PS&gt;</span>
+    <code>ominis search AnonCatalyst --styxnet --max-results 15
+    --format txt,json,md</code></div>
+  <div class="metrics">
+    <div class="metric"><span class="value">7</span><span class="label">results</span></div>
+    <div class="metric"><span class="value">14</span><span class="label">profiles</span></div>
+    <div class="metric"><span class="value">16</span><span class="label">engines</span></div>
+    <div class="metric"><span class="value">15463 ms</span><span class="label">elapsed</span></div>
+  </div>
+  <h3>Top results</h3>
+  <table class="results"><thead><tr><th>#</th><th>Result</th><th>Snippet</th></tr></thead>
+  <tbody><tr><td class="rank">1</td><td><span class="engine">styxnet</span><strong>istoleyourbutter (@AnonCatalyst) / Posts / X</strong><a href="https://x.com/anoncatalyst">https://x.com/anoncatalyst</a></td><td class="snippet">Jun 26, 2024 · istoleyourbutter (@AnonCatalyst) - Posts - 🔍 OSINT Specialist | Uncovering hidden truths through open-source intelligence. Passionate about cy... | X (formerly Twitt</td></tr><tr><td class="rank">2</td><td><span class="engine">styxnet</span><strong>AnonCatalyst (Istoleyourbutter) · GitHub</strong><a href="https://github.com/AnonCatalyst">https://github.com/AnonCatalyst</a></td><td class="snippet">Istoleyourbutter AnonCatalyst Follow 🌐 - Osint Specialist 🏆 - Best Open Source Osint Tools! 💬 - Software Developer 182 followers · 9 following</td></tr><tr><td class="rank">3</td><td><span class="engine">styxnet</span><strong>GitHub - AnonCatalyst/DepthSearch: DepthSearch is a deep web ...</strong><a href="https://github.com/AnonCatalyst/DepthSearch/">https://github.com/AnonCatalyst/DepthSearch/</a></td><td class="snippet">DepthSearch is a powerful OSINT tool designed for conducting deep web searches. It enables users to search for specific keywords or strings across deep web search engines, providin</td></tr><tr><td class="rank">4</td><td><span class="engine">styxnet</span><strong>AnonCatalyst (@anoncatalyst) • Instagram photos and videos</strong><a href="https://www.instagram.com/anoncatalyst/">https://www.instagram.com/anoncatalyst/</a></td><td class="snippet">1,542 Followers, 73 Following, 144 Posts - AnonCatalyst (@anoncatalyst) on Instagram: &quot;♤ Osint Specialist ︎ Python3, Shell, HTML, JS, CSS, Kotlin Entirely Self Taught ♡ No deg</td></tr></tbody></table>
+  <h3>Ranked profiles</h3>
+  <table class="profiles"><thead><tr><th>Platform</th><th>Profile</th><th>Conf.</th></tr></thead>
+  <tbody><tr><td><strong>GitHub</strong><span class="category">dev</span></td><td><a href="https://github.com/AnonCatalyst">https://github.com/AnonCatalyst</a><span class="title">AnonCatalyst on GitHub</span><span class="source">styxnet</span></td><td class="confidence">90</td></tr><tr><td><strong>X (Twitter)</strong><span class="category">social</span></td><td><a href="https://x.com/anoncatalyst">https://x.com/anoncatalyst</a><span class="title">istoleyourbutter (@AnonCatalyst) / X</span><span class="source">styxnet</span></td><td class="confidence">90</td></tr><tr><td><strong>YouTube</strong><span class="category">video</span></td><td><a href="https://www.youtube.com/channel/UCJ6Tt-LeRdxxn4KBtMH3ZLQ">https://www.youtube.com/channel/UCJ6Tt-LeRdxxn4KBtMH3ZLQ</a></td><td class="confidence">90</td></tr><tr><td><strong>Instagram</strong><span class="category">social</span></td><td><a href="https://www.instagram.com/anoncatalyst">https://www.instagram.com/anoncatalyst</a></td><td class="confidence">85</td></tr><tr><td><strong>Medium</strong><span class="category">blog</span></td><td><a href="https://medium.com/@hard2find.co.01">https://medium.com/@hard2find.co.01</a></td><td class="confidence">85</td></tr><tr><td><strong>GitLab</strong><span class="category">dev</span></td><td><a href="https://gitlab.com/AnonCatalyst">https://gitlab.com/AnonCatalyst</a><span class="title">AnonCatalyst on GitLab</span><span class="source">styxnet</span></td><td class="confidence">80</td></tr><tr><td><strong>Linktree</strong><span class="category">links</span></td><td><a href="https://linktr.ee/anoncatalyst">https://linktr.ee/anoncatalyst</a><span class="title">AnonCatalyst | Linktree</span><span class="source">styxnet</span></td><td class="confidence">75</td></tr><tr><td><strong>Blur</strong><span class="category">crypto</span></td><td><a href="https://blur.io/anoncatalyst">https://blur.io/anoncatalyst</a><span class="source">styxnet</span></td><td class="confidence">60</td></tr><tr><td><strong>CashApp</strong><span class="category">finance</span></td><td><a href="https://cash.app/anoncatalyst">https://cash.app/anoncatalyst</a><span class="title">Pay $anoncatalyst on Cash App</span><span class="source">styxnet</span></td><td class="confidence">60</td></tr><tr><td><strong>Coders Rank</strong><span class="category">dev</span></td><td><a href="https://profile.codersrank.io/user/anoncatalyst">https://profile.codersrank.io/user/anoncatalyst</a><span class="title">anoncatalyst&#x27;s CodersRank profile</span><span class="source">styxnet</span></td><td class="confidence">60</td></tr><tr><td><strong>Dumpor</strong><span class="category">social</span></td><td><a href="https://dumpor.com/v/anoncatalyst">https://dumpor.com/v/anoncatalyst</a><span class="title">anoncatalyst Watch instagram stories and profile anonymous</span><span class="source">styxnet</span></td><td class="confidence">60</td></tr><tr><td><strong>Gettr</strong><span class="category">social</span></td><td><a href="https://gettr.com/user/anoncatalyst">https://gettr.com/user/anoncatalyst</a><span class="title">anoncatalyst on GETTR - Profile and Posts</span><span class="source">styxnet</span></td><td class="confidence">60</td></tr><tr><td><strong>Infosec.Exchange</strong><span class="category">social</span></td><td><a href="https://bird.makeup/users/anoncatalyst">https://bird.makeup/users/anoncatalyst</a><span class="title">anoncatalyst on Infosec.Exchange</span><span class="source">styxnet</span></td><td class="confidence">60</td></tr><tr><td><strong>Xbox</strong><span class="category">gaming</span></td><td><a href="https://xbox.com/en-US/play/user/anoncatalyst">https://xbox.com/en-US/play/user/anoncatalyst</a><span class="title">View anoncatalyst&#x27;s profile | Xbox Cloud Gaming on Xbox.com</span><span class="source">styxnet</span></td><td class="confidence">60</td></tr></tbody></table>
+  <p class="caption">Archive id <code>arc_811ae04c57e04e05</code>.
+  No proxies, no local engine fallback. StyxNet profiles are untrusted
+  candidates: the service label is capped at confidence 60 unless the local
+  registry recognises the URL shape.</p>
+</section>
+
+  <footer>
+    <span><b>Ominis OSINT 1.2.0</b> &middot; maintained by AnonCatalyst with
+    the WinterGate Intelligence Collective.</span>
+    <span>Captures: 2026-11-02 &middot; source reports in
+    <code>docs/captures</code></span>
+  </footer>
+</body>
+</html>

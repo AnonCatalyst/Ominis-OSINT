@@ -36,6 +36,26 @@ def _env_flag(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_int(name: str, fallback: int) -> int:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return fallback
+    try:
+        return int(value)
+    except ValueError:
+        raise ValueError(f"{name} must be a whole number, not {value!r}") from None
+
+
+def _env_float(name: str, fallback: float) -> float:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return fallback
+    try:
+        return float(value)
+    except ValueError:
+        raise ValueError(f"{name} must be a number, not {value!r}") from None
+
+
 def parse_date(value: str | None) -> str:
     """Return ``YYYY-MM-DD`` or raise ``ValueError``.
 
@@ -141,20 +161,19 @@ class Settings:
             "country": os.environ.get("OMINIS_COUNTRY", ""),
             "since": parse_date(os.environ.get("OMINIS_SINCE")),
             "until": parse_date(os.environ.get("OMINIS_UNTIL")),
-            "max_results": int(os.environ.get("OMINIS_MAX_RESULTS", "50")),
+            "max_results": _env_int("OMINIS_MAX_RESULTS", 50),
             "proxies": _split(os.environ.get("OMINIS_PROXY_POOL")),
             "serpbase_key": os.environ.get("SERPBASE_API_KEY", "")
             or os.environ.get("OMINIS_SERPBASE_KEY", ""),
             "out_dir": Path(os.environ.get("OMINIS_OUTPUT_DIR", "Results")),
             "formats": _split(os.environ.get("OMINIS_FORMATS")) or ("txt", "json"),
-            "timeout": float(os.environ.get("OMINIS_TIMEOUT", "15")),
+            "timeout": _env_float("OMINIS_TIMEOUT", 15.0),
             "user_agent": os.environ.get("OMINIS_USER_AGENT", ""),
             "styxnet": _env_flag("OMINIS_STYXNET"),
             "styxnet_key": styxnet_api.load_key(),
             "styxnet_endpoint": os.environ.get(
                 "OMINIS_STYXNET_ENDPOINT", styxnet_api.DEFAULT_ENDPOINT),
-            "styxnet_engines": int(
-                os.environ.get("OMINIS_STYXNET_ENGINES", "35")),
+            "styxnet_engines": _env_int("OMINIS_STYXNET_ENGINES", 35),
             "styxnet_scopes": _split(os.environ.get("OMINIS_STYXNET_SCOPES"))
             or styxnet_api.DEFAULT_SCOPES,
         }

@@ -16,7 +16,6 @@ is required. The key is never written to a report or printed:
 
 from __future__ import annotations
 
-import html
 import json
 import os
 import re
@@ -29,7 +28,7 @@ from typing import Any
 
 import httpx
 
-from . import platforms
+from . import platforms, utils
 
 DEFAULT_ENDPOINT = "https://wintergate.org/styxnet/api"
 SERVICE_URL = "https://wintergate.org/styxnet/"
@@ -55,10 +54,10 @@ ROTATION_NOTE = (
 )
 
 ACCESS_NOTE = (
-    "StyxNet access is free during the preview, but it needs a key. Request "
-    "one from AnonCatalyst at https://wintergate.org/styxnet/ and either pass "
-    "--styxnet-key, set STYXNET_ACCESS_KEY, or save the key to "
-    "~/.config/ominis/styxnet-key.txt."
+    "StyxNet access is free during the preview, but it needs a key. Join the "
+    "WinterGate Discord at https://discord.gg/tu5CynxjZq and request access "
+    "from AnonCatalyst, then pass --styxnet-key, set STYXNET_ACCESS_KEY, or "
+    "save the key to ~/.config/ominis/styxnet-key.txt."
 )
 
 #: Result titles that mean the platform answered with an error page.
@@ -67,6 +66,7 @@ _MISSING_MARKERS = (
     "does not exits", "doesn't exits", "no longer exists",
     "no longer available", "user not found", "profile not found",
     "community :: error", "invalid address", "invalid user", "not a valid",
+    "не существует", "не найден", "не найдена", "страница не найдена",
 )
 
 #: A live page can still be a login wall or a search page. These markers keep
@@ -152,8 +152,7 @@ def _check_key(key: str) -> str:
 
 def _text(value: Any) -> str:
     """Decode entities and strip invisible padding from remote text."""
-    return (html.unescape(str(value or ""))
-            .replace("\u200b", "").replace("\u200c", "").strip())
+    return utils.clean_text(value)
 
 
 def _number(value: Any) -> int:
@@ -261,7 +260,7 @@ def _credible_profile(item: dict[str, Any], query: str) -> dict[str, Any] | None
     confidence = _number(item.get("confidence")) or 40
     return {
         "platform": _text(item.get("platform")) or "StyxNet",
-        "profile_url": url,
+        "profile_url": utils.canonical_url(url) or url,
         "category": _text(item.get("category")) or "other",
         # The service's label is not independently verified, so cap it.
         "confidence": min(confidence, 60),
@@ -311,6 +310,12 @@ def _normalise_profiles(payload: Any,
             continue
         seen.add(key)
         profiles.append(profile)
+    # A caller that prints the answer directly should see the strongest lead
+    # first, exactly like the search report does.
+    profiles.sort(key=lambda profile: (
+        -_number(profile.get("confidence")),
+        str(profile.get("platform") or "").casefold(),
+        str(profile.get("profile_url") or "")))
     return profiles
 
 

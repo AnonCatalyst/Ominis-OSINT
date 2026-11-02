@@ -255,3 +255,128 @@ async def test_check_one_labels_the_detected_platform():
     assert hit.platform == "GitHub"
     assert hit.category == "dev"
     assert hit.confidence == 90
+
+
+@pytest.mark.asyncio
+async def test_check_one_uses_open_graph_metadata():
+    def handler(request):
+        return httpx.Response(
+            200,
+            text='<title>Profile</title>'
+                 '<meta property="og:title" content="Acme on Example">')
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://example.com/")
+    assert hit.found
+    assert hit.match == "metadata"
+
+
+@pytest.mark.asyncio
+async def test_check_one_uses_a_structured_handle():
+    def handler(request):
+        return httpx.Response(
+            200,
+            text='<title>TikTok</title><script>window.__DATA__='
+                 '{"uniqueId":"acme","nickname":"Acme"}</script>')
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://tiktok.com/")
+    assert hit.found
+    assert hit.match == "structured"
+
+
+@pytest.mark.asyncio
+async def test_check_one_trusts_twitch_canonical_url():
+    def handler(request):
+        return httpx.Response(
+            200,
+            text='<title>Twitch</title>'
+                 '<link rel="canonical" href="https://www.twitch.tv/acme">')
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://twitch.tv/")
+    assert hit.found
+    assert hit.match == "canonical"
+
+
+@pytest.mark.asyncio
+async def test_check_one_ignores_twitch_not_found_without_a_canonical():
+    def handler(request):
+        return httpx.Response(200, text="<title>Twitch</title><p>Not here</p>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://twitch.tv/")
+    assert hit.found is False
+
+
+@pytest.mark.asyncio
+async def test_check_one_rejects_an_embedded_404():
+    # Pinterest returns HTTP 200 for a missing profile and still includes the
+    # requested username in its JSON state.
+    def handler(request):
+        return httpx.Response(
+            200, text='<title>Pinterest</title>'
+                      '<script>{"username":"acme","httpStatus":404}</script>')
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://pinterest.com/")
+    assert hit.found is False
+
+
+@pytest.mark.asyncio
+async def test_check_one_rejects_a_localised_missing_title():
+    def handler(request):
+        return httpx.Response(
+            200,
+            text="<title>Warface | Профиль игрока acme не существует</title>"
+                 "<p>acme</p>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://example.com/")
+    assert hit.found is False
+
+
+def test_error_text_is_never_blank():
+    text = username._error_text(httpx.ConnectTimeout(""))
+    assert text.startswith("ConnectTimeout:")
+    assert "timed out" in text
+
+
+@pytest.mark.asyncio
+async def test_check_one_reads_a_title_beyond_the_old_scan_window():
+    padding = "<script>" + ("x" * 300_000) + "</script>"
+
+    def handler(request):
+        return httpx.Response(
+            200, text=f"<html><head>{padding}<title>acme on YouTube</title>"
+                      "</head></html>")
+
+    async with _client(handler) as client:
+        hit = await username.check_one(client, "acme", "https://youtube.com/")
+    assert hit.found
+    assert hit.title == "acme on YouTube"
+
+
+@pytest.mark.asyncio
+async def test_run_dedupes_templates_and_puts_matches_first(monkeypatch):
+    _FakeClient.instances = []
+    _FakeClient.bodies = {"https://b.example/acme": "<title>acme</title>"}
+    monkeypatch.setattr(username.httpx, "AsyncClient", _FakeClient)
+    outcome = await username.run(
+        "acme", ["https://a.example/", "https://b.example/",
+                 "https://a.example/"])
+    assert len(outcome.hits) == 2
+    assert outcome.hits[0].found
+    assert outcome.hits[0].url == "https://b.example/acme"
+
+
+def test_write_can_include_every_checked_url(tmp_path):
+    written = username.write(_report(), tmp_path, ("json", "txt", "md"),
+                             include_all=True)
+    payload = json.loads(Path(written["json"]).read_text(encoding="utf-8"))
+    assert len(payload["hits"]) == 2
+    text = Path(written["txt"]).read_text(encoding="utf-8")
+    assert "All checked" in text
+    assert "https://b.example/acme" in text
+    markdown = Path(written["md"]).read_text(encoding="utf-8")
+    assert "## All checked" in markdown

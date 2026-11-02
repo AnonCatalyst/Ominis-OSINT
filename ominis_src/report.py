@@ -131,6 +131,12 @@ def write_txt(report: SearchReport, path: Path) -> Path:
             suffix = f" (confidence {confidence})" if confidence else ""
             lines.append(f"{profile.get('platform')} [{category}]{suffix}")
             lines.append(f"  {profile.get('profile_url')}")
+            title = str(profile.get("title") or "")
+            if title:
+                lines.append(f"  Title: {title}")
+            source = str(profile.get("source") or "")
+            if source:
+                lines.append(f"  Source: {source}")
     if report.errors:
         lines.append("Errors:")
         lines.extend(f"  {error}" for error in report.errors)
@@ -166,9 +172,18 @@ def write_markdown(report: SearchReport, path: Path) -> Path:
             category = str(profile.get("category") or "other")
             confidence = profile.get("confidence")
             suffix = f" _(confidence {confidence})_" if confidence else ""
-            lines.append(
-                f"- **{profile.get('platform')}** `{category}` "
-                f"<{profile.get('profile_url')}>{suffix}")
+            title = str(profile.get("title") or "")
+            source = str(profile.get("source") or "")
+            label = f" ({source})" if source else ""
+            url = profile.get("profile_url")
+            if title:
+                lines.append(
+                    f"- **{profile.get('platform')}** `{category}` "
+                    f"[{title}]({url}){label}{suffix}")
+            else:
+                lines.append(
+                    f"- **{profile.get('platform')}** `{category}` "
+                    f"<{url}>{label}{suffix}")
     if report.errors:
         lines += ["", "## Errors", ""]
         lines.extend(f"- {error}" for error in report.errors)

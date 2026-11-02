@@ -1,5 +1,6 @@
 import re
 import urllib.parse
+import html
 import json
 import csv
 import base64
@@ -10,6 +11,68 @@ from . import platforms
 
 # Initialize logging
 logger = logging.getLogger(__name__)
+
+#: Query parameters that track a click rather than identify a resource.
+#: Removing them lets the same result from two engines de-duplicate.
+TRACKING_PARAMS = frozenset({
+    "fbclid", "gclid", "dclid", "msclkid", "mc_cid", "mc_eid", "igshid",
+    "yclid", "twclid", "ttclid", "wickedid", "vero_id", "oly_enc_id",
+    "oly_anon_id", "ref", "ref_src", "ref_url", "referrer", "source",
+    "spm", "scid", "elqTrackId", "elqTrack", "assetType", "assetId",
+})
+
+
+def clean_text(value):
+    """Decode escaped entities and normalise remote text for a report.
+
+    Search snippets occasionally arrive double-escaped (``&amp;#39;``), so a
+    single ``html.unescape`` left the raw entity visible. Decode until the text
+    stops changing, then collapse the whitespace the decode exposed.
+    """
+    text = str(value or "")
+    for _ in range(3):
+        decoded = html.unescape(text)
+        if decoded == text:
+            break
+        text = decoded
+    for invisible in ("\u200b", "\u200c", "\u200d", "\ufeff"):
+        text = text.replace(invisible, "")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def canonical_url(url):
+    """A stable key for de-duplicating the same search result.
+
+    ``http``/``https``, ``www.``, a trailing slash, the fragment and common
+    click-tracking parameters do not make a different page. Path case is kept
+    because some sites treat it as significant.
+    """
+    if not isinstance(url, str) or not url.strip():
+        return ""
+    parsed = urllib.parse.urlsplit(url.strip())
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if not host:
+        return url.strip().casefold()
+    if host.startswith("www."):
+        host = host[4:]
+    if host == "twitter.com":
+        host = "x.com"
+    port = parsed.port
+    if port and port not in (80, 443):
+        host = f"{host}:{port}"
+    path = re.sub(r"/{2,}", "/", parsed.path or "/")
+    if path != "/":
+        path = path.rstrip("/")
+    pairs = []
+    for key, value in urllib.parse.parse_qsl(parsed.query,
+                                             keep_blank_values=True):
+        folded = key.casefold()
+        if folded in TRACKING_PARAMS or folded.startswith("utm_"):
+            continue
+        pairs.append((key, value))
+    pairs.sort()
+    query = urllib.parse.urlencode(pairs)
+    return f"https://{host}{path}" + (f"?{query}" if query else "")
 
 
 def host_matches(url, domain):
@@ -83,7 +146,8 @@ def find_social_profiles(url):
         raise ValueError("URL must be a string")
 
     profiles = platforms.detect_profiles(url)
-    if not profiles and platforms.is_forum_url(url):
+    if (not profiles and not platforms.is_known_host(url)
+            and platforms.is_forum_url(url)):
         profiles = [{"platform": "Forum", "profile_url": url,
                      "category": "forum", "confidence": 30}]
     return profiles
@@ -94,16 +158,49 @@ def is_potential_forum(url):
     return platforms.is_forum_url(url)
 
 # Define the extract_mentions function
+def _count_phrase(text, phrase):
+    """Count whole-word occurrences of a phrase, ignoring word-internal hits.
+
+    ``acme`` in ``acmecorp`` is not a mention, and a two-word query should
+    still match when the page breaks the phrase across a line. Word
+    boundaries are applied only when the phrase starts or ends with a letter
+    or digit, so ``C++`` keeps working.
+    """
+    phrase = re.sub(r"\s+", " ", phrase.strip())
+    if not phrase:
+        return 0
+    pattern = re.escape(phrase).replace(r"\ ", r"\s+")
+    if phrase[0].isalnum() or phrase[0] == "_":
+        pattern = r"(?<![A-Za-z0-9_])" + pattern
+    if phrase[-1].isalnum() or phrase[-1] == "_":
+        pattern = pattern + r"(?![A-Za-z0-9_])"
+    return len(re.findall(pattern, text, re.IGNORECASE))
+
+
 def extract_mentions(text, query):
     if not isinstance(text, str) or not text:
         raise ValueError("Input 'text' must be a non-empty string.")
 
     if isinstance(query, str):
-        query = [query]
+        queries = [query]
     elif not isinstance(query, list) or not all(isinstance(q, str) for q in query):
         raise ValueError("Input 'query' must be a string or a list of strings.")
+    else:
+        queries = query
 
-    mention_count = {q: len(re.findall(re.escape(q), text, re.IGNORECASE)) for q in query}
+    mention_count = {q: _count_phrase(text, q) for q in queries}
+    # A phrase query such as "acme corp" should still show which names were
+    # actually seen. Adding the individual words keeps a multi-word search
+    # from reporting zero mentions while every result names one of its words.
+    for q in queries:
+        words = [word.strip(".,;:!?()[]{}\"'")
+                 for word in re.split(r"\s+", q) if word.strip()]
+        if len(words) < 2:
+            continue
+        for word in words:
+            if len(word) < 3:
+                continue
+            mention_count.setdefault(word, _count_phrase(text, word))
     return mention_count
 
 # Additional Features
@@ -115,13 +212,13 @@ def validate_url(url):
 
 # Function to save results in JSON format
 def save_results_json(filename, data):
-    with open(filename, 'w') as file:
-        json.dump(data, file, indent=4)
+    with open(filename, 'w', encoding='utf-8') as file:
+        json.dump(data, file, indent=4, ensure_ascii=False)
 
 # Function to save results in CSV format
 def save_results_csv(filename, data):
     if data:
-        with open(filename, 'w', newline='') as file:
+        with open(filename, 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=data[0].keys())
             writer.writeheader()
             writer.writerows(data)

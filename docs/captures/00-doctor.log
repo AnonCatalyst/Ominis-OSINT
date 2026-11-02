@@ -1,0 +1,7 @@
+Python: 3.12.10
+import httpx: ok
+import bs4: ok
+import colorama: ok
+import validators: ok
+TLS CA bundle: system store
+HTTPS check: HTTP 200

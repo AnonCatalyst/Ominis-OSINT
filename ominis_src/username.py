@@ -20,25 +20,30 @@ from typing import Callable, Iterable
 
 import httpx
 
-from . import config, platforms, report
+from . import config, platforms, report, utils
 
 DEFAULT_PLATFORMS = Path(__file__).with_name("urls.txt")
 DEFAULT_USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/126.0 Safari/537.36")
 _SAFE_NAME = re.compile(r"[A-Za-z0-9._-]{1,64}")
-MAX_BODY_SCAN = 200_000
+#: YouTube and Pinterest put hundreds of kilobytes of script before the
+#: <title> tag. A 200 KB cap silently missed every YouTube profile.
+MAX_BODY_SCAN = 2_000_000
 #: Titles that say the account is gone, even when they return HTTP 200.
 _MISSING_MARKERS = (
     "404", "not found", "page not found", "doesn't exist", "does not exist",
     "user not found", "profile not found", "no longer available",
+    # The platform list covers regional sites; a Russian-language "profile
+    # does not exist" title was being reported as a live profile.
+    "не существует", "не найден", "не найдена", "страница не найдена",
 )
 #: Visible body text that means the same thing. A bare "404" is not included
 #: because it also appears in scripts and footers on real profile pages.
 _BODY_MISSING_MARKERS = (
     "user not found", "profile not found", "page not found",
     "account not found", "doesn't exist", "does not exist",
-    "no longer available",
+    "no longer available", "не существует", "не найден", "не найдена",
 )
 _HANDLE_CHARS = "A-Za-z0-9_.-"
 
@@ -51,6 +56,7 @@ class Hit:
     title: str = ""
     description: str = ""
     matched: bool = False
+    match: str = ""
     error: str = ""
     platform: str = ""
     category: str = ""
@@ -60,6 +66,37 @@ class Hit:
     @property
     def found(self) -> bool:
         return self.matched and not self.error
+
+
+@dataclass
+class PageInfo:
+    """What the page head says about the profile.
+
+    Only metadata is read here; a body-wide search happens separately and only
+    when the head does not already answer. This keeps a footer mention or a
+    canonical link from turning a soft 404 into a "found".
+    """
+
+    title: str = ""
+    description: str = ""
+    og_title: str = ""
+    og_description: str = ""
+    canonical: str = ""
+    og_url: str = ""
+    handles: tuple[str, ...] = ()
+    visible: str = ""
+    embedded_missing: bool = False
+
+
+_EMBEDDED_MISSING = re.compile(
+    r'"(?:httpStatus|status)"\s*:\s*404|"httpErrorPage"', re.IGNORECASE)
+_HANDLE_KEYS = (
+    "uniqueId", "vanityChannelUrl", "canonicalBaseUrl", "alternateName",
+    "username", "login", "screen_name",
+)
+_HANDLE_JSON = re.compile(
+    r'"(?:' + "|".join(_HANDLE_KEYS) + r')"\s*:\s*"([^"]{1,200})"',
+    re.IGNORECASE)
 
 
 @dataclass
@@ -84,7 +121,9 @@ def profile_url(base: str, username: str) -> str:
         raise ValueError("empty platform URL")
     if "{username}" in base:
         return base.replace("{username}", username)
-    if username.lower() in base.lower():
+    parsed = urllib.parse.urlsplit(base)
+    segments = [part for part in parsed.path.split("/") if part]
+    if segments and segments[-1].lstrip("@~") == username:
         return base
     # Query templates such as ``?gamertag=`` and ``&u=`` take the handle
     # directly; adding a slash would produce ``?gamertag=/acme``.
@@ -95,22 +134,73 @@ def profile_url(base: str, username: str) -> str:
 
 def load_platforms(path: str | Path = DEFAULT_PLATFORMS) -> list[str]:
     lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
-    return [line.strip() for line in lines
-            if line.strip() and not line.lstrip().startswith("#")]
+    templates: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        template = line.strip()
+        if not template or template.startswith("#"):
+            continue
+        if template in seen:
+            continue
+        seen.add(template)
+        templates.append(template)
+    return templates
 
 
 def _text(node) -> str:
-    return node.get_text(" ", strip=True) if node else ""
+    return utils.clean_text(node.get_text(" ", strip=True)) if node else ""
 
 
-def parse_page(body: str, username: str) -> tuple[str, str]:
+def _meta(soup, attribute: str, value: str) -> str:
+    node = soup.find("meta", attrs={attribute: value})
+    return utils.clean_text(node.get("content", "")) if node else ""
+
+
+def _handle_from_value(value: str) -> str:
+    """Reduce ``/@name``, ``https://host/@name`` and ``@name`` to ``name``."""
+    text = utils.clean_text(value).strip("\"'")
+    if not text:
+        return ""
+    text = text.split("?", 1)[0].split("#", 1)[0]
+    if "/" in text:
+        text = [part for part in text.split("/") if part][-1]
+    return text.lstrip("@~").strip()
+
+
+def parse_page_info(body: str) -> PageInfo:
+    """Read the page head once and keep the signals a profile check needs."""
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(body[:MAX_BODY_SCAN], "html.parser")
     title = _text(soup.title)
-    node = soup.find("meta", attrs={"name": "description"})
-    description = str(node.get("content", "")) if node else ""
-    return title, description
+    description = _meta(soup, "name", "description")
+    og_title = _meta(soup, "property", "og:title") or _meta(
+        soup, "name", "twitter:title")
+    og_description = (_meta(soup, "property", "og:description")
+                      or _meta(soup, "name", "twitter:description"))
+    canonical_node = soup.find("link", rel="canonical")
+    canonical = ""
+    if canonical_node:
+        canonical = utils.clean_text(canonical_node.get("href", ""))
+    og_url = _meta(soup, "property", "og:url")
+    handles = tuple(
+        handle for handle in (_handle_from_value(match.group(1))
+                              for match in _HANDLE_JSON.finditer(
+                                  body[:MAX_BODY_SCAN]))
+        if handle)
+    embedded_missing = bool(_EMBEDDED_MISSING.search(body[:MAX_BODY_SCAN]))
+    for node in soup(["script", "style", "noscript", "template"]):
+        node.decompose()
+    visible = utils.clean_text(soup.get_text(" ", strip=True))
+    return PageInfo(title=title, description=description, og_title=og_title,
+                    og_description=og_description, canonical=canonical,
+                    og_url=og_url, handles=handles, visible=visible,
+                    embedded_missing=embedded_missing)
+
+
+def parse_page(body: str, username: str) -> tuple[str, str]:
+    info = parse_page_info(body)
+    return info.title or info.og_title, info.description or info.og_description
 
 
 def _visible_text(body: str) -> str:
@@ -119,12 +209,7 @@ def _visible_text(body: str) -> str:
     Scanning raw HTML would match a canonical ``href="/acme"`` on a 404 page,
     which is exactly the false positive this check exists to avoid.
     """
-    from bs4 import BeautifulSoup
-
-    soup = BeautifulSoup(body[:MAX_BODY_SCAN], "html.parser")
-    for node in soup(["script", "style", "noscript", "template"]):
-        node.decompose()
-    return soup.get_text(" ", strip=True)
+    return parse_page_info(body).visible
 
 
 def _mentions(text: str, username: str) -> bool:
@@ -134,6 +219,33 @@ def _mentions(text: str, username: str) -> bool:
     pattern = (rf"(?<![{_HANDLE_CHARS}]){re.escape(username)}"
                rf"(?![{_HANDLE_CHARS}])")
     return re.search(pattern, text, re.IGNORECASE) is not None
+
+
+#: Sites whose canonical/og:url is a trustworthy statement that the profile
+#: exists. Their initial HTML is otherwise a generic shell. A 404 on these
+#: sites omits the canonical link, which is covered by tests.
+_CANONICAL_PROFILE_HOSTS = frozenset({"twitch.tv"})
+
+
+def _canonical_handle(info: PageInfo) -> str:
+    for value in (info.canonical, info.og_url):
+        handle = _handle_from_value(value)
+        if handle:
+            return handle
+    return ""
+
+
+def _error_text(exc: Exception) -> str:
+    """A useful message even when the exception has no text of its own."""
+    detail = str(exc).strip()
+    if not detail:
+        if isinstance(exc, httpx.TimeoutException):
+            detail = "timed out"
+        elif isinstance(exc, httpx.ConnectError):
+            detail = "could not connect"
+        else:
+            detail = "no response"
+    return f"{type(exc).__name__}: {detail}"
 
 
 async def check_one(client: httpx.AsyncClient, username: str, base: str,
@@ -150,17 +262,20 @@ async def check_one(client: httpx.AsyncClient, username: str, base: str,
     except httpx.HTTPError as exc:
         return Hit(username=username, url=url, platform=platform,
                    category=category, confidence=confidence,
-                   error=f"{type(exc).__name__}: {exc}")
+                   error=_error_text(exc))
     hit = Hit(username=username, url=str(response.url),
               status=response.status_code, platform=platform,
               category=category, confidence=confidence)
     if response.status_code != 200:
         return hit
-    title, description = parse_page(response.text, username)
-    hit.title, hit.description = title, description
+    info = parse_page_info(response.text)
+    hit.title = info.title or info.og_title
+    hit.description = info.description or info.og_description
     # A soft 404 is a 200 page that says the account is gone. Never let a
     # footer mention of the username turn that into a "found".
-    if any(marker in title.casefold() for marker in _MISSING_MARKERS):
+    if any(marker in hit.title.casefold() for marker in _MISSING_MARKERS):
+        return hit
+    if info.embedded_missing:
         return hit
     # The requested URL always contains the username, so only a redirect to a
     # different address says anything about the profile. A trailing slash is
@@ -170,15 +285,35 @@ async def check_one(client: httpx.AsyncClient, username: str, base: str,
     final = urllib.parse.urlsplit(str(response.url))
     path_changed = final.path.rstrip("/") != requested.path.rstrip("/")
     redirected = path_changed and _mentions(final.path, username)
-    hit.matched = (redirected
-                   or _mentions(title, username)
-                   or _mentions(description, username))
-    if not hit.matched and scan_body:
-        visible = _visible_text(response.text)
-        if any(marker in visible.casefold()
+    if redirected:
+        hit.matched, hit.match = True, "redirect"
+        return hit
+
+    signals = " ".join(part for part in (
+        info.title, info.description, info.og_title, info.og_description) if part)
+    if _mentions(signals, username):
+        hit.matched, hit.match = True, "metadata"
+        return hit
+
+    if any(handle.casefold() == username.casefold() for handle in info.handles):
+        hit.matched, hit.match = True, "structured"
+        return hit
+
+    host = (final.hostname or "").lower().rstrip(".")
+    if host.startswith("www."):
+        host = host[4:]
+    canonical = _canonical_handle(info)
+    if (host in _CANONICAL_PROFILE_HOSTS
+            and canonical.casefold() == username.casefold()):
+        hit.matched, hit.match = True, "canonical"
+        return hit
+
+    if scan_body and info.visible:
+        if any(marker in info.visible.casefold()
                for marker in _BODY_MISSING_MARKERS):
             return hit
-        hit.matched = _mentions(visible, username)
+        if _mentions(info.visible, username):
+            hit.matched, hit.match = True, "body"
     return hit
 
 
@@ -194,6 +329,9 @@ async def run(username: str, platforms: Iterable[str] | None = None, *,
     templates = list(platforms) if platforms is not None else load_platforms()
     if not templates:
         raise ValueError("no platform URLs to check")
+    # The shipped list has historical duplicates, and a custom list may too.
+    # Checking the same URL twice inflated "checked" and doubled its errors.
+    templates = list(dict.fromkeys(templates))
 
     outcome = UsernameReport(username=username)
     proxy = None
@@ -205,7 +343,8 @@ async def run(username: str, platforms: Iterable[str] | None = None, *,
     limits = httpx.Limits(max_connections=max(2, concurrency),
                           max_keepalive_connections=max(2, concurrency))
     headers = {"User-Agent": DEFAULT_USER_AGENT,
-               "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"}
+               "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+               "Accept-Language": "en-US,en;q=0.9"}
     semaphore = asyncio.Semaphore(max(1, concurrency))
 
     async with httpx.AsyncClient(proxy=proxy, verify=verify_tls,
@@ -218,7 +357,18 @@ async def run(username: str, platforms: Iterable[str] | None = None, *,
                     progress(hit)
                 return hit
 
-        outcome.hits = list(await asyncio.gather(*(worker(base) for base in templates)))
+        hits = await asyncio.gather(*(worker(base) for base in templates))
+    # Best leads first, then a stable order for the rest. Duplicate final
+    # addresses (two templates redirecting to one profile) are collapsed.
+    ordered = sorted(hits, key=lambda hit: (
+        not hit.found, -hit.confidence, hit.platform.casefold(), hit.url))
+    seen: set[str] = set()
+    for hit in ordered:
+        key = utils.canonical_url(hit.url) or hit.url
+        if key in seen:
+            continue
+        seen.add(key)
+        outcome.hits.append(hit)
     return outcome
 
 
@@ -227,7 +377,8 @@ def run_sync(username: str, **kwargs: object) -> UsernameReport:
 
 
 def write(outcome: UsernameReport, out_dir: str | Path = "Results",
-          formats: tuple[str, ...] | list[str] = ("txt", "json")) -> dict[str, str]:
+          formats: tuple[str, ...] | list[str] = ("txt", "json"),
+          include_all: bool = False) -> dict[str, str]:
     directory = Path(out_dir)
     directory.mkdir(parents=True, exist_ok=True)
     stem = report.results_path(directory, f"username-{outcome.username}", "")
@@ -237,21 +388,25 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
         # ``john.doe`` instead of adding the extension.
         path = stem.with_name(f"{stem.name}.{name}")
         if name == "json":
-            path.write_text(json.dumps({
+            payload: dict[str, object] = {
                 "username": outcome.username,
                 "started": outcome.started,
                 "found": len(outcome.found),
                 "checked": len(outcome.hits),
                 "profiles": [asdict(hit) for hit in outcome.found],
                 "errors": [asdict(hit) for hit in outcome.errors],
-            }, indent=2, ensure_ascii=False), encoding="utf-8")
+            }
+            if include_all:
+                payload["hits"] = [asdict(hit) for hit in outcome.hits]
+            path.write_text(json.dumps(payload, indent=2, ensure_ascii=False),
+                            encoding="utf-8")
         elif name == "csv":
             with path.open("w", encoding="utf-8", newline="") as handle:
                 writer = csv.DictWriter(
                     handle, fieldnames=["username", "url", "status", "title",
-                                        "description", "matched", "error",
-                                        "platform", "category", "confidence",
-                                        "source"])
+                                        "description", "matched", "match",
+                                        "error", "platform", "category",
+                                        "confidence", "source"])
                 writer.writeheader()
                 for hit in outcome.hits:
                     writer.writerow(asdict(hit))
@@ -265,6 +420,15 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
                 if hit.category:
                     label += f" ({hit.category})"
                 lines.append(f"- [{hit.title or label}]({hit.url}) - {hit.status}")
+            if include_all:
+                lines += ["", "## All checked", "",
+                          "| Platform | Status | URL | Result |",
+                          "| --- | --- | --- | --- |"]
+                for hit in outcome.hits:
+                    result = "found" if hit.found else (
+                        hit.error.split(":", 1)[0] if hit.error else "no match")
+                    lines.append(f"| {hit.platform or '-'} | {hit.status or '-'} "
+                                 f"| <{hit.url}> | {result} |")
             path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         else:
             lines = [f"Username: {outcome.username}",
@@ -278,8 +442,17 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
                     lines.append(f"Title: {hit.title}")
                 if hit.description:
                     lines.append(f"Description: {hit.description}")
+                if hit.match:
+                    lines.append(f"Matched on: {hit.match}")
                 lines.append("-" * 78)
             lines += ["", f"Found {len(outcome.found)} of {len(outcome.hits)} platforms."]
+            if include_all:
+                lines += ["", "All checked", "=" * 78]
+                for hit in outcome.hits:
+                    result = "found" if hit.found else (
+                        f"error: {hit.error}" if hit.error else "no match")
+                    lines.append(f"{hit.url} - HTTP {hit.status or 'no response'} - "
+                                 f"{result}")
             if outcome.errors:
                 lines.append(f"Errors: {len(outcome.errors)}")
             path.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -1,0 +1,155 @@
+username,url,status,title,description,matched,match,error,platform,category,confidence,source
+AnonCatalyst,https://www.tiktok.com/@AnonCatalyst,200,TikTok - Make Your Day,,True,structured,,TikTok,social,95,local
+AnonCatalyst,https://github.com/AnonCatalyst,200,AnonCatalyst (Istoleyourbutter) · GitHub,🌐 - Osint Specialist 🏆 - Best Open Source Osint Tools! 💬 - Software Developer - AnonCatalyst,True,metadata,,GitHub,dev,90,local
+AnonCatalyst,https://x.com/AnonCatalyst,200,istoleyourbutter (@AnonCatalyst) / X,"🔍 OSINT Specialist | Uncovering hidden truths through open-source intelligence. Passionate about cybersecurity, intelligence, and data analysis. 📊 #OSINT",True,metadata,,X (Twitter),social,90,local
+AnonCatalyst,https://www.youtube.com/@AnonCatalyst,200,AnonCatalyst - YouTube,AnonCatalyst 🔍 Uncovering the Digital WorldWelcome to AnonCatalyst! Your one-stop destination for mastering Open Source Intelligence (OSINT) and digital rec...,True,metadata,,YouTube,video,90,local
+AnonCatalyst,https://www.paypal.com/paypalme/AnonCatalyst,200,PayPal.Me,Post it. Text it. Tag it. Share it. Shout it. And let your friends pay you back in a tap or two. Grab your PayPal.Me link today.,True,redirect,,PayPal.me,finance,85,local
+AnonCatalyst,https://app.trakt.tv/profile/AnonCatalyst,200,Trakt Web: Profile,"Trakt Web: A new, lightweight way to track your favorite movies and TV shows.",True,redirect,,Trakt,writing,85,local
+AnonCatalyst,https://www.twitch.tv/AnonCatalyst,200,Twitch,Twitch is the world's leading video platform and community for gamers.,True,canonical,,Twitch,video,85,local
+AnonCatalyst,https://gitlab.com/AnonCatalyst,200,Tony Kincaid · GitLab,GitLab.com,True,body,,GitLab,dev,80,local
+AnonCatalyst,https://t.me/AnonCatalyst,200,Telegram: Contact @AnonCatalyst,,True,metadata,,Telegram,messaging,80,local
+AnonCatalyst,https://www.pbase.com/AnonCatalyst,200,PBase.com,,True,body,,Pbase,,0,local
+AnonCatalyst,https://www.linkedin.com/in/AnonCatalyst,999,,,False,,,LinkedIn,professional,90,local
+AnonCatalyst,https://www.reddit.com/user/AnonCatalyst/,200,Reddit,,False,,,Reddit,forum,90,local
+AnonCatalyst,https://www.youtube.com/user/AnonCatalyst,404,,,False,,,YouTube,video,90,local
+AnonCatalyst,https://www.chess.com/member/AnonCatalyst,404,,,False,,,Chess.com,gaming,85,local
+AnonCatalyst,https://www.donationalerts.com/r/AnonCatalyst,404,,,False,,,DonationAlerts,finance,85,local
+AnonCatalyst,https://doxbin.com/user/AnonCatalyst,403,,,False,,,Doxbin,leak,85,local
+AnonCatalyst,https://www.duolingo.com/profile/AnonCatalyst,200,Duolingo,"Duolingo is the world's most popular way to learn a language. It's 100% free, fun and science-based. Practice online on duolingo.com or on the apps!",False,,,Duolingo,education,85,local
+AnonCatalyst,https://www.ebay.com/usr/AnonCatalyst,403,,,False,,,eBay,marketplace,85,local
+AnonCatalyst,https://www.flickr.com/people/AnonCatalyst,502,,,False,,,Flickr,photo,85,local
+AnonCatalyst,https://www.instagram.com/AnonCatalyst,200,Instagram,,False,,,Instagram,social,85,local
+AnonCatalyst,https://www.last.fm/user/AnonCatalyst,200,Client Challenge,,False,,,Last.fm,music,85,local
+AnonCatalyst,https://medium.com/@AnonCatalyst,403,,,False,,,Medium,blog,85,local
+AnonCatalyst,https://www.openstreetmap.org/user/AnonCatalyst,404,,,False,,,OpenStreetMap,research,85,local
+AnonCatalyst,https://pastebin.com/u/AnonCatalyst,404,,,False,,,Pastebin,leak,85,local
+AnonCatalyst,https://pypi.org/user/AnonCatalyst,200,Client Challenge,,False,,,PyPI,dev,85,local
+AnonCatalyst,https://www.quora.com/profile/AnonCatalyst,403,,,False,,,Quora,social,85,local
+AnonCatalyst,https://steamcommunity.com/id/AnonCatalyst,200,Steam Community :: Error,,False,,,Steam,gaming,85,local
+AnonCatalyst,https://wikipedia.org/wiki/user:AnonCatalyst,403,,,False,,,Wikipedia,research,85,local
+AnonCatalyst,https://9gag.com/u/AnonCatalyst,403,,,False,,,9GAG,social,80,local
+AnonCatalyst,https://www.alltrails.com/members/AnonCatalyst,403,,,False,,,AllTrails,fitness,80,local
+AnonCatalyst,https://www.analystforum.com/u/AnonCatalyst,0,,,False,,ConnectError: [Errno 11002] getaddrinfo failed,AnalystForum,finance,80,local
+AnonCatalyst,https://anime-planet.com/users/AnonCatalyst,403,,,False,,,Anime-Planet,anime,80,local
+AnonCatalyst,https://badoo.com/profile/AnonCatalyst,200,"Best Free Online Dating Site & App - Friends, Chat, Flirt | Badoo","Join Badoo’s community - the best free online dating app. Chat before you match, meet & date people in your area or make new friends from all over the world.",False,,,Badoo,dating,80,local
+AnonCatalyst,https://www.behance.net/AnonCatalyst,404,,,False,,,Behance,photo,80,local
+AnonCatalyst,https://codepen.io/,403,,,False,,,CodePen,dev,80,local
+AnonCatalyst,https://www.couchsurfing.com/people/AnonCatalyst,410,,,False,,,Couchsurfing,travel,80,local
+AnonCatalyst,https://www.crunchyroll.com/,403,,,False,,,Crunchyroll,anime,80,local
+AnonCatalyst,https://www.discogs.com/user/AnonCatalyst,403,,,False,,,Discogs,music,80,local
+AnonCatalyst,https://dribbble.com/AnonCatalyst,404,,,False,,,Dribbble,photo,80,local
+AnonCatalyst,https://www.etsy.com/people/AnonCatalyst,403,,,False,,,Etsy,marketplace,80,local
+AnonCatalyst,https://www.freelancer.com/signup?next=%2Fu%2FAnonCatalyst,200,Join 90.5M+ Professionals | Sign Up Free | Freelancer,"Create your free account in seconds. Post projects and hire from 90.5+ million freelancers, or find work across 3400+ skills. Join the world's largest cloud workforce tod",False,,,Freelancer,marketplace,80,local
+AnonCatalyst,https://www.instructables.com/member/AnonCatalyst,404,,,False,,,Instructables,diy,80,local
+AnonCatalyst,https://justpaste.it/u/AnonCatalyst,404,,,False,,,JustPaste.it,leak,80,local
+AnonCatalyst,https://www.kaggle.com/AnonCatalyst,200,Checking your browser - reCAPTCHA,,False,,,Kaggle,dev,80,local
+AnonCatalyst,https://www.khanacademy.org/profiles/AnonCatalyst,200,Client Challenge,,False,,,Khan Academy,education,80,local
+AnonCatalyst,https://www.kickstarter.com/profile/AnonCatalyst,403,,,False,,,Kickstarter,finance,80,local
+AnonCatalyst,https://www.meetup.com/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Fmembers%2FAnonCatalyst%2F,200,Login to Meetup | Meetup,Not a Meetup member yet? Log in and find groups that host online or in person events and meet people in your local community who share your interests.,False,,,Meetup,social,80,local
+AnonCatalyst,https://www.patreon.com/AnonCatalyst,404,,,False,,,Patreon,social,80,local
+AnonCatalyst,https://www.producthunt.com/@AnonCatalyst,403,,,False,,,Product Hunt,professional,80,local
+AnonCatalyst,https://www.redtube.com/users/AnonCatalyst,404,,,False,,,RedTube,adult,80,local
+AnonCatalyst,https://community.signalusers.org/u/AnonCatalyst,404,,,False,,,Signal Community,forum,80,local
+AnonCatalyst,https://www.tripadvisor.com/members/AnonCatalyst,403,,,False,,,TripAdvisor,travel,80,local
+AnonCatalyst,https://www.trustpilot.com/users/AnonCatalyst,403,,,False,,,Trustpilot,review,80,local
+AnonCatalyst,https://vimeo.com/AnonCatalyst,404,,,False,,,Vimeo,video,80,local
+AnonCatalyst,https://www.wattpad.com/user/AnonCatalyst,404,,,False,,,Wattpad,writing,80,local
+AnonCatalyst,https://wellfound.com/u/AnonCatalyst,404,,,False,,,Wellfound,professional,80,local
+AnonCatalyst,https://www.xbox.com/en-US/play/user?gamertag=AnonCatalyst,200,View profile | Xbox Cloud Gaming on Xbox.com,Play games with your friends with Xbox Cloud Gaming!,False,,,Xbox,gaming,80,local
+AnonCatalyst,https://www.xvideos.com/profiles/AnonCatalyst,404,,,False,,,XVideos,adult,80,local
+AnonCatalyst,https://www.yelp.com/user_details?userid=AnonCatalyst,200,,,False,,,Yelp,review,80,local
+AnonCatalyst,https://www.bloglovin.com/@AnonCatalyst,403,,,False,,,BlogLovin,blog,75,local
+AnonCatalyst,https://www.deviantart.com/anoncatalyst,404,,,False,,,DeviantArt,photo,75,local
+AnonCatalyst,https://www.facebook.com/AnonCatalyst,400,,,False,,,Facebook,social,75,local
+AnonCatalyst,https://www.gaiaonline.com/profiles/AnonCatalyst,202,,,False,,,Gaia Online,gaming,75,local
+AnonCatalyst,https://giphy.com/channel/AnonCatalyst,404,,,False,,,Giphy,video,75,local
+AnonCatalyst,https://www.linux.org/members/AnonCatalyst,403,,,False,,,Linux.org,forum,75,local
+AnonCatalyst,https://www.pinterest.com/AnonCatalyst/,200,,,False,,,Pinterest,social,75,local
+AnonCatalyst,https://rt.pornhub.com/users/AnonCatalyst,410,,,False,,,Pornhub,adult,75,local
+AnonCatalyst,https://soundcloud.com/AnonCatalyst,404,,,False,,,SoundCloud,music,75,local
+AnonCatalyst,https://500px.com/AnonCatalyst,200,,,False,,,500px,photo,70,local
+AnonCatalyst,https://www.fiverr.com/AnonCatalyst,404,,,False,,,Fiverr,marketplace,70,local
+AnonCatalyst,https://www.minds.com/AnonCatalyst,404,,,False,,,Minds,social,70,local
+AnonCatalyst,https://www.mixcloud.com/AnonCatalyst/,200,Mixcloud - This is Audio Culture,Listen to the best DJs and radio presenters in the world for free.,False,,,Mixcloud,music,70,local
+AnonCatalyst,https://www.newgrounds.com/AnonCatalyst,403,,,False,,,Newgrounds,gaming,70,local
+AnonCatalyst,https://www.thingiverse.com/AnonCatalyst,403,,,False,,,Thingiverse,diy,70,local
+AnonCatalyst,https://www.zotero.org/AnonCatalyst,404,,,False,,,Zotero,research,70,local
+AnonCatalyst,https://www.dailymotion.com/AnonCatalyst,200,Dailymotion,,False,,,Dailymotion,video,65,local
+AnonCatalyst,https://www.ello.co/AnonCatalyst,0,,,False,,ConnectError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010),Ello,social,65,local
+AnonCatalyst,https://www.mamba.ru/AnonCatalyst,403,,,False,,,Mamba,dating,65,local
+AnonCatalyst,https://myspace.com/AnonCatalyst,404,,,False,,,Myspace,social,65,local
+AnonCatalyst,https://users.scala-lang.org/u/AnonCatalyst,404,,,False,,,Discourse forum,forum,55,local
+AnonCatalyst,https://www.freepik.com/photos,403,,,False,,,Discourse forum,forum,55,local
+AnonCatalyst,https://www.pinkbike.com/u/AnonCatalyst,403,,,False,,,Discourse forum,forum,55,local
+AnonCatalyst,https://digg.com/@AnonCatalyst,410,,,False,,,Fediverse (Mastodon-compatible),social,45,local
+AnonCatalyst,https://teletype.in/@anoncatalyst,404,,,False,,,Fediverse (Mastodon-compatible),social,45,local
+AnonCatalyst,https://www.hubpages.com/@AnonCatalyst,0,,,False,,ConnectTimeout: timed out,Fediverse (Mastodon-compatible),social,45,local
+AnonCatalyst,https://www.withings.com/profile/AnonCatalyst,403,,,False,,,8Fit,,0,local
+AnonCatalyst,https://www.8tracks.com/AnonCatalyst,403,,,False,,,8Tracks,,0,local
+AnonCatalyst,https://www.arduino.cc/AnonCatalyst,404,,,False,,,Arduino,,0,local
+AnonCatalyst,https://ask.fm/AnonCatalyst,0,,,False,,ConnectError: [Errno 11001] getaddrinfo failed,Ask,,0,local
+AnonCatalyst,https://www.atlasobscura.com/users/AnonCatalyst,403,,,False,,,Atlasobscura,,0,local
+AnonCatalyst,https://bandcamp.com/AnonCatalyst,404,,,False,,,Bandcamp,,0,local
+AnonCatalyst,https://www.bandsintown.com/AnonCatalyst,403,,,False,,,Bandsintown,,0,local
+AnonCatalyst,https://bionluk.com/AnonCatalyst,404,,,False,,,Bionluk,,0,local
+AnonCatalyst,https://bitcoinforum.com/profile/AnonCatalyst,0,,,False,,ConnectTimeout: timed out,Bitcoinforum,,0,local
+AnonCatalyst,https://www.blip.fm/AnonCatalyst,0,,,False,,ConnectError: [Errno 11002] getaddrinfo failed,Blip,,0,local
+AnonCatalyst,https://www.blogger.com/profile/AnonCatalyst,400,,,False,,,Blogger,,0,local
+AnonCatalyst,https://www.buzzfeed.com/AnonCatalyst,406,,,False,,,Buzzfeed,,0,local
+AnonCatalyst,https://www.canva.com/AnonCatalyst,403,,,False,,,Canva,,0,local
+AnonCatalyst,https://www.care2.com/,200,"Care2 is the world's largest social network for good, a community of over 40 million people standing together, starting petitions and sharing stories that inspire action.","Largest online community empowering people to lead a healthy and green lifestyle while taking action on important causes such as human rights, animal welfare and global warming.",False,,,Care2,,0,local
+AnonCatalyst,https://www.colourlovers.com/lover/AnonCatalyst,403,,,False,,,Colourlovers,,0,local
+AnonCatalyst,https://www.creativelive.com/student/AnonCatalyst,404,,,False,,,Creativelive,,0,local
+AnonCatalyst,https://www.dailykos.com/user/AnonCatalyst,404,,,False,,,Dailykos,,0,local
+AnonCatalyst,https://www.designspiration.com/AnonCatalyst/,404,,,False,,,Designspiration,,0,local
+AnonCatalyst,https://doxbin.com/upload/AnonCatalyst,403,,,False,,,Doxbin,,0,local
+AnonCatalyst,https://www.flightradar24.com/author/AnonCatalyst,403,,,False,,,Flightradar24,,0,local
+AnonCatalyst,https://www.foap.com/users/AnonCatalyst,404,,,False,,,Foap,,0,local
+AnonCatalyst,https://www.gamcare.org.uk/users/AnonCatalyst,403,,,False,,,Gamcare,,0,local
+AnonCatalyst,https://www.goodreads.com/user/show/AnonCatalyst,404,,,False,,,Goodreads,,0,local
+AnonCatalyst,https://www.houzz.com/user/AnonCatalyst,200,Client Challenge,,False,,,Houzz,,0,local
+AnonCatalyst,https://www.jamendo.com/start/AnonCatalyst,404,,,False,,,Jamendo,,0,local
+AnonCatalyst,https://ws2.kik.com/user/AnonCatalyst,404,,,False,,,Kik,,0,local
+AnonCatalyst,https://www.livejournal.com/profile?userid=AnonCatalyst,0,,,False,,ConnectTimeout: timed out,Livejournal,,0,local
+AnonCatalyst,https://www.metacritic.com/user/AnonCatalyst/,404,,,False,,,Metacritic,,0,local
+AnonCatalyst,https://www.metal-archives.com/users/AnonCatalyst,403,,,False,,,Metal Archives,,0,local
+AnonCatalyst,https://mix.com/AnonCatalyst,404,,,False,,,Mix,,0,local
+AnonCatalyst,http://www.money-talk.org/profile.php?mode=viewprofile&u=AnonCatalyst,0,,,False,,ConnectTimeout: timed out,Money Talk,,0,local
+AnonCatalyst,https://ok.ru/AnonCatalyst,404,,,False,,,Ok,,0,local
+AnonCatalyst,https://opensource.com/users/AnonCatalyst,404,,,False,,,Opensource,,0,local
+AnonCatalyst,https://www.pearltrees.com/ooops,200,Pearltrees,,False,,,Pearltrees,,0,local
+AnonCatalyst,https://www.photo.net/photodb/user?AnonCatalyst,403,,,False,,,Photo,,0,local
+AnonCatalyst,https://photobucket.com/user/AnonCatalyst,200,Private Group Photo & Video Sharing,"A private space for your group's photos and videos. Share, react, and relive moments together. Available on iOS, Android, and desktop. Free for new sign-ups.",False,,,Photobucket,,0,local
+AnonCatalyst,https://www.digitalcameraworld.com/,200,"Camera news, reviews and features","Camera news, reviews and features",False,,,Photoshopcreative,,0,local
+AnonCatalyst,https://pinboard.in/u:AnonCatalyst,200,Pinboard *,,False,,,Pinboard,,0,local
+AnonCatalyst,https://www.roblox.com/request-error?code=404,404,,,False,,,Roblox,,0,local
+AnonCatalyst,https://www.sbnation.com/users/AnonCatalyst,404,,,False,,,Sbnation,,0,local
+AnonCatalyst,https://www.sciencedaily.com/user/AnonCatalyst,404,,,False,,,Sciencedaily,,0,local
+AnonCatalyst,https://www.scribd.com/AnonCatalyst,200,Client Challenge,,False,,,Scribd,,0,local
+AnonCatalyst,https://www.seoclerks.com/user/AnonCatalyst,404,,,False,,,Seoclerks,,0,local
+AnonCatalyst,https://www.slashdot.org/~/AnonCatalyst,403,,,False,,,Slashdot,,0,local
+AnonCatalyst,https://slickdeals.net/register/?url=%2Fforums%2Fmember.php%3Fu%3DAnonCatalyst,200,Join Slickdeals,"Your search for great deals and coupon savings ends here. Find the best bargains and money-saving offers, discounts, promo codes, freebies and price comparisons from the trusted Slickdeals community.",False,,,Slickdeals,,0,local
+AnonCatalyst,https://www.snapchat.com/@anoncatalyst,404,,,False,,,Snapchat,,0,local
+AnonCatalyst,https://society6.com/AnonCatalyst,404,,,False,,,Society6,,0,local
+AnonCatalyst,https://timesofindia.indiatimes.com/speaking-tree,200,Spiritual News: Latest Spiritual Awakening News:- Speaking Tree,"Get all the latest spiritual news, spiritual blogs from experts, spiritual videos, healing news and more on Speaking Tree",False,,,Speakingtree,,0,local
+AnonCatalyst,https://www.spoonflower.com/profiles/AnonCatalyst,403,,,False,,,Spoonflower,,0,local
+AnonCatalyst,https://www.stitcher.com/roadblock/index.html,200,Roadblock,StitcherX Web Client,False,,,Stitcher,,0,local
+AnonCatalyst,https://www.stumbleupon.com/stumbler/AnonCatalyst,404,,,False,,,Stumbleupon,,0,local
+AnonCatalyst,https://www.suicidegirls.com/members/anoncatalyst/,404,,,False,,,Suicidegirls,,0,local
+AnonCatalyst,https://www.taringa.net/AnonCatalyst,200,Taringa! - Inteligencia Colectiva,"Aquí yació la primera red social Latinoaméricana, el sitio de internet que vio nacer la inteligencia colectiva y al taringuero.",False,,,Taringa,,0,local
+AnonCatalyst,https://www.tasteofhome.com/cook/anoncatalyst,404,,,False,,,Tasteofhome,,0,local
+AnonCatalyst,https://auth.ted.com/session/new?context=ted.www%2Fprofiles&referrer=https%3A%2F%2Fwww.ted.com%2Fprofiles%2Fanoncatalyst,200,TED: Ideas worth spreading,,False,,,Ted,,0,local
+AnonCatalyst,https://www.travellerspoint.com/users/AnonCatalyst/,404,,,False,,,Travellerspoint,,0,local
+AnonCatalyst,https://www.tripit.com/people/AnonCatalyst,403,,,False,,,Tripit,,0,local
+AnonCatalyst,https://tamtam.chat,200,ТамТам,Собери всех друзей в одном мессенджере,False,,,Tt,,0,local
+AnonCatalyst,https://www.ubisoft.com/en-us/ubisoft-connect,200,Ubisoft Connect | Ubisoft (US),Ubisoft Connect is a multi-platform ecosystem of player services and the go-to destination for your Ubisoft games.,False,,,Ubisoft,,0,local
+AnonCatalyst,https://www.upwork.com/freelancers/AnonCatalyst,403,,,False,,,Upwork,,0,local
+AnonCatalyst,https://www.veoh.com/users/AnonCatalyst,0,,,False,,ConnectError: [Errno 11001] getaddrinfo failed,Veoh,,0,local
+AnonCatalyst,https://www.vine.co/AnonCatalyst,404,,,False,,,Vine,,0,local
+AnonCatalyst,https://wanelo.com/,429,,,False,,,Wanelo,,0,local
+AnonCatalyst,https://weheartit.com/AnonCatalyst,403,,,False,,,Weheartit,,0,local
+AnonCatalyst,https://wfts.su/profile/AnonCatalyst,200,Warface TrueSight | Профиль игрока AnonCatalyst не существует,Warface TrueSight | Профиль игрока AnonCatalyst не существует,False,,,Wfts,,0,local
+AnonCatalyst,https://www.wikidot.com/user:info/AnonCatalyst,200,User Information - Wikidot - Free and Pro Wiki Hosting,,False,,,Wikidot,,0,local
+AnonCatalyst,https://www.wikihow.com/User:AnonCatalyst,200,Client Challenge,,False,,,Wikihow,,0,local
+AnonCatalyst,https://www.xboxgamertag.com/search/AnonCatalyst,403,,,False,,,Xboxgamertag,,0,local
+AnonCatalyst,https://www.zedge.net/profile/AnonCatalyst,404,,,False,,,Zedge,,0,local

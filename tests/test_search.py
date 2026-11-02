@@ -27,9 +27,11 @@ async def test_run_collects_deduplicates_and_reports(monkeypatch, tmp_path):
     settings = config.Settings(query="acme", max_results=5,
                                engines=("duckduckgo", "bing"))
     outcome = await search.run(settings)
+    # Engines are paginated in lockstep: both page-1 batches arrive before
+    # DuckDuckGo's page 2, so a small --max-results is still fed by both.
     assert [record.url for record in outcome.records] == [
-        "https://a.example/", "https://b.example/", "https://c.example/",
-        "https://a.example/duplicate"]
+        "https://a.example/", "https://b.example/",
+        "https://a.example/duplicate", "https://c.example/"]
     assert outcome.proxies_used is False
     assert outcome.errors == []
     assert [record.position for record in outcome.records] == [1, 2, 3, 4]

@@ -23,6 +23,27 @@ EXIT_USAGE = 2
 EXIT_ERROR = 1
 
 
+def _configure_stdio() -> None:
+    """Make console output survive titles that are not in the local code page.
+
+    Windows still defaults a redirected console to cp1252. A real result titled
+    with an emoji then raised ``UnicodeEncodeError`` and killed the run after
+    the work was already done, so the report was never written. Reconfigure
+    with ``errors="replace"`` instead: an unprintable glyph becomes ``?`` and
+    the search keeps going.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            # A wrapped stream (pytest, an IDE) may refuse; printing still
+            # works through its own encoder.
+            pass
+
+
 def _engine_list(value: str) -> tuple[str, ...]:
     return config.parse_engines(value)
 
@@ -271,7 +292,8 @@ def cmd_username(args: argparse.Namespace) -> int:
         print(f"{len(outcome.found)} match(es) out of {len(outcome.hits)} checked.")
     else:
         print(f"No matches across {len(outcome.hits)} platforms.")
-    paths = username_mod.write(outcome, args.out, args.format)
+    paths = username_mod.write(outcome, args.out, args.format,
+                               include_all=args.all)
     for name, path in paths.items():
         print(f"{name}: {path}")
     return EXIT_OK
@@ -325,6 +347,7 @@ def cmd_doctor(_: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _configure_stdio()
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.command:

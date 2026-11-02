@@ -12,6 +12,7 @@ Results/*
 !Results/.gitkeep
 config/valid_proxies.txt
 *.log
+!docs/captures/*.log
 profiles.json
 profiles.csv
 mentions.json

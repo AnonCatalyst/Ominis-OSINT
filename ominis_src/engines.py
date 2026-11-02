@@ -27,9 +27,23 @@ ENGINE_LABELS = {
     "serpbase": "SerpBase (Google)",
 }
 
+#: Hosts that are search plumbing, never an organic result. A redirect we
+#: failed to unwrap must not be reported as a page the user can visit.
+_NOISE_HOSTS = ("go.microsoft.com", "r.bing.com")
+_SELF_HOSTS = {"duckduckgo": "duckduckgo.com", "bing": "bing.com"}
+
 
 class EngineError(RuntimeError):
     """A provider could not answer; callers decide whether to continue."""
+
+
+def is_noise_url(url: str, engine: str = "") -> bool:
+    if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+        return True
+    own = _SELF_HOSTS.get(engine)
+    if own and utils.host_matches(url, own):
+        return True
+    return any(utils.host_matches(url, host) for host in _NOISE_HOSTS)
 
 
 @dataclass
@@ -91,7 +105,7 @@ def parse_duckduckgo(html: str) -> list[Result]:
         if not link:
             continue
         href = utils.unwrap_duckduckgo_url(link.get("href", ""))
-        if not href.startswith("http"):
+        if not href.startswith("http") or is_noise_url(href, "duckduckgo"):
             continue
         tracked = urllib.parse.urlparse(href)
         if (utils.host_matches(href, "duckduckgo.com")
@@ -100,8 +114,9 @@ def parse_duckduckgo(html: str) -> list[Result]:
         snippet = ""
         node = block.select_one(".result__snippet")
         if node:
-            snippet = node.get_text(" ", strip=True)
-        results.append(Result(title=link.get_text(" ", strip=True) or href,
+            snippet = utils.clean_text(node.get_text(" ", strip=True))
+        results.append(Result(title=utils.clean_text(
+                                  link.get_text(" ", strip=True)) or href,
                               url=href, engine="duckduckgo",
                               snippet=snippet, position=position))
     return results
@@ -118,13 +133,14 @@ def parse_bing(html: str) -> list[Result]:
         if not heading or not link:
             continue
         href = utils.unwrap_bing_url(link["href"])
-        if not href.startswith("http"):
+        if not href.startswith("http") or is_noise_url(href, "bing"):
             continue
         snippet = ""
         node = block.select_one(".b_caption p") or block.select_one("p")
         if node:
-            snippet = node.get_text(" ", strip=True)
-        results.append(Result(title=heading.get_text(" ", strip=True) or href,
+            snippet = utils.clean_text(node.get_text(" ", strip=True))
+        results.append(Result(title=utils.clean_text(
+                                  heading.get_text(" ", strip=True)) or href,
                               url=href, engine="bing",
                               snippet=snippet, position=position))
     return results
@@ -142,8 +158,9 @@ def parse_serpbase(payload: Any) -> list[Result]:
             continue
         title = item.get("title") or item.get("name") or url
         snippet = item.get("snippet") or item.get("description") or item.get("text") or ""
-        results.append(Result(title=str(title), url=url, engine="serpbase",
-                              snippet=str(snippet),
+        results.append(Result(title=utils.clean_text(title), url=url,
+                              engine="serpbase",
+                              snippet=utils.clean_text(snippet),
                               position=int(item.get("position") or position)))
     return results
 

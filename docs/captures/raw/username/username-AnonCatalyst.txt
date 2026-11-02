@@ -1,0 +1,230 @@
+Username: AnonCatalyst
+Started: 2026-11-02T02:44:52+00:00
+==============================================================================
+URL: https://www.tiktok.com/@AnonCatalyst
+Status: 200
+Platform: TikTok (social)
+Title: TikTok - Make Your Day
+Matched on: structured
+------------------------------------------------------------------------------
+URL: https://github.com/AnonCatalyst
+Status: 200
+Platform: GitHub (dev)
+Title: AnonCatalyst (Istoleyourbutter) · GitHub
+Description: 🌐 - Osint Specialist 🏆 - Best Open Source Osint Tools! 💬 - Software Developer - AnonCatalyst
+Matched on: metadata
+------------------------------------------------------------------------------
+URL: https://x.com/AnonCatalyst
+Status: 200
+Platform: X (Twitter) (social)
+Title: istoleyourbutter (@AnonCatalyst) / X
+Description: 🔍 OSINT Specialist | Uncovering hidden truths through open-source intelligence. Passionate about cybersecurity, intelligence, and data analysis. 📊 #OSINT
+Matched on: metadata
+------------------------------------------------------------------------------
+URL: https://www.youtube.com/@AnonCatalyst
+Status: 200
+Platform: YouTube (video)
+Title: AnonCatalyst - YouTube
+Description: AnonCatalyst 🔍 Uncovering the Digital WorldWelcome to AnonCatalyst! Your one-stop destination for mastering Open Source Intelligence (OSINT) and digital rec...
+Matched on: metadata
+------------------------------------------------------------------------------
+URL: https://www.paypal.com/paypalme/AnonCatalyst
+Status: 200
+Platform: PayPal.me (finance)
+Title: PayPal.Me
+Description: Post it. Text it. Tag it. Share it. Shout it. And let your friends pay you back in a tap or two. Grab your PayPal.Me link today.
+Matched on: redirect
+------------------------------------------------------------------------------
+URL: https://app.trakt.tv/profile/AnonCatalyst
+Status: 200
+Platform: Trakt (writing)
+Title: Trakt Web: Profile
+Description: Trakt Web: A new, lightweight way to track your favorite movies and TV shows.
+Matched on: redirect
+------------------------------------------------------------------------------
+URL: https://www.twitch.tv/AnonCatalyst
+Status: 200
+Platform: Twitch (video)
+Title: Twitch
+Description: Twitch is the world's leading video platform and community for gamers.
+Matched on: canonical
+------------------------------------------------------------------------------
+URL: https://gitlab.com/AnonCatalyst
+Status: 200
+Platform: GitLab (dev)
+Title: Tony Kincaid · GitLab
+Description: GitLab.com
+Matched on: body
+------------------------------------------------------------------------------
+URL: https://t.me/AnonCatalyst
+Status: 200
+Platform: Telegram (messaging)
+Title: Telegram: Contact @AnonCatalyst
+Matched on: metadata
+------------------------------------------------------------------------------
+URL: https://www.pbase.com/AnonCatalyst
+Status: 200
+Platform: Pbase
+Title: PBase.com
+Matched on: body
+------------------------------------------------------------------------------
+
+Found 10 of 154 platforms.
+
+All checked
+==============================================================================
+https://www.tiktok.com/@AnonCatalyst - HTTP 200 - found
+https://github.com/AnonCatalyst - HTTP 200 - found
+https://x.com/AnonCatalyst - HTTP 200 - found
+https://www.youtube.com/@AnonCatalyst - HTTP 200 - found
+https://www.paypal.com/paypalme/AnonCatalyst - HTTP 200 - found
+https://app.trakt.tv/profile/AnonCatalyst - HTTP 200 - found
+https://www.twitch.tv/AnonCatalyst - HTTP 200 - found
+https://gitlab.com/AnonCatalyst - HTTP 200 - found
+https://t.me/AnonCatalyst - HTTP 200 - found
+https://www.pbase.com/AnonCatalyst - HTTP 200 - found
+https://www.linkedin.com/in/AnonCatalyst - HTTP 999 - no match
+https://www.reddit.com/user/AnonCatalyst/ - HTTP 200 - no match
+https://www.youtube.com/user/AnonCatalyst - HTTP 404 - no match
+https://www.chess.com/member/AnonCatalyst - HTTP 404 - no match
+https://www.donationalerts.com/r/AnonCatalyst - HTTP 404 - no match
+https://doxbin.com/user/AnonCatalyst - HTTP 403 - no match
+https://www.duolingo.com/profile/AnonCatalyst - HTTP 200 - no match
+https://www.ebay.com/usr/AnonCatalyst - HTTP 403 - no match
+https://www.flickr.com/people/AnonCatalyst - HTTP 502 - no match
+https://www.instagram.com/AnonCatalyst - HTTP 200 - no match
+https://www.last.fm/user/AnonCatalyst - HTTP 200 - no match
+https://medium.com/@AnonCatalyst - HTTP 403 - no match
+https://www.openstreetmap.org/user/AnonCatalyst - HTTP 404 - no match
+https://pastebin.com/u/AnonCatalyst - HTTP 404 - no match
+https://pypi.org/user/AnonCatalyst - HTTP 200 - no match
+https://www.quora.com/profile/AnonCatalyst - HTTP 403 - no match
+https://steamcommunity.com/id/AnonCatalyst - HTTP 200 - no match
+https://wikipedia.org/wiki/user:AnonCatalyst - HTTP 403 - no match
+https://9gag.com/u/AnonCatalyst - HTTP 403 - no match
+https://www.alltrails.com/members/AnonCatalyst - HTTP 403 - no match
+https://www.analystforum.com/u/AnonCatalyst - HTTP no response - error: ConnectError: [Errno 11002] getaddrinfo failed
+https://anime-planet.com/users/AnonCatalyst - HTTP 403 - no match
+https://badoo.com/profile/AnonCatalyst - HTTP 200 - no match
+https://www.behance.net/AnonCatalyst - HTTP 404 - no match
+https://codepen.io/ - HTTP 403 - no match
+https://www.couchsurfing.com/people/AnonCatalyst - HTTP 410 - no match
+https://www.crunchyroll.com/ - HTTP 403 - no match
+https://www.discogs.com/user/AnonCatalyst - HTTP 403 - no match
+https://dribbble.com/AnonCatalyst - HTTP 404 - no match
+https://www.etsy.com/people/AnonCatalyst - HTTP 403 - no match
+https://www.freelancer.com/signup?next=%2Fu%2FAnonCatalyst - HTTP 200 - no match
+https://www.instructables.com/member/AnonCatalyst - HTTP 404 - no match
+https://justpaste.it/u/AnonCatalyst - HTTP 404 - no match
+https://www.kaggle.com/AnonCatalyst - HTTP 200 - no match
+https://www.khanacademy.org/profiles/AnonCatalyst - HTTP 200 - no match
+https://www.kickstarter.com/profile/AnonCatalyst - HTTP 403 - no match
+https://www.meetup.com/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Fmembers%2FAnonCatalyst%2F - HTTP 200 - no match
+https://www.patreon.com/AnonCatalyst - HTTP 404 - no match
+https://www.producthunt.com/@AnonCatalyst - HTTP 403 - no match
+https://www.redtube.com/users/AnonCatalyst - HTTP 404 - no match
+https://community.signalusers.org/u/AnonCatalyst - HTTP 404 - no match
+https://www.tripadvisor.com/members/AnonCatalyst - HTTP 403 - no match
+https://www.trustpilot.com/users/AnonCatalyst - HTTP 403 - no match
+https://vimeo.com/AnonCatalyst - HTTP 404 - no match
+https://www.wattpad.com/user/AnonCatalyst - HTTP 404 - no match
+https://wellfound.com/u/AnonCatalyst - HTTP 404 - no match
+https://www.xbox.com/en-US/play/user?gamertag=AnonCatalyst - HTTP 200 - no match
+https://www.xvideos.com/profiles/AnonCatalyst - HTTP 404 - no match
+https://www.yelp.com/user_details?userid=AnonCatalyst - HTTP 200 - no match
+https://www.bloglovin.com/@AnonCatalyst - HTTP 403 - no match
+https://www.deviantart.com/anoncatalyst - HTTP 404 - no match
+https://www.facebook.com/AnonCatalyst - HTTP 400 - no match
+https://www.gaiaonline.com/profiles/AnonCatalyst - HTTP 202 - no match
+https://giphy.com/channel/AnonCatalyst - HTTP 404 - no match
+https://www.linux.org/members/AnonCatalyst - HTTP 403 - no match
+https://www.pinterest.com/AnonCatalyst/ - HTTP 200 - no match
+https://rt.pornhub.com/users/AnonCatalyst - HTTP 410 - no match
+https://soundcloud.com/AnonCatalyst - HTTP 404 - no match
+https://500px.com/AnonCatalyst - HTTP 200 - no match
+https://www.fiverr.com/AnonCatalyst - HTTP 404 - no match
+https://www.minds.com/AnonCatalyst - HTTP 404 - no match
+https://www.mixcloud.com/AnonCatalyst/ - HTTP 200 - no match
+https://www.newgrounds.com/AnonCatalyst - HTTP 403 - no match
+https://www.thingiverse.com/AnonCatalyst - HTTP 403 - no match
+https://www.zotero.org/AnonCatalyst - HTTP 404 - no match
+https://www.dailymotion.com/AnonCatalyst - HTTP 200 - no match
+https://www.ello.co/AnonCatalyst - HTTP no response - error: ConnectError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)
+https://www.mamba.ru/AnonCatalyst - HTTP 403 - no match
+https://myspace.com/AnonCatalyst - HTTP 404 - no match
+https://users.scala-lang.org/u/AnonCatalyst - HTTP 404 - no match
+https://www.freepik.com/photos - HTTP 403 - no match
+https://www.pinkbike.com/u/AnonCatalyst - HTTP 403 - no match
+https://digg.com/@AnonCatalyst - HTTP 410 - no match
+https://teletype.in/@anoncatalyst - HTTP 404 - no match
+https://www.hubpages.com/@AnonCatalyst - HTTP no response - error: ConnectTimeout: timed out
+https://www.withings.com/profile/AnonCatalyst - HTTP 403 - no match
+https://www.8tracks.com/AnonCatalyst - HTTP 403 - no match
+https://www.arduino.cc/AnonCatalyst - HTTP 404 - no match
+https://ask.fm/AnonCatalyst - HTTP no response - error: ConnectError: [Errno 11001] getaddrinfo failed
+https://www.atlasobscura.com/users/AnonCatalyst - HTTP 403 - no match
+https://bandcamp.com/AnonCatalyst - HTTP 404 - no match
+https://www.bandsintown.com/AnonCatalyst - HTTP 403 - no match
+https://bionluk.com/AnonCatalyst - HTTP 404 - no match
+https://bitcoinforum.com/profile/AnonCatalyst - HTTP no response - error: ConnectTimeout: timed out
+https://www.blip.fm/AnonCatalyst - HTTP no response - error: ConnectError: [Errno 11002] getaddrinfo failed
+https://www.blogger.com/profile/AnonCatalyst - HTTP 400 - no match
+https://www.buzzfeed.com/AnonCatalyst - HTTP 406 - no match
+https://www.canva.com/AnonCatalyst - HTTP 403 - no match
+https://www.care2.com/ - HTTP 200 - no match
+https://www.colourlovers.com/lover/AnonCatalyst - HTTP 403 - no match
+https://www.creativelive.com/student/AnonCatalyst - HTTP 404 - no match
+https://www.dailykos.com/user/AnonCatalyst - HTTP 404 - no match
+https://www.designspiration.com/AnonCatalyst/ - HTTP 404 - no match
+https://doxbin.com/upload/AnonCatalyst - HTTP 403 - no match
+https://www.flightradar24.com/author/AnonCatalyst - HTTP 403 - no match
+https://www.foap.com/users/AnonCatalyst - HTTP 404 - no match
+https://www.gamcare.org.uk/users/AnonCatalyst - HTTP 403 - no match
+https://www.goodreads.com/user/show/AnonCatalyst - HTTP 404 - no match
+https://www.houzz.com/user/AnonCatalyst - HTTP 200 - no match
+https://www.jamendo.com/start/AnonCatalyst - HTTP 404 - no match
+https://ws2.kik.com/user/AnonCatalyst - HTTP 404 - no match
+https://www.livejournal.com/profile?userid=AnonCatalyst - HTTP no response - error: ConnectTimeout: timed out
+https://www.metacritic.com/user/AnonCatalyst/ - HTTP 404 - no match
+https://www.metal-archives.com/users/AnonCatalyst - HTTP 403 - no match
+https://mix.com/AnonCatalyst - HTTP 404 - no match
+http://www.money-talk.org/profile.php?mode=viewprofile&u=AnonCatalyst - HTTP no response - error: ConnectTimeout: timed out
+https://ok.ru/AnonCatalyst - HTTP 404 - no match
+https://opensource.com/users/AnonCatalyst - HTTP 404 - no match
+https://www.pearltrees.com/ooops - HTTP 200 - no match
+https://www.photo.net/photodb/user?AnonCatalyst - HTTP 403 - no match
+https://photobucket.com/user/AnonCatalyst - HTTP 200 - no match
+https://www.digitalcameraworld.com/ - HTTP 200 - no match
+https://pinboard.in/u:AnonCatalyst - HTTP 200 - no match
+https://www.roblox.com/request-error?code=404 - HTTP 404 - no match
+https://www.sbnation.com/users/AnonCatalyst - HTTP 404 - no match
+https://www.sciencedaily.com/user/AnonCatalyst - HTTP 404 - no match
+https://www.scribd.com/AnonCatalyst - HTTP 200 - no match
+https://www.seoclerks.com/user/AnonCatalyst - HTTP 404 - no match
+https://www.slashdot.org/~/AnonCatalyst - HTTP 403 - no match
+https://slickdeals.net/register/?url=%2Fforums%2Fmember.php%3Fu%3DAnonCatalyst - HTTP 200 - no match
+https://www.snapchat.com/@anoncatalyst - HTTP 404 - no match
+https://society6.com/AnonCatalyst - HTTP 404 - no match
+https://timesofindia.indiatimes.com/speaking-tree - HTTP 200 - no match
+https://www.spoonflower.com/profiles/AnonCatalyst - HTTP 403 - no match
+https://www.stitcher.com/roadblock/index.html - HTTP 200 - no match
+https://www.stumbleupon.com/stumbler/AnonCatalyst - HTTP 404 - no match
+https://www.suicidegirls.com/members/anoncatalyst/ - HTTP 404 - no match
+https://www.taringa.net/AnonCatalyst - HTTP 200 - no match
+https://www.tasteofhome.com/cook/anoncatalyst - HTTP 404 - no match
+https://auth.ted.com/session/new?context=ted.www%2Fprofiles&referrer=https%3A%2F%2Fwww.ted.com%2Fprofiles%2Fanoncatalyst - HTTP 200 - no match
+https://www.travellerspoint.com/users/AnonCatalyst/ - HTTP 404 - no match
+https://www.tripit.com/people/AnonCatalyst - HTTP 403 - no match
+https://tamtam.chat - HTTP 200 - no match
+https://www.ubisoft.com/en-us/ubisoft-connect - HTTP 200 - no match
+https://www.upwork.com/freelancers/AnonCatalyst - HTTP 403 - no match
+https://www.veoh.com/users/AnonCatalyst - HTTP no response - error: ConnectError: [Errno 11001] getaddrinfo failed
+https://www.vine.co/AnonCatalyst - HTTP 404 - no match
+https://wanelo.com/ - HTTP 429 - no match
+https://weheartit.com/AnonCatalyst - HTTP 403 - no match
+https://wfts.su/profile/AnonCatalyst - HTTP 200 - no match
+https://www.wikidot.com/user:info/AnonCatalyst - HTTP 200 - no match
+https://www.wikihow.com/User:AnonCatalyst - HTTP 200 - no match
+https://www.xboxgamertag.com/search/AnonCatalyst - HTTP 403 - no match
+https://www.zedge.net/profile/AnonCatalyst - HTTP 404 - no match
+Errors: 9

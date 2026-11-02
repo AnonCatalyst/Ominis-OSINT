@@ -93,6 +93,17 @@ def test_from_env_ignores_empty_overrides(monkeypatch):
     assert settings.language == "de"
 
 
+@pytest.mark.parametrize("name,value", [
+    ("OMINIS_MAX_RESULTS", "many"),
+    ("OMINIS_TIMEOUT", "soon"),
+    ("OMINIS_STYXNET_ENGINES", "lots"),
+])
+def test_from_env_reports_the_offending_variable(monkeypatch, name, value):
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ValueError, match=name):
+        config.Settings.from_env("acme")
+
+
 def test_styxnet_is_off_by_default_and_needs_a_key_when_enabled():
     settings = config.Settings(query="acme")
     assert settings.styxnet is False

@@ -18,7 +18,7 @@ async def run(settings: config.Settings,
     outcome = report.SearchReport(query=settings.query,
                                   engines=list(settings.engines),
                                   proxies_used=settings.proxy_enabled)
-    seen: set[str] = set()
+    seen: dict[str, report.SearchRecord] = {}
     styxnet_failed = False
 
     if settings.styxnet:
@@ -36,8 +36,36 @@ async def run(settings: config.Settings,
     return outcome
 
 
+def _add(outcome: report.SearchReport,
+         seen: dict[str, report.SearchRecord],
+         record: report.SearchRecord,
+         progress: Progress | None) -> bool:
+    """Add a result once; merge engines and missing text for duplicates."""
+    key = utils.canonical_url(record.url) or record.url
+    existing = seen.get(key)
+    if existing is not None:
+        for engine in record.engine.split(","):
+            if engine and engine not in existing.engine.split(","):
+                existing.engine = (f"{existing.engine},{engine}"
+                                   if existing.engine else engine)
+        if not existing.snippet and record.snippet:
+            existing.snippet = record.snippet
+        if not existing.title and record.title:
+            existing.title = record.title
+        return False
+    record.position = len(outcome.records) + 1
+    seen[key] = record
+    outcome.records.append(record)
+    if progress:
+        progress(engines.Result(title=record.title, url=record.url,
+                                engine=record.engine, snippet=record.snippet,
+                                position=record.position))
+    return True
+
+
 async def _styxnet_pass(settings: config.Settings, outcome: report.SearchReport,
-                        seen: set[str], progress: Progress | None) -> bool:
+                        seen: dict[str, report.SearchRecord],
+                        progress: Progress | None) -> bool:
     try:
         answer = await asyncio.to_thread(
             styxnet.search,
@@ -62,18 +90,12 @@ async def _styxnet_pass(settings: config.Settings, outcome: report.SearchReport,
     }
     for item in answer.results:
         url = str(item.get("url") or "")
-        if not url or url in seen:
+        if not url or engines.is_noise_url(url):
             continue
-        seen.add(url)
-        record = report.SearchRecord(
+        _add(outcome, seen, report.SearchRecord(
             title=str(item.get("title") or url), url=url,
-            engine="styxnet", snippet=str(item.get("snippet") or ""),
-            position=len(outcome.records) + 1)
-        outcome.records.append(record)
-        if progress:
-            progress(engines.Result(title=record.title, url=record.url,
-                                    engine="styxnet", snippet=record.snippet,
-                                    position=record.position))
+            engine="styxnet", snippet=str(item.get("snippet") or "")),
+            progress)
         if len(outcome.records) >= settings.max_results:
             break
     outcome.profiles.extend(answer.profiles)
@@ -81,37 +103,44 @@ async def _styxnet_pass(settings: config.Settings, outcome: report.SearchReport,
 
 
 async def _local_pass(settings: config.Settings, outcome: report.SearchReport,
-                      seen: set[str], progress: Progress | None) -> None:
+                      seen: dict[str, report.SearchRecord],
+                      progress: Progress | None) -> None:
+    active: list[str] = []
     for engine in settings.engines:
         if engine == "serpbase" and not settings.serpbase_key:
             outcome.errors.append(
                 "SerpBase was selected but no API key is set; set SERPBASE_API_KEY")
             continue
-        page = 1
-        while len(outcome.records) < settings.max_results and page <= MAX_PAGES:
+        active.append(engine)
+
+    # Ask every engine for page 1, then page 2, rather than exhausting one
+    # provider first. With a small --max-results the old loop meant Bing never
+    # contributed, so one blocked scraper could silently empty the report.
+    page = 1
+    while active and len(outcome.records) < settings.max_results \
+            and page <= MAX_PAGES:
+        still: list[str] = []
+        for engine in active:
+            if len(outcome.records) >= settings.max_results:
+                break
             try:
                 batch = await engines.fetch_engine(engine, settings, page)
             except Exception as exc:  # one provider must not sink the run
                 outcome.errors.append(f"{engine}: {exc}")
-                break
+                continue
             if not batch:
-                break
-            added = 0
+                continue
             for item in batch:
-                if item.url in seen:
-                    continue
-                seen.add(item.url)
-                outcome.records.append(report.SearchRecord(
-                    title=item.title, url=item.url, engine=item.engine,
-                    snippet=item.snippet, position=len(outcome.records) + 1))
-                added += 1
-                if progress:
-                    progress(item)
                 if len(outcome.records) >= settings.max_results:
                     break
-            if not added:
-                break
-            page += 1
+                if engines.is_noise_url(item.url, item.engine):
+                    continue
+                _add(outcome, seen, report.SearchRecord(
+                    title=item.title, url=item.url, engine=item.engine,
+                    snippet=item.snippet), progress)
+            still.append(engine)
+        active = still
+        page += 1
 
 
 def _mentions(outcome: report.SearchReport, query: str) -> dict[str, int]:
@@ -135,7 +164,19 @@ def _profiles(known: list[dict[str, object]],
             key = platforms.profile_key(profile)
             if key:
                 found.setdefault(key, profile)
-    return [profile for profile in found.values() if profile]
+    ordered = sorted(found.values(),
+                     key=lambda profile: (
+                         -_confidence(profile),
+                         str(profile.get("platform") or "").casefold(),
+                         str(profile.get("profile_url") or "")))
+    return [profile for profile in ordered if profile]
+
+
+def _confidence(profile: dict[str, object]) -> int:
+    try:
+        return int(profile.get("confidence") or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def run_sync(settings: config.Settings,
