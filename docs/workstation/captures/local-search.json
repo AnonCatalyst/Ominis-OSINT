@@ -1,0 +1,145 @@
+{
+  "mode": "Web search",
+  "target": "AnonCatalyst",
+  "started": "2026-11-02T02:43:51+00:00",
+  "elapsed_ms": 4569,
+  "summary": {
+    "query": "AnonCatalyst",
+    "started": "2026-11-02T02:43:51+00:00",
+    "results": 10,
+    "mentions": {
+      "AnonCatalyst": 27
+    },
+    "profiles": 7,
+    "engines": [
+      "duckduckgo",
+      "bing"
+    ],
+    "proxies_used": false,
+    "styxnet": false,
+    "errors": []
+  },
+  "results": [
+    {
+      "title": "AnonCatalyst (Istoleyourbutter) · GitHub",
+      "url": "https://github.com/AnonCatalyst",
+      "engine": "bing",
+      "snippet": "Istoleyourbutter AnonCatalyst Follow 🌐 - Osint Specialist 🏆 - Best Open Source Osint Tools! 💬 - Software Developer 182 followers · 9 … Read more",
+      "position": 1
+    },
+    {
+      "title": "GitHub - AnonCatalyst /DepthSearch: DepthSearch is a deep web …",
+      "url": "https://github.com/AnonCatalyst/DepthSearch/",
+      "engine": "bing",
+      "snippet": "DepthSearch is a deep web OSINT tool that enables powerful, anonymous searches across deep web search engines. It features …",
+      "position": 2
+    },
+    {
+      "title": "Tony Kincaid / AnonCatalyst · GitLab",
+      "url": "https://gitlab.com/AnonCatalyst/AnonCatalyst",
+      "engine": "bing",
+      "snippet": "Config files for my GitHub profile.",
+      "position": 3
+    },
+    {
+      "title": "istoleyourbutter (@ AnonCatalyst ) / Posts / X",
+      "url": "https://x.com/anoncatalyst",
+      "engine": "bing",
+      "snippet": "Jun 26, 2024 · istoleyourbutter (@AnonCatalyst) - Posts - 🔍 OSINT Specialist | Uncovering hidden truths through open-source …",
+      "position": 4
+    },
+    {
+      "title": "AnonCatalyst - YouTube",
+      "url": "https://www.youtube.com/@AnonCatalyst",
+      "engine": "bing",
+      "snippet": "AnonCatalyst 🔍 Uncovering the Digital World Welcome to AnonCatalyst! Your one-stop destination for mastering Open Source …",
+      "position": 5
+    },
+    {
+      "title": "AnonCatalyst (@ anoncatalyst ) • Instagram photos and videos",
+      "url": "https://www.instagram.com/anoncatalyst/",
+      "engine": "bing",
+      "snippet": "1,542 Followers, 73 Following, 144 Posts - AnonCatalyst (@anoncatalyst) on Instagram: \"♤ Osint Specialist ︎ Python3, Shell, …",
+      "position": 6
+    },
+    {
+      "title": "Tony Kincaid · GitLab",
+      "url": "https://gitlab.com/AnonCatalyst",
+      "engine": "bing",
+      "snippet": "Feb 25, 2024 · Tony Kincaid · GitLab ... GitLab.com",
+      "position": 7
+    },
+    {
+      "title": "AnonCatalyst – Medium",
+      "url": "https://medium.com/@hard2find.co.01",
+      "engine": "bing",
+      "snippet": "Read writing from AnonCatalyst on Medium. ♤ Osint Specialist. Every day, AnonCatalyst and thousands of other voices read, write, …",
+      "position": 8
+    },
+    {
+      "title": "AnonCatalyst | Instagram | Linktree",
+      "url": "https://linktr.ee/istoleyourbutter",
+      "engine": "bing",
+      "snippet": "AnonCatalyst Hello World 🌍👋 Get your hands on the best Osint Tools! 🔥 Join the OpenZenith Discord Server!",
+      "position": 9
+    },
+    {
+      "title": "Ominis-OSINT | This Python application is an OSINT (Open Source ...",
+      "url": "https://anoncatalyst.github.io/Ominis-OSINT/",
+      "engine": "bing",
+      "snippet": "This Python application is an OSINT (Open Source Intelligence) tool called “Ominis OSINT - Web Hunter.” It performs online …",
+      "position": 10
+    }
+  ],
+  "profiles": [
+    {
+      "platform": "GitHub",
+      "profile_url": "https://github.com/AnonCatalyst",
+      "category": "dev",
+      "confidence": 90
+    },
+    {
+      "platform": "X (Twitter)",
+      "profile_url": "https://x.com/anoncatalyst",
+      "category": "social",
+      "confidence": 90
+    },
+    {
+      "platform": "YouTube",
+      "profile_url": "https://www.youtube.com/@AnonCatalyst",
+      "category": "video",
+      "confidence": 90
+    },
+    {
+      "platform": "Instagram",
+      "profile_url": "https://www.instagram.com/anoncatalyst",
+      "category": "social",
+      "confidence": 85
+    },
+    {
+      "platform": "Medium",
+      "profile_url": "https://medium.com/@hard2find.co.01",
+      "category": "blog",
+      "confidence": 85
+    },
+    {
+      "platform": "GitLab",
+      "profile_url": "https://gitlab.com/AnonCatalyst",
+      "category": "dev",
+      "confidence": 80
+    },
+    {
+      "platform": "Linktree",
+      "profile_url": "https://linktr.ee/istoleyourbutter",
+      "category": "links",
+      "confidence": 75
+    }
+  ],
+  "errors": [],
+  "paths": {
+    "txt": "AnonCatalyst.txt",
+    "json": "AnonCatalyst.json",
+    "md": "AnonCatalyst.md"
+  },
+  "version": "1.2.0"
+}

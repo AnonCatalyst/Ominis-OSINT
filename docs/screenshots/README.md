@@ -1,6 +1,6 @@
 # Screenshots
 
-A static gallery of real Ominis 1.2.0 runs. The page and the cropped PNGs are
+A static gallery of real Ominis 1.2.x runs, captured on 1.2.0. The page and the cropped PNGs are
 generated from the captured reports in [`docs/captures`](../captures), so they
 can be rebuilt at any time.
 

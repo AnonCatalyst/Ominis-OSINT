@@ -24,10 +24,13 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
-## Version 1.2
+## Version 1.2.1
 
 This is the full suite. It is published alongside the patched original
-(`v0.5.0`) so anyone relying on the old layout can keep it. Highlights:
+(`v0.5.0`) so anyone relying on the old layout can keep it. 1.2.1 is a
+documentation and metadata update that ships the same engine behaviour as 1.2.0
+and keeps the package aligned with the separate Windows workstation release.
+Highlights:
 
 - **Optional StyxNet search.** `--styxnet` sends the query to WinterGate's
   engine pool instead of scraping; local DuckDuckGo/Bing remain the fallback.
@@ -66,6 +69,24 @@ reports in [`docs/captures`](docs/captures). There is no mocked data.
 
 Full gallery: [`docs/screenshots/index.html`](docs/screenshots/index.html).
 How each capture was produced: [`docs/captures/README.md`](docs/captures/README.md).
+
+## Ominis Investigation Workstation (Windows)
+
+A separate desktop product for Windows: a native **Qt window application**, not
+a browser page and not an embedded web view. It wraps the same engine in one
+desk for web search, username checks, and StyxNet, and it labels every profile
+with the signal that detected it.
+
+- Latest workstation: **1.0.0** (bundled engine **1.2.1**)
+- Download: [`Ominis-Workstation-1.0.0-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.0)
+- Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)
+
+| | |
+|---|---|
+| [![Workstation overview](https://raw.githubusercontent.com/AnonCatalyst/Ominis-OSINT/main/docs/workstation/screenshots/01-overview.png)](https://github.com/AnonCatalyst/Ominis-OSINT/blob/main/docs/workstation/screenshots/01-overview.png) | [![Detection signals](https://raw.githubusercontent.com/AnonCatalyst/Ominis-OSINT/main/docs/workstation/screenshots/06-username-checks.png)](https://github.com/AnonCatalyst/Ominis-OSINT/blob/main/docs/workstation/screenshots/06-username-checks.png) |
+
+The workstation build is unsigned and no signing is claimed. It is a separate
+release from the command line suite; installing one does not install the other.
 
 ## Install
 

@@ -1,0 +1,192 @@
+{
+  "mode": "StyxNet",
+  "target": "AnonCatalyst",
+  "started": "2026-11-02T02:45:27+00:00",
+  "elapsed_ms": 15463,
+  "summary": {
+    "query": "AnonCatalyst",
+    "started": "2026-11-02T02:45:27+00:00",
+    "results": 7,
+    "mentions": {
+      "AnonCatalyst": 22
+    },
+    "profiles": 14,
+    "engines": [
+      "styxnet"
+    ],
+    "proxies_used": false,
+    "styxnet": true,
+    "errors": [],
+    "styxnet_meta": {
+      "engines": 16,
+      "elapsed_ms": 15463,
+      "archive_id": "arc_811ae04c57e04e05"
+    }
+  },
+  "results": [
+    {
+      "title": "istoleyourbutter (@AnonCatalyst) / Posts / X",
+      "url": "https://x.com/anoncatalyst",
+      "engine": "styxnet",
+      "snippet": "Jun 26, 2024 · istoleyourbutter (@AnonCatalyst) - Posts - 🔍 OSINT Specialist | Uncovering hidden truths through open-source intelligence. Passionate about cy... | X (formerly Twitter)",
+      "position": 1
+    },
+    {
+      "title": "AnonCatalyst (Istoleyourbutter) · GitHub",
+      "url": "https://github.com/AnonCatalyst",
+      "engine": "styxnet",
+      "snippet": "Istoleyourbutter AnonCatalyst Follow 🌐 - Osint Specialist 🏆 - Best Open Source Osint Tools! 💬 - Software Developer 182 followers · 9 following",
+      "position": 2
+    },
+    {
+      "title": "GitHub - AnonCatalyst/DepthSearch: DepthSearch is a deep web ...",
+      "url": "https://github.com/AnonCatalyst/DepthSearch/",
+      "engine": "styxnet",
+      "snippet": "DepthSearch is a powerful OSINT tool designed for conducting deep web searches. It enables users to search for specific keywords or strings across deep web search engines, providing detailed results with URLs, titles, and descriptions. The tool is built to support proxy rotation for enhanced anonymity and integrates system information retrieval to offer insights into the running environment ...",
+      "position": 3
+    },
+    {
+      "title": "AnonCatalyst (@anoncatalyst) • Instagram photos and videos",
+      "url": "https://www.instagram.com/anoncatalyst/",
+      "engine": "styxnet",
+      "snippet": "1,542 Followers, 73 Following, 144 Posts - AnonCatalyst (@anoncatalyst) on Instagram: \"♤ Osint Specialist ︎ Python3, Shell, HTML, JS, CSS, Kotlin Entirely Self Taught ♡ No degrees, no certs, just passion & dedication 💻 #osinttools\"",
+      "position": 4
+    },
+    {
+      "title": "AnonCatalyst - YouTube",
+      "url": "https://www.youtube.com/channel/UCJ6Tt-LeRdxxn4KBtMH3ZLQ",
+      "engine": "styxnet",
+      "snippet": "AnonCatalyst 🔍 Uncovering the Digital World Welcome to AnonCatalyst! Your one-stop destination for mastering Open Source Intelligence (OSINT) and digital reconnaissance 🌐. I develop powerful ...",
+      "position": 5
+    },
+    {
+      "title": "AnonCatalyst – Medium",
+      "url": "https://medium.com/@hard2find.co.01",
+      "engine": "styxnet",
+      "snippet": "Read writing from AnonCatalyst on Medium. ♤ Osint Specialist. Every day, AnonCatalyst and thousands of other voices read, write, and share important stories on Medium.",
+      "position": 6
+    },
+    {
+      "title": "Tony Kincaid / AnonCatalyst · GitLab",
+      "url": "https://gitlab.com/AnonCatalyst/AnonCatalyst",
+      "engine": "styxnet",
+      "snippet": "Config files for my GitHub profile.",
+      "position": 7
+    }
+  ],
+  "profiles": [
+    {
+      "platform": "GitHub",
+      "profile_url": "https://github.com/AnonCatalyst",
+      "category": "dev",
+      "confidence": 90,
+      "title": "AnonCatalyst on GitHub",
+      "source": "styxnet"
+    },
+    {
+      "platform": "X (Twitter)",
+      "profile_url": "https://x.com/anoncatalyst",
+      "category": "social",
+      "confidence": 90,
+      "title": "istoleyourbutter (@AnonCatalyst) / X",
+      "source": "styxnet"
+    },
+    {
+      "platform": "YouTube",
+      "profile_url": "https://www.youtube.com/channel/UCJ6Tt-LeRdxxn4KBtMH3ZLQ",
+      "category": "video",
+      "confidence": 90
+    },
+    {
+      "platform": "Instagram",
+      "profile_url": "https://www.instagram.com/anoncatalyst",
+      "category": "social",
+      "confidence": 85
+    },
+    {
+      "platform": "Medium",
+      "profile_url": "https://medium.com/@hard2find.co.01",
+      "category": "blog",
+      "confidence": 85
+    },
+    {
+      "platform": "GitLab",
+      "profile_url": "https://gitlab.com/AnonCatalyst",
+      "category": "dev",
+      "confidence": 80,
+      "title": "AnonCatalyst on GitLab",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Linktree",
+      "profile_url": "https://linktr.ee/anoncatalyst",
+      "category": "links",
+      "confidence": 75,
+      "title": "AnonCatalyst | Linktree",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Blur",
+      "profile_url": "https://blur.io/anoncatalyst",
+      "category": "crypto",
+      "confidence": 60,
+      "title": "",
+      "source": "styxnet"
+    },
+    {
+      "platform": "CashApp",
+      "profile_url": "https://cash.app/anoncatalyst",
+      "category": "finance",
+      "confidence": 60,
+      "title": "Pay $anoncatalyst on Cash App",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Coders Rank",
+      "profile_url": "https://profile.codersrank.io/user/anoncatalyst",
+      "category": "dev",
+      "confidence": 60,
+      "title": "anoncatalyst's CodersRank profile",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Dumpor",
+      "profile_url": "https://dumpor.com/v/anoncatalyst",
+      "category": "social",
+      "confidence": 60,
+      "title": "anoncatalyst Watch instagram stories and profile anonymous",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Gettr",
+      "profile_url": "https://gettr.com/user/anoncatalyst",
+      "category": "social",
+      "confidence": 60,
+      "title": "anoncatalyst on GETTR - Profile and Posts",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Infosec.Exchange",
+      "profile_url": "https://bird.makeup/users/anoncatalyst",
+      "category": "social",
+      "confidence": 60,
+      "title": "anoncatalyst on Infosec.Exchange",
+      "source": "styxnet"
+    },
+    {
+      "platform": "Xbox",
+      "profile_url": "https://xbox.com/en-US/play/user/anoncatalyst",
+      "category": "gaming",
+      "confidence": 60,
+      "title": "View anoncatalyst's profile | Xbox Cloud Gaming on Xbox.com",
+      "source": "styxnet"
+    }
+  ],
+  "errors": [],
+  "paths": {
+    "txt": "AnonCatalyst.txt",
+    "json": "AnonCatalyst.json",
+    "md": "AnonCatalyst.md"
+  },
+  "version": "1.2.0"
+}
