@@ -163,7 +163,8 @@ Resolve a key in this order:
 2. `STYXNET_ACCESS_KEY` in the environment
 3. `OMINIS_STYXNET_KEY` in the environment
 4. `~/.config/ominis/styxnet-key.txt`
-   (`%APPDATA%\ominis\styxnet-key.txt` on Windows)
+   (`%USERPROFILE%\.config\ominis\styxnet-key.txt` on Windows)
+5. `%APPDATA%\ominis\styxnet-key.txt` when the first file is absent
 
 Request a key at <https://discord.gg/tu5CynxjZq>. The service is described at
 <https://wintergate.org/styxnet/>. The key is never printed or written to a

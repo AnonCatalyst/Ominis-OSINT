@@ -15,9 +15,9 @@ checks, StyxNet runs, and reports all happen inside one desktop window.
 ## Download
 
 The release asset is `Ominis-Workstation-1.0.0-win64.zip`. Unpack it and run
-`OminisWorkstation.exe`. There is no installer and nothing is written outside
-the folder except the reports you ask for and, if you choose to save one, the
-StyxNet key file.
+`OminisWorkstation.exe`. There is no installer. The only things written outside
+the folder are the reports you ask for, the optional StyxNet key file, and
+window preferences in the registry.
 
 The build is **unsigned**. Windows SmartScreen may show a warning for an
 unknown publisher. No code signing is claimed; see `CODE_SIGNING.md` in the
@@ -38,19 +38,20 @@ service errors. It is optional and never enabled by default.
 
 ### Access to StyxNet
 
-Access is free during the preview. Join the WinterGate Discord and ask for a
-key:
+Access is free right now and will stay free for the foreseeable future. Join
+the WinterGate Discord and ask for a key:
 
 <https://discord.gg/tu5CynxjZq>
 
 The key is stored in `~/.config/ominis/styxnet-key.txt` (or
 `%USERPROFILE%\.config\ominis\styxnet-key.txt`) with the file permissions
-tightened to the current account. Settings never display the key again; it
-shows only whether a key is saved and how many characters it has. You can also
-use `STYXNET_ACCESS_KEY` or `OMINIS_STYXNET_KEY` if you prefer environment
-variables. Client-side limits (one search at a time, 20 per hour, 100 per day,
-10 seconds between searches, 200 engines per request) are enforced by the
-engine, not by the window, so they hold across terminals too.
+tightened to the current account. An existing key in
+`%APPDATA%\ominis\styxnet-key.txt` is also accepted. Settings never display the
+key again; it shows only whether a key is saved and how many characters it has.
+You can also use `STYXNET_ACCESS_KEY` or `OMINIS_STYXNET_KEY` if you prefer
+environment variables. Client-side limits (one search at a time, 20 per hour,
+100 per day, 10 seconds between searches, 200 engines per request) are enforced
+by the engine, not by the window, so they hold across terminals too.
 
 ## Detection signals
 
