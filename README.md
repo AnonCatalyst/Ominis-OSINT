@@ -1,4 +1,4 @@
-# Ominis-OSINT: Web Hunter
+# Ominis-OSINT: Web Hunter 
 
 [![PyPI](https://img.shields.io/pypi/v/ominis-osint-suite.svg)](https://pypi.org/project/ominis-osint-suite/)
 [![Tests](https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/tests.yml/badge.svg)](https://github.com/AnonCatalyst/Ominis-OSINT/actions/workflows/tests.yml)
