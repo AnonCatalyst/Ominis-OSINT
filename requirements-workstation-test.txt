@@ -1,0 +1,3 @@
+# Windows-only workstation test lane: the CLI suite plus the optional Qt GUI.
+-r requirements-test.txt
+PySide6==6.12.0

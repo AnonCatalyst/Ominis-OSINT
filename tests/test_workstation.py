@@ -9,6 +9,13 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
 
 import pytest
+
+pytest.importorskip(
+    "PySide6.QtCore",
+    reason="PySide6 is an optional GUI dependency; install it to run workstation tests.",
+    exc_type=ImportError,
+)
+
 from PySide6.QtCore import Qt
 
 from ominis_src import report, styxnet, username
