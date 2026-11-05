@@ -485,7 +485,7 @@ def _release_slot(lease_id: str) -> None:
 def search(query: str, *, key: str = "", endpoint: str = DEFAULT_ENDPOINT,
            max_engines: int = 35, res_limit: int = 50,
            scopes: tuple[str, ...] | list[str] = DEFAULT_SCOPES,
-           timeout: float = 120.0) -> StyxNetAnswer:
+           timeout: float = 120.0, use_env_proxy: bool = False) -> StyxNetAnswer:
     """Run one StyxNet search and return normalised results and profiles."""
     query = str(query or "").strip()
     if not query:
@@ -514,7 +514,9 @@ def search(query: str, *, key: str = "", endpoint: str = DEFAULT_ENDPOINT,
     lease = _reserve_slot(timeout)
     try:
         with httpx.Client(base_url=endpoint.rstrip("/"), headers=headers,
-                          timeout=timeout, follow_redirects=True) as client:
+                          timeout=timeout, follow_redirects=True,
+                          verify=utils.ssl_verify(),
+                          trust_env=use_env_proxy) as client:
             response = _request(client, "POST", "/search", json=body)
     except httpx.HTTPError as exc:
         raise StyxNetError(f"StyxNet request failed: {exc}") from None

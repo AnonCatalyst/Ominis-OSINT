@@ -64,11 +64,24 @@ async def test_explicit_proxy_overrides_environment_and_no_proxy(servers, monkey
 
 
 @pytest.mark.asyncio
-async def test_unsupplied_pool_preserves_environment_proxy(servers, monkeypatch):
+async def test_unsupplied_pool_ignores_environment_proxy_by_default(servers, monkeypatch):
     origin = await servers.origin()
     proxy = await servers.http_proxy()
     monkeypatch.setenv("HTTP_PROXY", proxy.url)
+    monkeypatch.delenv("NO_PROXY", raising=False)
     assert await tools_handler.make_request_async(origin.url) == "local response"
+    assert proxy.requests == []
+    assert len(origin.requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_unsupplied_pool_can_opt_into_environment_proxy(servers, monkeypatch):
+    origin = await servers.origin()
+    proxy = await servers.http_proxy()
+    monkeypatch.setenv("HTTP_PROXY", proxy.url)
+    monkeypatch.delenv("NO_PROXY", raising=False)
+    assert await tools_handler.make_request_async(
+        origin.url, use_env_proxy=True) == "local response"
     assert len(proxy.requests) == 1
 
 

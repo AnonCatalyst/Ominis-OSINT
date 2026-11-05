@@ -13,7 +13,7 @@ from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
 
 # Load utility functions from ominis_src/utils.py
 from ominis_src.utils import (extract_mentions, find_social_profiles,
-                              host_matches, is_potential_forum,
+                              host_matches, is_potential_forum, ssl_verify,
                               unwrap_bing_url, unwrap_duckduckgo_url)
 
 # Initialize colorama for colored output
@@ -147,20 +147,28 @@ def _safe_proxy_error(error, proxy):
     return message
 
 
-async def make_request_async(url, proxies=None):
+async def make_request_async(url, proxies=None, *, timeout=REQUEST_TIMEOUT,
+                             verify_tls=True, use_env_proxy=False):
     proxies = _normalize_proxy_pool(proxies)
     if proxies is None:
         # A blocked or stalled host must not consume the whole run: the retry
         # loop, its backoff and every request share one wall-clock budget.
+        # Environment proxies are opt-in; otherwise a stale HTTP_PROXY value
+        # can make every engine look empty.
+        budget = float(REQUEST_TIMEOUT)
+        attempt_timeout = min(float(timeout), budget)
         try:
             return await asyncio.wait_for(
-                _make_request_with_retries(url, proxies, MAX_RETRY_COUNT),
-                timeout=REQUEST_TIMEOUT,
+                _make_request_with_retries(
+                    url, proxies, MAX_RETRY_COUNT, timeout=attempt_timeout,
+                    verify_tls=verify_tls, use_env_proxy=use_env_proxy,
+                ),
+                timeout=budget,
             )
         except asyncio.TimeoutError:
-            logger.error("Request exceeded %g-second budget for %s", REQUEST_TIMEOUT, url)
+            logger.error("Request exceeded %g-second budget for %s", budget, url)
             raise RuntimeError(
-                f"Request failed: network budget of {REQUEST_TIMEOUT:g} seconds exceeded"
+                f"Request failed: network budget of {budget:g} seconds exceeded"
             ) from None
 
     # User input must not consume the network retry budget.
@@ -168,17 +176,24 @@ async def make_request_async(url, proxies=None):
     if show_message is None:
         show_message = await ask_to_show_message()
     max_retries = min(MAX_RETRY_COUNT, MAX_PROXY_RETRY_COUNT)
+    budget = float(PROXY_REQUEST_TIMEOUT)
+    attempt_timeout = min(float(timeout), budget)
     try:
         return await asyncio.wait_for(
-            _make_request_with_retries(url, proxies, max_retries),
-            timeout=PROXY_REQUEST_TIMEOUT,
+            _make_request_with_retries(
+                url, proxies, max_retries, timeout=attempt_timeout,
+                verify_tls=verify_tls, use_env_proxy=use_env_proxy,
+            ),
+            timeout=budget,
         )
     except asyncio.TimeoutError:
-        logger.error("Explicit proxy request exceeded %g-second budget for %s", PROXY_REQUEST_TIMEOUT, url)
-        raise RuntimeError(f"Request failed: explicit proxy budget of {PROXY_REQUEST_TIMEOUT:g} seconds exceeded") from None
+        logger.error("Explicit proxy request exceeded %g-second budget for %s", budget, url)
+        raise RuntimeError(f"Request failed: explicit proxy budget of {budget:g} seconds exceeded") from None
 
 
-async def _make_request_with_retries(url, proxies, max_retries):
+async def _make_request_with_retries(url, proxies, max_retries, *,
+                                     timeout=REQUEST_TIMEOUT, verify_tls=True,
+                                     use_env_proxy=False):
     retry_count = 0
     while retry_count < max_retries:
         proxy = random.choice(proxies) if proxies is not None else None
@@ -186,8 +201,9 @@ async def _make_request_with_retries(url, proxies, max_retries):
             async with httpx.AsyncClient(
                 proxy=proxy,
                 http2=True,
-                verify=True,
-                timeout=10.0,
+                verify=ssl_verify(verify_tls),
+                timeout=timeout,
+                trust_env=use_env_proxy and proxy is None,
                 follow_redirects=True,
                 limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
             ) as client:

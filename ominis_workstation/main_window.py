@@ -12,12 +12,14 @@ from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDialog, QDialogButtonBox,
     QFileDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
-    QProgressBar, QPushButton, QScrollArea, QSizePolicy, QSpinBox, QSplitter,
-    QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
+    QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSizePolicy,
+    QSpinBox, QSplitter, QTabWidget, QTableWidget, QTableWidgetItem,
+    QVBoxLayout, QWidget,
 )
 
 from ominis_src import __version__ as engine_version
 
+from . import __version__ as workstation_version
 from . import backend, theme
 from .backend import MODE_SEARCH, MODE_STYXNET, MODE_USERNAME, MODES, InvestigationRequest
 from .widgets import (
@@ -26,7 +28,7 @@ from .widgets import (
     profile_signal, signal_color, signal_label, signal_strength,
 )
 
-APP_VERSION = "1.0.0"
+APP_VERSION = workstation_version
 APP_NAME = "Ominis Investigation Workstation"
 ORG_NAME = "WinterGate"
 DOCS_URL = "https://github.com/AnonCatalyst/Ominis-OSINT"
@@ -39,6 +41,7 @@ class CasePanel(QFrame):
 
     settingsRequested = Signal()
     modeChanged = Signal(str)
+    proxyChanged = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -69,11 +72,60 @@ class CasePanel(QFrame):
             box.setChecked(name in ("duckduckgo", "bing"))
             self.engine_boxes[name] = box
             engine_layout.addWidget(box)
-        self.engine_note = QLabel("Scraped locally. Proxies stay off.")
+        self.engine_note = QLabel("Scraped locally. Proxies are off by default.")
         self.engine_note.setObjectName("Hint")
         self.engine_note.setWordWrap(True)
         engine_layout.addWidget(self.engine_note)
         layout.addWidget(self.engine_group)
+
+        self.scan_group = QGroupBox("Page inspection")
+        scan_layout = QVBoxLayout(self.scan_group)
+        scan_layout.setSpacing(6)
+        self.scan_pages = QCheckBox("Read result pages and verify profiles")
+        self.scan_pages.setChecked(True)
+        self.scan_pages.setToolTip(
+            "Fetch each result page and record whether its metadata, "
+            "canonical URL, structured data, or visible text matches the "
+            "query. This is the same evidence the username checker uses.")
+        scan_layout.addWidget(self.scan_pages)
+        self.scan_limit = QSpinBox()
+        self.scan_limit.setRange(1, 100)
+        self.scan_limit.setValue(10)
+        self.scan_limit.setToolTip("How many of the top results to inspect.")
+        scan_row = QHBoxLayout()
+        scan_row.addWidget(QLabel("Pages to inspect"))
+        scan_row.addWidget(self.scan_limit, 1)
+        scan_layout.addLayout(scan_row)
+        self.scan_pages.toggled.connect(self.scan_limit.setEnabled)
+        layout.addWidget(self.scan_group)
+
+        self.proxy_group = QGroupBox("Proxies (optional)")
+        proxy_layout = QVBoxLayout(self.proxy_group)
+        proxy_layout.setSpacing(6)
+        self.proxy_toggle = QCheckBox("Route through a proxy pool")
+        proxy_layout.addWidget(self.proxy_toggle)
+        self.proxy_edit = QPlainTextEdit()
+        self.proxy_edit.setPlaceholderText(
+            "One endpoint per line, for example\n"
+            "http://host:8080\n"
+            "socks5://host:1080")
+        self.proxy_edit.setFixedHeight(64)
+        self.proxy_edit.setEnabled(False)
+        proxy_layout.addWidget(self.proxy_edit)
+        self.env_proxy = QCheckBox("Use system proxy environment")
+        self.env_proxy.setToolTip(
+            "Honour HTTP_PROXY, HTTPS_PROXY and ALL_PROXY. Off by default so "
+            "a stale proxy variable cannot silently empty a run.")
+        self.env_proxy.setEnabled(False)
+        proxy_layout.addWidget(self.env_proxy)
+        proxy_note = QLabel(
+            "Off by default. Entries are used for this session only and are "
+            "never written to a report or the activity log.")
+        proxy_note.setObjectName("Hint")
+        proxy_note.setWordWrap(True)
+        proxy_layout.addWidget(proxy_note)
+        self.proxy_toggle.toggled.connect(self._proxy_toggled)
+        layout.addWidget(self.proxy_group)
 
         self.max_results = QSpinBox()
         self.max_results.setRange(1, 1000)
@@ -168,6 +220,12 @@ class CasePanel(QFrame):
         dir_row.addWidget(self.out_dir, 1)
         dir_row.addWidget(browse)
         output_layout.addLayout(dir_row)
+        self.save_report = QCheckBox("Save report files")
+        self.save_report.setChecked(True)
+        self.save_report.setToolTip(
+            "Uncheck to keep results in the window only. No files are written "
+            "and no report folder is created.")
+        output_layout.addWidget(self.save_report)
         output_layout.addWidget(QLabel("Formats"))
         format_row = QGridLayout()
         self.format_boxes: dict[str, QCheckBox] = {}
@@ -177,6 +235,7 @@ class CasePanel(QFrame):
             self.format_boxes[name] = box
             format_row.addWidget(box, index // 2, index % 2)
         output_layout.addLayout(format_row)
+        self.save_report.toggled.connect(self._report_toggled)
         layout.addWidget(output)
 
         layout.addStretch(1)
@@ -205,6 +264,7 @@ class CasePanel(QFrame):
         is_username = mode == MODE_USERNAME
         is_styxnet = mode == MODE_STYXNET
         self.engine_group.setVisible(not is_username and not is_styxnet)
+        self.scan_group.setVisible(not is_username)
         self.max_field.setVisible(not is_username)
         self.max_results.setEnabled(not is_username)
         self.filters_group.setVisible(not is_username)
@@ -218,7 +278,7 @@ class CasePanel(QFrame):
         elif is_styxnet:
             self.engine_note.setText("One request to the WinterGate pool.")
         else:
-            self.engine_note.setText("Scraped locally. Proxies stay off.")
+            self.engine_note.setText("Scraped locally. Proxies are off by default.")
         self.modeChanged.emit(mode)
 
     def selected_engines(self) -> tuple[str, ...]:
@@ -226,8 +286,30 @@ class CasePanel(QFrame):
                      if box.isChecked())
 
     def selected_formats(self) -> tuple[str, ...]:
+        if not self.save_report.isChecked():
+            return ()
         return tuple(name for name, box in self.format_boxes.items()
                      if box.isChecked())
+
+    def selected_proxies(self) -> tuple[str, ...]:
+        if not self.proxy_toggle.isChecked():
+            return ()
+        entries: list[str] = []
+        for line in self.proxy_edit.toPlainText().splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                entries.append(line)
+        return tuple(dict.fromkeys(entries))
+
+    def _proxy_toggled(self, enabled: bool) -> None:
+        self.proxy_edit.setEnabled(enabled)
+        self.env_proxy.setEnabled(enabled)
+        self.proxyChanged.emit()
+
+    def _report_toggled(self, enabled: bool) -> None:
+        for box in self.format_boxes.values():
+            box.setEnabled(enabled)
+        self.out_dir.setEnabled(enabled)
 
     def selected_scopes(self) -> tuple[str, ...]:
         return tuple(name for name, box in self.scope_boxes.items()
@@ -256,6 +338,13 @@ class CasePanel(QFrame):
             box.setChecked(name in saved)
         self.include_all.setChecked(
             settings.value("run/include_all", True, type=bool))
+        self.scan_pages.setChecked(
+            settings.value("run/scan_pages", True, type=bool))
+        self.scan_limit.setValue(
+            settings.value("run/scan_limit", 10, type=int))
+        self.save_report.setChecked(
+            settings.value("run/save_report", True, type=bool))
+        self._report_toggled(self.save_report.isChecked())
         self.concurrency.setValue(
             settings.value("run/concurrency", 8, type=int))
         self.styxnet_engines.setValue(
@@ -273,6 +362,9 @@ class CasePanel(QFrame):
         settings.setValue("run/out_dir", self.out_dir.text().strip())
         settings.setValue("run/engines", ",".join(self.selected_engines()))
         settings.setValue("run/include_all", self.include_all.isChecked())
+        settings.setValue("run/scan_pages", self.scan_pages.isChecked())
+        settings.setValue("run/scan_limit", self.scan_limit.value())
+        settings.setValue("run/save_report", self.save_report.isChecked())
         settings.setValue("run/concurrency", self.concurrency.value())
         settings.setValue("run/styxnet_engines", self.styxnet_engines.value())
         settings.setValue("run/scopes", ",".join(self.selected_scopes()))
@@ -544,14 +636,13 @@ class SettingsDialog(QDialog):
         eyebrow = QLabel("SETTINGS")
         eyebrow.setObjectName("Eyebrow")
         layout.addWidget(eyebrow)
-        title = QLabel("StyxNet access")
+        title = QLabel("Settings")
         title.setObjectName("PageTitle")
         layout.addWidget(title)
         body = QLabel(
-            "StyxNet is optional. Access is free during the preview but needs "
-            "a key. Request one in the WinterGate Discord; keys are issued by "
-            "hand. Saved keys stay on this machine and are never displayed "
-            "again.")
+            "StyxNet is optional. Access is free right now but needs a key. "
+            "Request one in the WinterGate Discord; keys are issued by hand. "
+            "Saved keys stay on this machine and are never displayed again.")
         body.setObjectName("Hint")
         body.setWordWrap(True)
         layout.addWidget(body)
@@ -590,6 +681,18 @@ class SettingsDialog(QDialog):
         layout.addWidget(note)
 
         layout.addWidget(Hairline())
+        desktop = QLabel("DESKTOP")
+        desktop.setObjectName("Eyebrow")
+        layout.addWidget(desktop)
+        desktop_note = QLabel(
+            "The installer creates a Desktop shortcut. For the portable "
+            "build, or after moving the folder, create the shortcuts here.")
+        desktop_note.setObjectName("Hint")
+        desktop_note.setWordWrap(True)
+        layout.addWidget(desktop_note)
+        shortcut = QPushButton("Create Desktop and Start menu shortcuts")
+        shortcut.clicked.connect(self._install_shortcut)
+        layout.addWidget(shortcut)
         link_row = QHBoxLayout()
         docs = QPushButton("Open the StyxNet page")
         docs.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(SERVICE_URL)))
@@ -610,6 +713,16 @@ class SettingsDialog(QDialog):
 
     def _refresh(self) -> None:
         self.status.setText(backend.key_status())
+
+    def _install_shortcut(self) -> None:
+        try:
+            created = backend.create_shortcuts()
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "Shortcut not created", str(exc))
+            return
+        QMessageBox.information(
+            self, "Shortcut created",
+            "Created:\n" + "\n".join(str(path) for path in created))
 
     def _save(self) -> None:
         try:
@@ -837,6 +950,8 @@ class MainWindow(QMainWindow):
         self.act_doctor = QAction("Environment check...", self)
         self.act_doctor.setShortcut("Ctrl+D")
         self.act_doctor.triggered.connect(self.open_doctor)
+        self.act_shortcut = QAction("Install desktop shortcut...", self)
+        self.act_shortcut.triggered.connect(self.install_shortcut)
         self.act_clear = QAction("Clear session", self)
         self.act_clear.setShortcut("Ctrl+L")
         self.act_clear.triggered.connect(self.clear_session)
@@ -864,6 +979,7 @@ class MainWindow(QMainWindow):
         tools_menu.addSeparator()
         tools_menu.addAction(self.act_settings)
         tools_menu.addAction(self.act_doctor)
+        tools_menu.addAction(self.act_shortcut)
 
         help_menu = self.menuBar().addMenu("Help")
         help_menu.addAction(self.act_signals)
@@ -931,6 +1047,7 @@ class MainWindow(QMainWindow):
         self.case_panel = CasePanel()
         self.case_panel.settingsRequested.connect(self.open_settings)
         self.case_panel.modeChanged.connect(self._panel_mode_changed)
+        self.case_panel.proxyChanged.connect(self._update_proxy_pill)
         side_scroll = QScrollArea()
         side_scroll.setWidgetResizable(True)
         side_scroll.setFrameShape(QFrame.NoFrame)
@@ -1007,6 +1124,7 @@ class MainWindow(QMainWindow):
         self.mode.currentTextChanged.connect(self._sync_panel_mode)
         self._sync_panel_mode(self.mode.currentText())
         self._update_key_pills()
+        self._update_proxy_pill()
 
     # -------------------------------------------------------------- helpers
     def _restore(self) -> None:
@@ -1056,6 +1174,33 @@ class MainWindow(QMainWindow):
         self.key_pill.set_kind("good" if backend.styxnet.load_key() else "")
         self.case_panel.set_key_status(status, bool(backend.styxnet.load_key()))
 
+    def _update_proxy_pill(self) -> None:
+        panel = self.case_panel
+        if not panel.proxy_toggle.isChecked():
+            text, kind = "Proxies off", ""
+        else:
+            entries = panel.selected_proxies()
+            if entries:
+                text, kind = f"{len(entries)} proxy endpoint(s)", "warn"
+            elif panel.env_proxy.isChecked():
+                text, kind = "System proxy", "warn"
+            else:
+                text, kind = "Proxy pool empty", "warn"
+        self.proxy_pill.setText(text)
+        self.proxy_pill.set_kind(kind)
+
+    def install_shortcut(self) -> None:
+        try:
+            created = backend.create_shortcuts()
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "Shortcut not created", str(exc))
+            return
+        self.activity.append_event(
+            "Shortcuts: " + ", ".join(path.name for path in created))
+        QMessageBox.information(
+            self, "Shortcut created",
+            "Desktop and Start menu shortcuts now point at this build.")
+
     def _set_running(self, running: bool) -> None:
         self.run_button.setEnabled(not running)
         self.stop_button.setEnabled(running)
@@ -1073,13 +1218,16 @@ class MainWindow(QMainWindow):
     def _build_request(self) -> InvestigationRequest:
         panel = self.case_panel
         formats = panel.selected_formats()
-        if not formats:
-            raise ValueError("Choose at least one report format.")
         mode = self.mode.currentText()
         if mode == MODE_SEARCH and not panel.selected_engines():
             raise ValueError("Choose at least one engine.")
         if mode == MODE_STYXNET and not panel.selected_scopes():
             raise ValueError("Choose at least one StyxNet scope.")
+        proxies = panel.selected_proxies()
+        if panel.proxy_toggle.isChecked() and not proxies \
+                and not panel.env_proxy.isChecked():
+            raise ValueError(
+                "Proxy pool is enabled but empty. Add an endpoint or turn it off.")
         since = panel.since.date().toString("yyyy-MM-dd") \
             if panel.date_toggle.isChecked() and mode == MODE_SEARCH else ""
         until = panel.until.date().toString("yyyy-MM-dd") \
@@ -1095,6 +1243,10 @@ class MainWindow(QMainWindow):
             until=until,
             out_dir=Path(panel.out_dir.text().strip() or _default_cases_dir()),
             formats=formats,
+            proxies=proxies,
+            use_env_proxy=panel.proxy_toggle.isChecked() and panel.env_proxy.isChecked(),
+            scan_pages=panel.scan_pages.isChecked(),
+            scan_limit=panel.scan_limit.value(),
             concurrency=panel.concurrency.value(),
             include_all=panel.include_all.isChecked(),
             styxnet_engines=panel.styxnet_engines.value(),
@@ -1219,12 +1371,18 @@ class MainWindow(QMainWindow):
         resolved = sum(
             1 for record in records
             if str(record.get("url") or "").rstrip("/").casefold() in known)
+        summary = payload.get("summary") or {}
+        scanned = int(summary.get("scanned") or 0)
+        page_matches = int(summary.get("page_matches") or 0)
+        # Once pages have been read, the Signal column is more useful than the
+        # engine name: it says what the page itself proved.
+        self.results_table.set_signal_mode(bool(scanned))
         self.results_caption.setText(
             f"{len(records)} result(s) · {resolved} resolved to a profile · "
-            f"{len(payload.get('errors') or [])} warning(s) · "
-            "◆ detected profile")
+            f"{scanned} page(s) inspected · {page_matches} page match(es) · "
+            f"{len(payload.get('errors') or [])} warning(s)")
         if payload.get("mode") == MODE_STYXNET:
-            meta = (payload.get("summary") or {}).get("styxnet_meta") or {}
+            meta = summary.get("styxnet_meta") or {}
             self.profiles_caption.setText(
                 f"{len(profiles)} candidate profile(s) · "
                 f"{meta.get('engines', '?')} engines · "
@@ -1233,7 +1391,7 @@ class MainWindow(QMainWindow):
         else:
             self.profiles_caption.setText(
                 f"{len(profiles)} detected profile(s) · "
-                "URL-pattern leads; open a profile to confirm")
+                f"{page_matches} confirmed by page evidence")
         self.tabs.setCurrentWidget(self.overview)
 
     def _load_username(self, payload: dict[str, Any]) -> None:

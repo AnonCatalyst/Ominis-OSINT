@@ -24,14 +24,25 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
-## Version 1.2.1
+## Version 1.2.2
 
 This is the full suite. It is published alongside the patched original
-(`v0.5.0`) so anyone relying on the old layout can keep it. 1.2.1 is a
-documentation and metadata update that ships the same engine behaviour as 1.2.0
-and keeps the package aligned with the separate Windows workstation release.
-Highlights:
+(`v0.5.0`) so anyone relying on the old layout can keep it. 1.2.2 adds page
+inspection, explicit proxy controls, and raw-only output, and fixes searches
+that silently returned nothing when a dead proxy variable was set. Highlights:
 
+- **Result pages are read, not just snippets.** The default scan pass fetches
+  the top results and records what each page itself proves: metadata,
+  canonical URL, structured handle fields, redirect target, and visible text.
+  Reports carry the HTTP status, final URL, signal, and detail per row, and
+  profiles inherit that evidence. Turn it off with `--no-scan-pages`, and cap
+  it with `--scan-limit`.
+- **Environment proxies are opt-in.** `HTTP_PROXY`, `HTTPS_PROXY`, and
+  `ALL_PROXY` are ignored unless `--use-env-proxy` is passed. A stale dead
+  proxy can no longer empty every engine. Explicit `--proxy`/`--proxy-file`
+  pools still work, and a failed proxy still fails instead of falling back.
+- **Raw output is allowed.** `--format none` prints results and writes no
+  report files. The workstation has a matching "Save report files" switch.
 - **Optional StyxNet search.** `--styxnet` sends the query to WinterGate's
   engine pool instead of scraping; local DuckDuckGo/Bing remain the fallback.
 - **Cleaner results.** Canonical URLs collapse duplicate engine hits, engines
@@ -44,8 +55,6 @@ Highlights:
   wide `social_platforms.json` table (still shipped), then generic
   Discourse/Fediverse/forum rules. False positives from substrings, reserved
   words, and canonical links are rejected.
-- **Proxies are off by default.** No proxy list is downloaded or validated
-  unless you ask for it.
 - **Real filters.** Language, country, and date ranges are passed to each
   engine instead of being accepted and ignored.
 - **Optional results API.** Set `SERPBASE_API_KEY` and the Google leg goes
@@ -54,7 +63,7 @@ Highlights:
 - **No browser download.** Username checks share one HTTPX client instead of
   starting a `requests_html` Chromium session per URL.
 - **Reports in four formats.** `txt`, `json`, `csv`, and `md`, with file names
-  that are safe for any query.
+  that are safe for any query. Or no files at all.
 - **A real CLI.** Scriptable subcommands, exit codes, and a `doctor` check.
 
 ### See it run
@@ -77,8 +86,9 @@ a browser page and not an embedded web view. It wraps the same engine in one
 desk for web search, username checks, and StyxNet, and it labels every profile
 with the signal that detected it.
 
-- Latest workstation: **1.0.0** (bundled engine **1.2.1**)
-- Download: [`Ominis-Workstation-1.0.0-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.0)
+- Latest workstation: **1.0.2** (bundled engine **1.2.2**)
+- Installer: [`Ominis-Workstation-1.0.2-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.2)
+- Portable: [`Ominis-Workstation-1.0.2-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.2)
 - Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)
 
 | | |
@@ -117,7 +127,13 @@ python ominis.py search "acme corp" --country US --lang en --max-results 40
 ```
 
 Results are written to `Results/` (override with `--out`). Choose formats with
-`--format txt,json,csv,md`.
+`--format txt,json,csv,md`. Use `--format none` to print results in the
+terminal and write no files.
+
+By default Ominis reads the top 10 result pages and stores what each page
+proves: HTTP status, final URL, signal (metadata, canonical, structured,
+redirect, body, or url), and a plain-language detail. Adjust the pass with
+`--scan-limit N` or turn it off with `--no-scan-pages`.
 
 Filters:
 
@@ -228,8 +244,15 @@ and `socks5h://` URLs are accepted, including authenticated forms. Credentials
 are redacted from console output and error logs. An explicit pool is never
 silently bypassed: if every proxy fails, the request fails.
 
-TLS verification is on. For a private CA set `SSL_CERT_FILE` (HTTPX and aiohttp
-both honour it). `--no-verify` exists for debugging and is not recommended.
+Environment proxies are different: Ominis ignores `HTTP_PROXY`, `HTTPS_PROXY`,
+and `ALL_PROXY` unless you pass `--use-env-proxy`. This is deliberate. A dead
+proxy variable inherited from another tool used to make every search return
+zero results with no clear error. The workstation has the same two controls,
+and its environment check tests the direct route.
+
+TLS verification is on. For a private CA set `SSL_CERT_FILE` (honoured
+explicitly even though proxy environment variables are ignored).
+`--no-verify` exists for debugging and is not recommended.
 
 ### Guided mode
 

@@ -187,6 +187,7 @@ async def fetch_serpbase(query: str, key: str, *, language: str = "",
                          proxies: tuple[str, ...] = (),
                          timeout: float = 15.0,
                          verify_tls: bool = True,
+                         use_env_proxy: bool = False,
                          endpoint: str = config.SERPBASE_ENDPOINT) -> list[Result]:
     """Query a SerpBase-compatible Google results API.
 
@@ -217,7 +218,8 @@ async def fetch_serpbase(query: str, key: str, *, language: str = "",
 
     try:
         async with httpx.AsyncClient(proxy=proxy, timeout=timeout,
-                                     verify=verify_tls,
+                                     verify=utils.ssl_verify(verify_tls),
+                                     trust_env=use_env_proxy and proxy is None,
                                      follow_redirects=True) as client:
             response = await client.post(endpoint, json=body, headers=headers)
             response.raise_for_status()
@@ -244,7 +246,8 @@ async def fetch_engine(engine: str, settings: config.Settings, page: int) -> lis
             since=settings.since, until=settings.until,
             page=page, per_page=min(20, settings.page_size),
             proxies=settings.proxies, timeout=settings.timeout,
-            verify_tls=settings.verify_tls)
+            verify_tls=settings.verify_tls,
+            use_env_proxy=settings.use_env_proxy)
 
     if engine not in ("duckduckgo", "bing"):
         raise EngineError(f"unknown engine: {engine}")
@@ -262,7 +265,10 @@ async def fetch_engine(engine: str, settings: config.Settings, page: int) -> lis
                        settings.country, settings.since, settings.until)
         parser = parse_bing
 
-    text = await tools_handler.make_request_async(url, settings.proxies or None)
+    text = await tools_handler.make_request_async(
+        url, settings.proxies or None, timeout=settings.timeout,
+        verify_tls=settings.verify_tls,
+        use_env_proxy=settings.use_env_proxy)
     if not text:
         return []
     return parser(text)

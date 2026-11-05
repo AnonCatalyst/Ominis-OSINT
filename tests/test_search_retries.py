@@ -35,7 +35,9 @@ async def test_retry_limit_depends_on_explicit_pool(servers, monkeypatch, explic
 
     monkeypatch.setattr(tools_handler.asyncio, "sleep", fast_sleep)
     with pytest.raises(RuntimeError, match="Request failed"):
-        await tools_handler.make_request_async(origin.url, [proxy.url] if explicit else None)
+        await tools_handler.make_request_async(
+            origin.url, [proxy.url] if explicit else None,
+            use_env_proxy=not explicit)
     assert len(proxy.requests) == expected_attempts
     assert origin.connections == 0
 

@@ -5,19 +5,31 @@ window built with PySide6 — **not a browser page, not a local web server, and
 not an Electron shell**. There is no embedded browser: search results, profile
 checks, StyxNet runs, and reports all happen inside one desktop window.
 
-- Workstation version: **1.0.0**
-- Bundled engine: **Ominis 1.2.1**
+- Workstation version: **1.0.2**
+- Bundled engine: **Ominis 1.2.2**
 - Platform: Windows 10/11, 64-bit
 - License: MIT
 
 ![Workstation overview](screenshots/01-overview.png)
 
-## Download
+## Download and install
 
-The release asset is `Ominis-Workstation-1.0.0-win64.zip`. Unpack it and run
-`OminisWorkstation.exe`. There is no installer. The only things written outside
-the folder are the reports you ask for, the optional StyxNet key file, and
-window preferences in the registry.
+Download `Ominis-Workstation-1.0.2-win64-setup.exe` and run it. The installer is
+per-user by default, so it does not need administrator rights. It adds a
+**Desktop** shortcut, a **Start menu** entry, and an entry under **Settings >
+Apps** so the app can be uninstalled normally.
+
+A portable `Ominis-Workstation-1.0.2-win64.zip` is also published. Unpack it and
+run `OminisWorkstation.exe` if you do not want an installed copy.
+
+If you use the portable build, or move the folder after installing, run
+**Tools > Install desktop shortcut...** (also in Settings) to recreate the
+Desktop and Start menu shortcuts against the current executable.
+
+The installed app keeps window preferences in the registry and writes reports
+only where you ask. The optional StyxNet key file stays in your user profile.
+Uninstalling removes the program and its shortcuts; it leaves case reports,
+saved preferences, and the StyxNet key file alone.
 
 The build is **unsigned**. Windows SmartScreen may show a warning for an
 unknown publisher. No code signing is claimed; see `CODE_SIGNING.md` in the
@@ -29,7 +41,7 @@ SHA-256 digests for every release asset are published with the release.
 
 | Mode | What it does |
 |---|---|
-| **Web search** | Scrapes DuckDuckGo and Bing locally, or calls SerpBase when a key is set. Results are canonicalised and profiles are detected from the URLs. |
+| **Web search** | Scrapes DuckDuckGo and Bing locally, or calls SerpBase when a key is set. Results are canonicalised, and profiles are detected from URLs plus the page evidence collected by the inspection pass. |
 | **Username** | Checks a handle against the shipped platform templates over HTTPS and confirms a profile from page metadata, canonical links, redirects, structured data, or visible page content. |
 | **StyxNet** | Sends one request to WinterGate's engine pool. Organic results and candidate profiles come back together. Candidate confidence is capped until you open the profile. |
 
@@ -111,22 +123,50 @@ More: [username profiles](screenshots/05-username-profiles.png),
 > verified 2026-11-02 capture and are labelled from that run. The live
 > behaviour is recorded in [`../captures`](../captures).
 
+## Page inspection
+
+Web searches fetch the top result pages by default and record what each page
+itself proves. The case panel controls the pass:
+
+- **Read result pages and verify profiles** turns the pass on or off.
+- **Pages to inspect** caps how many of the top results are fetched.
+
+The results table gains a **Signal** column once pages have been read, and the
+inspector shows the HTTP status, final URL after redirects, page title, and a
+plain-language detail. A profile returned only by a URL shape is kept as a lead
+but its confidence is capped until page evidence confirms it. Pages that block
+the client are reported as errors, not matches.
+
 ## Reports
 
 Every finished run writes the formats selected in the case panel (`txt`,
 `json`, `md`, and optionally `csv`) to the chosen folder. The default is
 `Documents\Ominis Cases`. **Open report folder** opens the last run's folder.
+Clear **Save report files** to keep results in the window only: no folder is
+created and no files are written.
 
 Reports are plain files. Nothing is uploaded anywhere. The StyxNet key is never
-written into a report.
+written into a report. Scanned rows include the HTTP status, final URL, signal,
+detail, and page title/description fields.
 
 ## Proxies
 
-Proxies are optional and off by default. The workstation never downloads or
-validates a proxy list on its own. If your machine has `HTTP_PROXY`,
-`HTTPS_PROXY`, or `ALL_PROXY` set, the underlying HTTP client may honour them;
-**Environment check** shows whether they are set, without printing their
-values (they can contain credentials).
+Proxies are optional and off by default. The workstation never downloads,
+validates, or scrapes a proxy list on its own. The case panel has two separate
+controls:
+
+- **Route through a proxy pool** enables the endpoint box. One endpoint per
+  line; bare `host:port` is treated as HTTP, and `http://`, `https://`,
+  `socks5://`, and `socks5h://` are accepted. Entries stay in memory for the
+  session and are not written to a report or the activity log.
+- **Use system proxy environment** honours `HTTP_PROXY`, `HTTPS_PROXY`, and
+  `ALL_PROXY`, but only while the pool control is enabled. Without it, those
+  variables are ignored, so a stale value cannot silently empty a run.
+
+An explicit pool is never bypassed. If every endpoint fails, the request fails
+and the activity log says so. **Environment check** tests the direct route and
+shows whether proxy variables are set without printing their values (they can
+contain credentials).
 
 ## Run from source
 
@@ -166,6 +206,20 @@ pyinstaller --noconfirm --clean workstation.spec
 The result is `dist\OminisWorkstation.exe`, with the Qt runtime, the Ominis
 engine, and both detection tables inside. The spec excludes Qt WebEngine on
 purpose: there is no browser in this application.
+
+## Build the installer
+
+Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then compile
+`workstation.iss` from the repository root after PyInstaller:
+
+```sh
+ISCC.exe workstation.iss
+```
+
+The result is `dist\Ominis-Workstation-1.0.2-win64-setup.exe`. The installer is
+per-user, so testing it does not require an administrator shell. It contains
+the same executable as the portable zip plus `README.md`, `LICENSE`,
+`TRADEMARKS.md`, and `CODE_SIGNING.md`.
 
 ## Tests
 

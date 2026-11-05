@@ -102,9 +102,17 @@ class Settings:
     until: str = ""
     max_results: int = 50
     proxies: tuple[str, ...] = ()
+    #: Honour HTTP_PROXY/HTTPS_PROXY/ALL_PROXY from the environment. This is
+    #: off by default: a stale proxy variable must not silently empty a run.
+    use_env_proxy: bool = False
     serpbase_key: str = ""
     out_dir: Path = field(default_factory=lambda: Path("Results"))
     formats: tuple[str, ...] = ("txt", "json")
+    #: Fetch result pages and record what the page itself proves. Snippets
+    #: alone cannot confirm a profile; this is the equivalent of the username
+    #: checker for arbitrary search results.
+    scan_pages: bool = True
+    scan_limit: int = 10
     timeout: float = 15.0
     verify_tls: bool = True
     user_agent: str = ""
@@ -122,6 +130,10 @@ class Settings:
             raise ValueError("max_results must be between 1 and 1000")
         if float(self.timeout) <= 0:
             raise ValueError("timeout must be positive")
+        if int(self.scan_limit) < 1:
+            raise ValueError("scan_limit must be at least 1")
+        if int(self.scan_limit) > 1000:
+            raise ValueError("scan_limit must be at most 1000")
         unknown = [name for name in self.formats if name not in OUTPUT_FORMATS]
         if unknown:
             raise ValueError(f"unknown output format(s): {', '.join(unknown)}")
@@ -141,7 +153,7 @@ class Settings:
 
     @property
     def proxy_enabled(self) -> bool:
-        return bool(self.proxies)
+        return bool(self.proxies) or self.use_env_proxy
 
     @property
     def page_size(self) -> int:
@@ -163,10 +175,14 @@ class Settings:
             "until": parse_date(os.environ.get("OMINIS_UNTIL")),
             "max_results": _env_int("OMINIS_MAX_RESULTS", 50),
             "proxies": _split(os.environ.get("OMINIS_PROXY_POOL")),
+            "use_env_proxy": _env_flag("OMINIS_USE_ENV_PROXY"),
             "serpbase_key": os.environ.get("SERPBASE_API_KEY", "")
             or os.environ.get("OMINIS_SERPBASE_KEY", ""),
             "out_dir": Path(os.environ.get("OMINIS_OUTPUT_DIR", "Results")),
             "formats": _split(os.environ.get("OMINIS_FORMATS")) or ("txt", "json"),
+            "scan_pages": (os.environ.get("OMINIS_SCAN_PAGES", "").strip()
+                           .lower() not in {"0", "false", "no", "off"}),
+            "scan_limit": _env_int("OMINIS_SCAN_LIMIT", 10),
             "timeout": _env_float("OMINIS_TIMEOUT", 15.0),
             "user_agent": os.environ.get("OMINIS_USER_AGENT", ""),
             "styxnet": _env_flag("OMINIS_STYXNET"),

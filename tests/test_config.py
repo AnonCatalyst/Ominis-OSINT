@@ -12,9 +12,12 @@ def test_defaults_keep_proxies_off():
     settings = config.Settings(query="acme")
     assert settings.proxies == ()
     assert settings.proxy_enabled is False
+    assert settings.use_env_proxy is False
     assert settings.engines == ("duckduckgo", "bing")
     assert settings.formats == ("txt", "json")
     assert settings.verify_tls is True
+    assert settings.scan_pages is True
+    assert settings.scan_limit == 10
 
 
 @pytest.mark.parametrize("value,expected", [
@@ -64,6 +67,14 @@ def test_settings_page_size_is_bounded():
     assert config.Settings(query="acme", max_results=1000).page_size == 200
 
 
+def test_scan_limit_is_bounded():
+    assert config.Settings(query="acme", scan_limit=1).scan_limit == 1
+    assert config.Settings(query="acme", scan_limit=1000).scan_limit == 1000
+    for value in (0, 1001):
+        with pytest.raises(ValueError, match="scan_limit"):
+            config.Settings(query="acme", scan_limit=value)
+
+
 def test_from_env_reads_omins_variables(monkeypatch):
     monkeypatch.setenv("OMINIS_ENGINES", "bing,serpbase")
     monkeypatch.setenv("OMINIS_LANGUAGE", "en")
@@ -91,6 +102,17 @@ def test_from_env_ignores_empty_overrides(monkeypatch):
     settings = config.Settings.from_env("acme", engines=None, language="de")
     assert settings.engines == ("bing",)
     assert settings.language == "de"
+
+
+def test_from_env_reads_proxy_and_scan_flags(monkeypatch):
+    monkeypatch.setenv("OMINIS_USE_ENV_PROXY", "true")
+    monkeypatch.setenv("OMINIS_SCAN_PAGES", "0")
+    monkeypatch.setenv("OMINIS_SCAN_LIMIT", "4")
+    settings = config.Settings.from_env("acme")
+    assert settings.use_env_proxy is True
+    assert settings.proxy_enabled is True
+    assert settings.scan_pages is False
+    assert settings.scan_limit == 4
 
 
 @pytest.mark.parametrize("name,value", [

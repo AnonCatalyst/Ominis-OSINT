@@ -1,4 +1,6 @@
+import os
 import re
+import ssl
 import urllib.parse
 import html
 import json
@@ -8,6 +10,28 @@ import logging
 import validators
 
 from . import platforms
+
+
+def ssl_verify(verify_tls: bool = True):
+    """Return the ``verify`` value for an httpx client.
+
+    Every Ominis client disables ``trust_env`` so a stale proxy variable cannot
+    silently break a run. That also hides ``SSL_CERT_FILE``/``SSL_CERT_DIR``,
+    which corporate and test environments rely on. Honour the two certificate
+    variables explicitly while still ignoring proxy variables.
+    """
+    if not verify_tls:
+        return False
+    cafile = os.environ.get("SSL_CERT_FILE", "").strip()
+    capath = os.environ.get("SSL_CERT_DIR", "").strip()
+    if not cafile and not capath:
+        return True
+    try:
+        return ssl.create_default_context(
+            cafile=cafile or None, capath=capath or None)
+    except (OSError, ssl.SSLError):
+        # A broken override must not disable verification entirely.
+        return True
 
 # Initialize logging
 logger = logging.getLogger(__name__)

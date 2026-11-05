@@ -118,7 +118,7 @@ def test_parse_serpbase_keeps_api_position_and_description():
 async def test_fetch_engine_uses_scraped_transport(monkeypatch):
     seen = {}
 
-    async def fake_request(url, proxies=None):
+    async def fake_request(url, proxies=None, **kwargs):
         seen["url"] = url
         seen["proxies"] = proxies
         return DDG_HTML
@@ -135,7 +135,7 @@ async def test_fetch_engine_uses_scraped_transport(monkeypatch):
 async def test_fetch_engine_passes_an_explicit_pool(monkeypatch):
     seen = {}
 
-    async def fake_request(url, proxies=None):
+    async def fake_request(url, proxies=None, **kwargs):
         seen["proxies"] = proxies
         return BING_HTML
 

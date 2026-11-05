@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from ominis_src import __version__  # noqa: E402
 from ominis_workstation import backend  # noqa: E402
 
 
@@ -48,7 +49,7 @@ def from_captures(out: Path) -> None:
         "errors": search["summary"].get("errors") or [],
         "paths": {"txt": "AnonCatalyst.txt", "json": "AnonCatalyst.json",
                   "md": "AnonCatalyst.md"},
-        "version": "1.2.0",
+        "version": __version__,
     }, out)
 
     user = json.loads((ROOT / "docs" / "captures" / "raw" / "username" /
@@ -81,7 +82,7 @@ def from_captures(out: Path) -> None:
                   "json": "username-AnonCatalyst.json",
                   "md": "username-AnonCatalyst.md",
                   "csv": "username-AnonCatalyst.csv"},
-        "version": "1.2.0",
+        "version": __version__,
     }, out)
 
     styx = json.loads((ROOT / "docs" / "captures" / "raw" / "styxnet" /
@@ -98,7 +99,7 @@ def from_captures(out: Path) -> None:
         "errors": styx["summary"].get("errors") or [],
         "paths": {"txt": "AnonCatalyst.txt", "json": "AnonCatalyst.json",
                   "md": "AnonCatalyst.md"},
-        "version": "1.2.0",
+        "version": __version__,
     }, out)
 
 

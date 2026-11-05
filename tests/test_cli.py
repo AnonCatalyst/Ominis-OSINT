@@ -257,7 +257,8 @@ def test_search_command_returns_success_for_results(monkeypatch, tmp_path, capsy
                         lambda result, settings: {"txt": str(tmp_path / "acme.txt")})
     code = cli.main(["search", "acme", "--quiet", "--out", str(tmp_path)])
     assert code == cli.EXIT_OK
-    assert "1 result(s), 0 social profile(s)." in capsys.readouterr().out
+    assert ("1 result(s), 0 social profile(s), 0 page match(es)."
+            in capsys.readouterr().out)
 
 
 def test_search_command_uses_styxnet_settings(monkeypatch, tmp_path, capsys):

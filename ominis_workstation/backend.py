@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import os
 import stat
+import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass, field
@@ -42,6 +43,10 @@ class InvestigationRequest:
     until: str = ""
     out_dir: Path = field(default_factory=lambda: Path("Results"))
     formats: tuple[str, ...] = ("txt", "json", "md")
+    proxies: tuple[str, ...] = ()
+    use_env_proxy: bool = False
+    scan_pages: bool = True
+    scan_limit: int = 10
     concurrency: int = 8
     timeout: float = 15.0
     include_all: bool = False
@@ -126,7 +131,11 @@ def build_settings(request: InvestigationRequest) -> config.Settings:
         until=request.until,
         max_results=request.max_results,
         out_dir=Path(request.out_dir),
-        formats=tuple(request.formats) or ("txt", "json"),
+        formats=tuple(request.formats),
+        proxies=tuple(request.proxies),
+        use_env_proxy=request.use_env_proxy,
+        scan_pages=request.scan_pages,
+        scan_limit=request.scan_limit,
         timeout=request.timeout,
         styxnet=styx,
         styxnet_key=key,
@@ -160,7 +169,8 @@ async def execute_async(request: InvestigationRequest,
         log(f"Checking {total} platform templates for {target} ...")
         outcome = await username_mod.run(
             target, concurrency=request.concurrency,
-            timeout=request.timeout, progress=on_hit)
+            timeout=request.timeout, proxies=tuple(request.proxies),
+            use_env_proxy=request.use_env_proxy, progress=on_hit)
         paths = username_mod.write(
             outcome, request.out_dir, request.formats,
             include_all=request.include_all)
@@ -182,15 +192,28 @@ async def execute_async(request: InvestigationRequest,
         log(f"[{result.engine}] {result.title or result.url}")
         progress(seen, settings.max_results)
 
+    if settings.proxy_enabled:
+        if settings.proxies:
+            log(f"Using {len(settings.proxies)} proxy endpoint(s).")
+        else:
+            log("Using the system proxy environment.")
+    if settings.scan_pages:
+        log(f"Inspecting up to {settings.scan_limit} result page(s) ...")
     outcome = await search.run(settings, progress=on_result)
     paths = search.write(outcome, settings)
     payload = search_payload(outcome, paths, _elapsed(started))
     for message in outcome.errors:
         log(f"warning  {message}")
+    if not outcome.records and not outcome.profiles:
+        log("No results. If a proxy is set, turn proxies off and retry; "
+            "the activity log above lists each engine error.")
+    if not request.formats:
+        log("Raw view only: no report files were written.")
     if settings.styxnet and not outcome.records and not outcome.profiles:
         log("StyxNet returned nothing. Check the archive id in the summary.")
     log(f"Done: {payload['summary']['results']} results, "
-        f"{payload['summary']['profiles']} profiles.")
+        f"{payload['summary']['profiles']} profiles, "
+        f"{payload['summary'].get('scanned', 0)} page(s) inspected.")
     return payload
 
 
@@ -305,24 +328,23 @@ def doctor_checks() -> list[dict[str, Any]]:
         "ok": True,
         "detail": ("not set, direct connections"
                    if not proxy_names
-                   else "set for " + ", ".join(proxy_names) + " (values hidden)"),
+                   else "set for " + ", ".join(proxy_names)
+                   + " (ignored unless enabled)"),
     })
     try:
         import httpx
 
-        with httpx.Client(timeout=8.0, follow_redirects=True) as client:
+        with httpx.Client(timeout=8.0, follow_redirects=True,
+                          trust_env=False) as client:
             response = client.get("https://example.com/")
         detail = f"HTTP {response.status_code}"
-        if proxy_names:
-            detail += "; environment proxy in use"
-        checks.append({"label": "HTTPS check",
+        checks.append({"label": "HTTPS check (direct)",
                        "ok": response.status_code < 400,
                        "detail": detail})
     except Exception as exc:
         detail = f"{type(exc).__name__}: {str(exc)[:140]}"
-        if proxy_names:
-            detail += " (environment proxy is set)"
-        checks.append({"label": "HTTPS check", "ok": False, "detail": detail})
+        checks.append({"label": "HTTPS check (direct)", "ok": False,
+                       "detail": detail})
     key = styxnet.load_key()
     checks.append({
         "label": "StyxNet key",
@@ -335,6 +357,70 @@ def doctor_checks() -> list[dict[str, Any]]:
 def key_file() -> Path:
     candidates = styxnet.key_candidates()
     return candidates[0]
+
+
+def _shortcut_target() -> tuple[Path, str, Path]:
+    """Return (target, arguments, working directory) for a shortcut."""
+    exe = Path(sys.executable).resolve()
+    if getattr(sys, "frozen", False):
+        return exe, "", exe.parent
+    pythonw = exe.with_name("pythonw.exe")
+    target = pythonw if pythonw.is_file() else exe
+    root = Path(__file__).resolve().parents[1]
+    return target, "-m ominis_workstation", root
+
+
+def shortcut_paths() -> tuple[Path, Path]:
+    desktop = Path.home() / "Desktop"
+    appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    start_menu = appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs"
+    name = "Ominis Investigation Workstation.lnk"
+    return desktop / name, start_menu / name
+
+
+def create_shortcuts() -> list[Path]:
+    """Create Desktop and Start menu shortcuts for this executable.
+
+    The installer does this already. This is the finish-the-install step for
+    the portable build, and it is also useful after moving the folder.
+    """
+    if sys.platform != "win32":
+        raise ValueError("Desktop shortcuts are only available on Windows.")
+    target, arguments, workdir = _shortcut_target()
+    created: list[Path] = []
+    for path in shortcut_paths():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        values = {
+            "path": _ps_quote(str(path)),
+            "target": _ps_quote(str(target)),
+            "workdir": _ps_quote(str(workdir)),
+            "args": _ps_quote(arguments),
+            "icon": _ps_quote(f"{target},0"),
+        }
+        script = (
+            "$shell = New-Object -ComObject WScript.Shell; "
+            f"$link = $shell.CreateShortcut({values['path']}); "
+            f"$link.TargetPath = {values['target']}; "
+            f"$link.WorkingDirectory = {values['workdir']}; "
+            f"$link.Arguments = {values['args']}; "
+            f"$link.IconLocation = {values['icon']}; "
+            "$link.Description = 'Ominis Investigation Workstation'; "
+            "$link.Save()"
+        )
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            capture_output=True, text=True, timeout=30,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            raise OSError(f"Could not create {path.name}: {detail[:200]}")
+        created.append(path)
+    return created
+
+
+def _ps_quote(value: str) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
 
 
 def key_status() -> str:

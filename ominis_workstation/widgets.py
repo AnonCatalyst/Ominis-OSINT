@@ -409,7 +409,8 @@ class ResultsTable(DataTable):
                 title_item.setToolTip(
                     f"{url}\n\nDetected {platform} profile")
 
-            snippet = SortItem(record.get("snippet") or "")
+            snippet = SortItem(record.get("detail")
+                               or record.get("snippet") or "")
             snippet.setForeground(QColor(theme.MUTED))
             cells = [position, engine, title_item, snippet]
 
@@ -671,6 +672,9 @@ class Inspector(QFrame):
             self._meta_row("Profile", platform)
         if record.get("status"):
             self._meta_row("HTTP", record.get("status"))
+        final_url = str(record.get("final_url") or "")
+        if final_url and final_url.rstrip("/") != url.rstrip("/"):
+            self._meta_row("Resolved", final_url)
         if errored:
             self.layout_body.addWidget(SectionTitle("Error"))
             error_label = QLabel(str(record.get("error")))
@@ -678,6 +682,15 @@ class Inspector(QFrame):
             error_label.setWordWrap(True)
             error_label.setStyleSheet(f"color: {theme.RED};")
             self.layout_body.addWidget(error_label)
+
+        page_title = str(record.get("page_title") or "")
+        if page_title and page_title != str(record.get("title") or ""):
+            self.layout_body.addWidget(SectionTitle("Page title"))
+            self.layout_body.addWidget(self._label(page_title, "Hint"))
+        detail = str(record.get("detail") or "")
+        if detail:
+            self.layout_body.addWidget(SectionTitle("Page evidence"))
+            self.layout_body.addWidget(self._label(detail, "Hint"))
 
         snippet_text = str(record.get("snippet") or "")
         if snippet_text:

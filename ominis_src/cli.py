@@ -50,10 +50,12 @@ def _engine_list(value: str) -> tuple[str, ...]:
 
 def _formats(value: str) -> tuple[str, ...]:
     formats = tuple(part.strip() for part in value.split(",") if part.strip())
+    if formats in (("none",), ("raw",)):
+        return ()
     unknown = [name for name in formats if name not in config.OUTPUT_FORMATS]
     if unknown:
         raise argparse.ArgumentTypeError(
-            f"unknown format(s): {', '.join(unknown)}")
+            f"unknown format(s): {', '.join(unknown)} (use txt,json,csv,md or none)")
     return formats
 
 
@@ -63,6 +65,13 @@ def _env(name: str, fallback: str = "") -> str:
 
 def _env_flag(name: str) -> bool:
     return _env(name).lower() in {"1", "true", "yes", "on"}
+
+
+def _env_flag_default(name: str, fallback: bool) -> bool:
+    value = _env(name).lower()
+    if not value:
+        return fallback
+    return value in {"1", "true", "yes", "on"}
 
 
 def _env_int(name: str, fallback: int) -> int:
@@ -151,8 +160,10 @@ def build_parser() -> argparse.ArgumentParser:
                        help="seconds per request (default: 15)")
         p.add_argument("--no-verify", action="store_true",
                        help="skip TLS verification (not recommended)")
+        p.add_argument("--use-env-proxy", action="store_true",
+                       help="honour HTTP_PROXY/HTTPS_PROXY/ALL_PROXY; off by default")
         p.add_argument("--format", type=_formats, default=_env_formats(),
-                       help="comma-separated: txt,json,csv,md")
+                       help="comma-separated: txt,json,csv,md, or none for no files")
         p.add_argument("--out", default=_env("OMINIS_OUTPUT_DIR") or "Results",
                        metavar="DIR",
                        help="results directory (default: Results)")
@@ -192,6 +203,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--styxnet-scopes", type=_styxnet_scopes,
         default=_env_scopes(), metavar="LIST",
         help="comma-separated: surface,onion,deep (default: all)")
+    search_cmd.add_argument(
+        "--scan-pages", action=argparse.BooleanOptionalAction,
+        default=_env_flag_default("OMINIS_SCAN_PAGES", True),
+        help="read result pages and record page-level evidence (default: on)")
+    search_cmd.add_argument(
+        "--scan-limit", type=_positive,
+        default=_env_int("OMINIS_SCAN_LIMIT", 10), metavar="N",
+        help="number of result pages to inspect (default: 10)")
     search_cmd.add_argument("--quiet", action="store_true",
                             help="do not print each result")
     common(search_cmd)
@@ -246,9 +265,12 @@ def cmd_search(args: argparse.Namespace) -> int:
         until=config.parse_date(args.until),
         max_results=args.max_results,
         proxies=_gather_proxies(args),
+        use_env_proxy=args.use_env_proxy,
         serpbase_key=args.serpbase_key or os.environ.get("SERPBASE_API_KEY", ""),
         out_dir=Path(args.out),
         formats=args.format,
+        scan_pages=args.scan_pages,
+        scan_limit=args.scan_limit,
         timeout=args.timeout,
         verify_tls=not args.no_verify,
         styxnet=args.styxnet,
@@ -259,9 +281,14 @@ def cmd_search(args: argparse.Namespace) -> int:
         styxnet_scopes=args.styxnet_scopes,
     )
     if settings.proxy_enabled:
-        print(f"Using {len(settings.proxies)} proxy endpoint(s).")
+        if settings.proxies:
+            print(f"Using {len(settings.proxies)} proxy endpoint(s).")
+        else:
+            print("Using the system proxy environment.")
     if settings.styxnet:
         print("Searching via StyxNet (WinterGate).")
+    if settings.scan_pages:
+        print(f"Inspecting up to {settings.scan_limit} result page(s).")
     outcome = asyncio.run(search.run(
         settings, None if args.quiet else _print_record))
     paths = search.write(outcome, settings)
@@ -270,7 +297,13 @@ def cmd_search(args: argparse.Namespace) -> int:
     for error in outcome.errors:
         print(f"warning: {error}", file=sys.stderr)
     print(f"{len(outcome.records)} result(s), "
-          f"{len(outcome.profiles)} social profile(s).")
+          f"{len(outcome.profiles)} social profile(s), "
+          f"{sum(1 for record in outcome.records if record.matched)} "
+          f"page match(es).")
+    if not outcome.records and not outcome.profiles:
+        print("No results. Check the warnings above; if a proxy is set, "
+              "retry without --use-env-proxy or without a proxy pool.",
+              file=sys.stderr)
     return EXIT_OK if outcome.records or not outcome.errors else EXIT_ERROR
 
 
@@ -286,6 +319,7 @@ def cmd_username(args: argparse.Namespace) -> int:
         args.username, platforms, concurrency=args.concurrency,
         timeout=args.timeout, proxies=settings_proxies,
         verify_tls=not args.no_verify,
+        use_env_proxy=args.use_env_proxy,
         progress=None if args.quiet else progress))
     shown = outcome.hits if args.all else outcome.found
     if shown:
@@ -337,9 +371,12 @@ def cmd_doctor(_: argparse.Namespace) -> int:
     try:
         import httpx
 
-        with httpx.Client(timeout=8.0, follow_redirects=True) as client:
+        # Check the direct route. Environment proxies are opt-in everywhere
+        # else, and a stale variable must not make a healthy install look bad.
+        with httpx.Client(timeout=8.0, follow_redirects=True,
+                          trust_env=False) as client:
             response = client.get("https://example.com/")
-        print(f"HTTPS check: HTTP {response.status_code}")
+        print(f"HTTPS check (direct): HTTP {response.status_code}")
     except Exception as exc:
         ok = False
         print(f"HTTPS check: FAILED ({type(exc).__name__}: {exc})")

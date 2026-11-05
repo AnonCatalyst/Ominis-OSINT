@@ -6,7 +6,7 @@ import asyncio
 from collections import Counter
 from typing import Callable
 
-from . import config, engines, platforms, report, styxnet, utils
+from . import config, engines, pagescan, platforms, report, styxnet, utils
 
 Progress = Callable[[engines.Result], None]
 
@@ -31,9 +31,28 @@ async def run(settings: config.Settings,
     if not settings.styxnet or styxnet_failed:
         await _local_pass(settings, outcome, seen, progress)
 
+    if settings.scan_pages and outcome.records:
+        await _scan_pass(settings, outcome)
+
     outcome.mentions = _mentions(outcome, settings.query)
     outcome.profiles = _profiles(outcome.profiles, outcome.records)
     return outcome
+
+
+async def _scan_pass(settings: config.Settings,
+                     outcome: report.SearchReport) -> None:
+    """Read the result pages themselves and keep the evidence on each row."""
+    tally = await pagescan.scan_records(
+        outcome.records, settings.query, limit=settings.scan_limit,
+        concurrency=min(8, max(2, settings.scan_limit)),
+        timeout=settings.timeout, proxies=settings.proxies,
+        verify_tls=settings.verify_tls,
+        use_env_proxy=settings.use_env_proxy,
+    )
+    if tally["errors"]:
+        outcome.errors.append(
+            f"page scan: {tally['errors']} of {tally['scanned']} result pages "
+            "could not be read")
 
 
 def _add(outcome: report.SearchReport,
@@ -76,6 +95,7 @@ async def _styxnet_pass(settings: config.Settings, outcome: report.SearchReport,
             res_limit=settings.page_size,
             scopes=settings.styxnet_scopes,
             timeout=max(120.0, settings.timeout),
+            use_env_proxy=settings.use_env_proxy,
         )
     except styxnet.StyxNetError as exc:
         outcome.errors.append(f"styxnet: {exc}")
@@ -160,16 +180,87 @@ def _profiles(known: list[dict[str, object]],
         if key:
             found.setdefault(key, profile)
     for record in records:
+        evidence = _evidence(record)
         for profile in utils.find_social_profiles(record.url):
-            key = platforms.profile_key(profile)
+            candidate = _with_evidence(profile, record, evidence)
+            key = platforms.profile_key(candidate)
             if key:
-                found.setdefault(key, profile)
+                found.setdefault(key, candidate)
+        # A redirect can land on a profile that the original URL did not look
+        # like (short links, regional hosts). The page scan knows the final URL.
+        if record.platform and (record.matched or not record.scanned):
+            candidate = {
+                "platform": record.platform,
+                "profile_url": record.final_url or record.url,
+                "category": "",
+                "confidence": evidence["confidence"],
+                "source": record.signal or "url",
+                "title": record.page_title or record.title,
+                "description": record.page_description,
+                "status": record.status,
+                "verified": bool(record.matched),
+            }
+            key = platforms.profile_key(candidate)
+            if key:
+                existing = found.get(key)
+                if existing is None:
+                    found[key] = candidate
+                elif record.matched:
+                    for field, value in candidate.items():
+                        if value not in ("", None, 0, False):
+                            existing.setdefault(field, value)
     ordered = sorted(found.values(),
                      key=lambda profile: (
                          -_confidence(profile),
                          str(profile.get("platform") or "").casefold(),
                          str(profile.get("profile_url") or "")))
     return [profile for profile in ordered if profile]
+
+
+def _evidence(record: report.SearchRecord) -> dict[str, object]:
+    """Turn one page scan into the fields a profile row can carry."""
+    signal = str(record.signal or "")
+    if signal in {"redirect", "canonical", "structured", "metadata"}:
+        confidence = 92
+    elif signal == "body":
+        confidence = 82
+    elif signal == "url":
+        confidence = 60
+    else:
+        confidence = 45
+    return {"signal": signal, "confidence": confidence,
+            "verified": bool(record.matched)}
+
+
+def _with_evidence(profile: dict[str, object],
+                   record: report.SearchRecord,
+                   evidence: dict[str, object]) -> dict[str, object]:
+    candidate = dict(profile)
+    if record.scanned:
+        candidate["page_signal"] = record.signal
+        candidate["verified"] = bool(record.matched)
+        if record.signal == "url":
+            # The URL table recognised a profile shape, but the page did not
+            # confirm it. Keep the lead and say so; never promote it.
+            candidate["confidence"] = min(
+                _confidence(candidate), 75)
+        elif record.matched:
+            candidate["confidence"] = max(
+                _confidence(candidate), int(evidence["confidence"]))
+            candidate["source"] = record.signal
+        elif record.error:
+            candidate["confidence"] = min(_confidence(candidate), 55)
+    if record.page_title:
+        candidate["title"] = record.page_title
+    if record.page_description:
+        candidate["description"] = record.page_description
+    if record.status:
+        candidate["status"] = record.status
+    # Only a confirmed page may move a profile URL. An unconfirmed check that
+    # redirected to a login or home page must keep the URL that was tested.
+    if record.final_url and record.matched:
+        candidate["profile_url"] = record.final_url
+    return candidate
 
 
 def _confidence(profile: dict[str, object]) -> int:

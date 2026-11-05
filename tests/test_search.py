@@ -5,6 +5,20 @@ import pytest
 from ominis_src import config, engines, search
 
 
+@pytest.fixture(autouse=True)
+def _no_page_scan(monkeypatch):
+    """Keep the offline search tests offline.
+
+    Page inspection is on by default for real runs. These fakes use reserved
+    example URLs, so the scan pass would otherwise hit the network and change
+    the record fields the assertions below describe.
+    """
+    async def skip(*args, **kwargs):
+        return {"scanned": 0, "matched": 0, "errors": 0}
+
+    monkeypatch.setattr(search.pagescan, "scan_records", skip)
+
+
 def _result(url, title="Title", snippet="", engine="duckduckgo", position=1):
     return engines.Result(title=title, url=url, engine=engine,
                           snippet=snippet, position=position)

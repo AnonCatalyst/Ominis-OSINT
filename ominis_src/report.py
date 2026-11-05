@@ -50,6 +50,18 @@ class SearchRecord:
     engine: str = ""
     snippet: str = ""
     position: int = 0
+    #: Page-level evidence, filled by the optional scan pass. A search
+    #: snippet is a claim; these fields say what the page itself proved.
+    status: int = 0
+    final_url: str = ""
+    signal: str = ""
+    detail: str = ""
+    matched: bool = False
+    scanned: bool = False
+    platform: str = ""
+    page_title: str = ""
+    page_description: str = ""
+    error: str = ""
 
 
 @dataclass
@@ -76,6 +88,9 @@ class SearchReport:
             "engines": self.engines,
             "proxies_used": self.proxies_used,
             "styxnet": self.styxnet,
+            "scanned": sum(1 for record in self.records if record.scanned),
+            "page_matches": sum(1 for record in self.records
+                                if record.scanned and record.matched),
             "errors": self.errors,
         }
         if self.styxnet_meta:
@@ -95,7 +110,10 @@ def write_json(report: SearchReport, path: Path) -> Path:
 def write_csv(report: SearchReport, path: Path) -> Path:
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
-            handle, fieldnames=["title", "url", "engine", "snippet", "position"])
+            handle, fieldnames=["title", "url", "engine", "snippet", "position",
+                                "status", "final_url", "signal", "detail",
+                                "matched", "scanned", "platform", "page_title",
+                                "page_description", "error"])
         writer.writeheader()
         for record in report.records:
             writer.writerow(asdict(record))
@@ -107,6 +125,16 @@ def write_txt(report: SearchReport, path: Path) -> Path:
     for record in report.records:
         lines.append(f"[{record.engine or 'search'}] {record.title}")
         lines.append(f"URL: {record.url}")
+        if record.final_url and record.final_url.rstrip("/") != record.url.rstrip("/"):
+            lines.append(f"Resolved: {record.final_url}")
+        if record.status:
+            lines.append(f"HTTP: {record.status}")
+        if record.signal:
+            lines.append(f"Signal: {record.signal}")
+        if record.detail:
+            lines.append(f"Detail: {record.detail}")
+        if record.error:
+            lines.append(f"Error: {record.error}")
         if record.snippet:
             lines.append(f"Snippet: {record.snippet}")
         lines.append("-" * 78)
@@ -150,6 +178,14 @@ def write_markdown(report: SearchReport, path: Path) -> Path:
     for record in report.records:
         lines.append(f"- **{record.title or record.url}**  ")
         lines.append(f"  {record.url}  ")
+        if record.final_url and record.final_url.rstrip("/") != record.url.rstrip("/"):
+            lines.append(f"  Resolved: <{record.final_url}>  ")
+        if record.signal:
+            lines.append(f"  Signal: **{record.signal}**  ")
+        if record.detail:
+            lines.append(f"  {record.detail}  ")
+        if record.error:
+            lines.append(f"  Error: {record.error}  ")
         if record.snippet:
             lines.append(f"  {record.snippet}")
         lines.append(f"  _{record.engine}_")
@@ -202,6 +238,8 @@ _WRITERS = {
 def write_all(report: SearchReport, out_dir: str | Path,
               formats: tuple[str, ...] | list[str] = ("txt", "json")) -> dict[str, Path]:
     """Write the requested formats and return ``format -> path``."""
+    if not formats:
+        return {}
     directory = Path(out_dir)
     directory.mkdir(parents=True, exist_ok=True)
     written: dict[str, Path] = {}

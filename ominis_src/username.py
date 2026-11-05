@@ -320,6 +320,7 @@ async def check_one(client: httpx.AsyncClient, username: str, base: str,
 async def run(username: str, platforms: Iterable[str] | None = None, *,
               concurrency: int = 8, timeout: float = 15.0,
               proxies: tuple[str, ...] = (), verify_tls: bool = True,
+              use_env_proxy: bool = False,
               progress: Callable[[Hit], None] | None = None) -> UsernameReport:
     username = str(username or "").strip()
     if not username:
@@ -347,7 +348,8 @@ async def run(username: str, platforms: Iterable[str] | None = None, *,
                "Accept-Language": "en-US,en;q=0.9"}
     semaphore = asyncio.Semaphore(max(1, concurrency))
 
-    async with httpx.AsyncClient(proxy=proxy, verify=verify_tls,
+    async with httpx.AsyncClient(proxy=proxy, verify=utils.ssl_verify(verify_tls),
+                                 trust_env=use_env_proxy and proxy is None,
                                  headers=headers, limits=limits,
                                  timeout=timeout) as client:
         async def worker(base: str) -> Hit:
@@ -379,6 +381,8 @@ def run_sync(username: str, **kwargs: object) -> UsernameReport:
 def write(outcome: UsernameReport, out_dir: str | Path = "Results",
           formats: tuple[str, ...] | list[str] = ("txt", "json"),
           include_all: bool = False) -> dict[str, str]:
+    if not formats:
+        return {}
     directory = Path(out_dir)
     directory.mkdir(parents=True, exist_ok=True)
     stem = report.results_path(directory, f"username-{outcome.username}", "")

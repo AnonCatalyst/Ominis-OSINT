@@ -13,7 +13,7 @@ README = (HERE / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="ominis-osint-suite",
-    version="1.2.1",
+    version="1.2.2",
     packages=find_packages(include=["ominis_src", "ominis_src.*"]),
     package_data={"ominis_src": ["*.json", "*.txt"]},
     py_modules=["ominis"],
