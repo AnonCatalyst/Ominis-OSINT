@@ -186,6 +186,16 @@ async def test_run_checks_every_template_and_passes_proxy(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_run_normalises_a_leading_at_sign(monkeypatch):
+    _FakeClient.instances = []
+    _FakeClient.bodies = {"https://a.example/acme": "<title>acme</title>"}
+    monkeypatch.setattr(username.httpx, "AsyncClient", _FakeClient)
+    outcome = await username.run("@acme", ["https://a.example/"])
+    assert outcome.username == "acme"
+    assert [hit.url for hit in outcome.hits] == ["https://a.example/acme"]
+
+
+@pytest.mark.asyncio
 async def test_run_rejects_unsafe_usernames():
     with pytest.raises(ValueError, match="letters, digits"):
         await username.run("../etc", ["https://a.example/"])

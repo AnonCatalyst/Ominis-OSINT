@@ -4,6 +4,7 @@ import os
 import re
 import json
 import logging
+import sys
 import urllib.parse
 import httpx
 from colorama import Fore, Style, init
@@ -252,13 +253,40 @@ async def _make_request_with_retries(url, proxies, max_retries, *,
     logger.error("All evasion attempts failed")
     return None
 
+def _interactive_input(text: str) -> str:
+    """Read one answer only when a real terminal is attached.
+
+    The workstation runs this module on a worker thread inside a windowed
+    process, where ``sys.stdin`` is ``None`` (or a pipe). Reading there raised
+    ``lost sys.stdin``/``EOFError`` and made every explicit proxy run fail
+    before it touched the network. Non-interactive callers simply get the
+    quiet default instead of a prompt nobody can answer.
+    """
+    stream = getattr(sys, "stdin", None)
+    if stream is None:
+        raise EOFError
+    try:
+        if not stream.isatty():
+            raise EOFError
+    except (AttributeError, ValueError, OSError):
+        raise EOFError from None
+    return input(text)
+
+
 async def ask_to_show_message():
     global show_message
     if show_message is None:
-        response = await asyncio.to_thread(
-            input, 
-            f'{Fore.RED}_'*80 + f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}Enable proxy rotation display? {Fore.LIGHTBLACK_EX}(y/n){Fore.YELLOW}:{Style.RESET_ALL} "
+        prompt = (
+            f'{Fore.RED}_' * 80
+            + f"\n{Fore.RED}[{Fore.YELLOW}!{Fore.RED}] {Fore.WHITE}"
+              "Enable proxy rotation display? "
+              f"{Fore.LIGHTBLACK_EX}(y/n){Fore.YELLOW}:{Style.RESET_ALL} "
         )
+        try:
+            response = await asyncio.to_thread(_interactive_input, prompt)
+        except (EOFError, OSError, RuntimeError):
+            # No terminal: keep the display off and let the proxy run.
+            response = ""
         show_message = response.strip().lower() == 'y'
     return show_message
 

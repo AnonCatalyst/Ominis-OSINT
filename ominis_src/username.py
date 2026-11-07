@@ -325,6 +325,12 @@ async def run(username: str, platforms: Iterable[str] | None = None, *,
     username = str(username or "").strip()
     if not username:
         raise ValueError("a username search needs a username")
+    # People copy handles as @name from social sites; the at-sign is notation,
+    # not part of the account name on any of the checked templates.
+    if username.startswith("@"):
+        username = username[1:].strip()
+        if not username:
+            raise ValueError("a username search needs a username")
     if not _SAFE_NAME.fullmatch(username):
         raise ValueError("usernames may only contain letters, digits, '.', '_' and '-'")
     templates = list(platforms) if platforms is not None else load_platforms()

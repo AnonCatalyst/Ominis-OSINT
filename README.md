@@ -24,6 +24,21 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
+## Version 1.2.3
+
+A maintenance release for the desktop path and username checks. Highlights:
+
+- **Proxy runs work in the windowed workstation again.** The legacy
+  "enable proxy rotation display?" prompt tried to read standard input, which
+  a windowed build does not have. Explicit proxy runs failed with
+  `lost sys.stdin` before touching the network. Non-interactive callers now
+  keep the display off and use the proxy; a terminal user can still opt in.
+- **Leading `@` is accepted.** `ominis username @AnonCatalyst` and the
+  workstation username mode now treat the at-sign as notation and check
+  `AnonCatalyst`. Unsafe names are still rejected.
+- **Build metadata is consistent.** The workstation executable reports
+  `1.0.3.0` in both the fixed and string version fields.
+
 ## Version 1.2.2
 
 This is the full suite. It is published alongside the patched original
@@ -86,9 +101,9 @@ a browser page and not an embedded web view. It wraps the same engine in one
 desk for web search, username checks, and StyxNet, and it labels every profile
 with the signal that detected it.
 
-- Latest workstation: **1.0.2** (bundled engine **1.2.2**)
-- Installer: [`Ominis-Workstation-1.0.2-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.2)
-- Portable: [`Ominis-Workstation-1.0.2-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.2)
+- Latest workstation: **1.0.3** (bundled engine **1.2.3**)
+- Installer: [`Ominis-Workstation-1.0.3-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.3)
+- Portable: [`Ominis-Workstation-1.0.3-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.3)
 - Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)
 
 | | |

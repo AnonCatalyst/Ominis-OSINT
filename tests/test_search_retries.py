@@ -103,6 +103,13 @@ async def test_proxy_display_prompt_does_not_consume_retry_budget(servers, monke
 
 
 @pytest.mark.asyncio
+async def test_proxy_display_prompt_is_quiet_without_a_terminal(monkeypatch):
+    monkeypatch.setattr(tools_handler, "show_message", None)
+    monkeypatch.setattr(tools_handler.sys, "stdin", None)
+    assert await tools_handler.ask_to_show_message() is False
+
+
+@pytest.mark.asyncio
 async def test_caller_cancellation_propagates_through_proxy_budget(servers):
     origin = await servers.origin()
     connected = asyncio.Event()
