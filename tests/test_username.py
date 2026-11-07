@@ -14,6 +14,19 @@ def _client(handler):
     return httpx.AsyncClient(transport=httpx.MockTransport(handler))
 
 
+def test_only_the_proactor_reset_callback_is_silenced():
+    reset = {"exception": ConnectionResetError(10054, "reset"),
+             "message": "Exception in callback "
+                        "_ProactorBasePipeTransport._call_connection_lost(None)"}
+    assert username._is_transport_reset(reset)
+    assert not username._is_transport_reset(
+        {"exception": ValueError("boom"), "message": reset["message"]})
+    assert not username._is_transport_reset(
+        {"exception": ConnectionResetError(10054, "reset"),
+         "message": "Fatal error on transport"})
+    assert not username._is_transport_reset({})
+
+
 @pytest.mark.parametrize("base,expected", [
     ("https://example.com/", "https://example.com/acme"),
     ("https://example.com/@", "https://example.com/@acme"),

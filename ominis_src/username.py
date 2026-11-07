@@ -317,6 +317,18 @@ async def check_one(client: httpx.AsyncClient, username: str, base: str,
     return hit
 
 
+def _is_transport_reset(context: dict[str, object]) -> bool:
+    """True for the harmless Windows proactor socket-reset callback.
+
+    The loop reports a connection reset while closing a pooled socket as an
+    unhandled callback error. The site itself is already reported through the
+    normal error list; only that specific callback is silenced.
+    """
+    return (isinstance(context.get("exception"),
+                       (ConnectionResetError, ConnectionAbortedError))
+            and "connection_lost" in str(context.get("message") or ""))
+
+
 async def run(username: str, platforms: Iterable[str] | None = None, *,
               concurrency: int = 8, timeout: float = 15.0,
               proxies: tuple[str, ...] = (), verify_tls: bool = True,
@@ -354,18 +366,40 @@ async def run(username: str, platforms: Iterable[str] | None = None, *,
                "Accept-Language": "en-US,en;q=0.9"}
     semaphore = asyncio.Semaphore(max(1, concurrency))
 
-    async with httpx.AsyncClient(proxy=proxy, verify=utils.ssl_verify(verify_tls),
-                                 trust_env=use_env_proxy and proxy is None,
-                                 headers=headers, limits=limits,
-                                 timeout=timeout) as client:
-        async def worker(base: str) -> Hit:
-            async with semaphore:
-                hit = await check_one(client, username, base, timeout=timeout)
-                if progress:
-                    progress(hit)
-                return hit
+    # Windows' proactor loop logs a full traceback when a site resets a
+    # pooled socket while the client closes it (WinError 10054). The
+    # library already reports that site as an error; the closing socket is
+    # not news. Ignore just that callback failure and keep every other
+    # loop error visible for the surrounding application.
+    loop = asyncio.get_running_loop()
+    previous_handler = loop.get_exception_handler()
 
-        hits = await asyncio.gather(*(worker(base) for base in templates))
+    def _ignore_reset(loop: asyncio.AbstractEventLoop,
+                      context: dict[str, object]) -> None:
+        if _is_transport_reset(context):
+            return
+        if previous_handler is not None:
+            previous_handler(loop, context)
+        else:
+            loop.default_exception_handler(context)
+
+    loop.set_exception_handler(_ignore_reset)
+    try:
+        async with httpx.AsyncClient(proxy=proxy,
+                                     verify=utils.ssl_verify(verify_tls),
+                                     trust_env=use_env_proxy and proxy is None,
+                                     headers=headers, limits=limits,
+                                     timeout=timeout) as client:
+            async def worker(base: str) -> Hit:
+                async with semaphore:
+                    hit = await check_one(client, username, base, timeout=timeout)
+                    if progress:
+                        progress(hit)
+                    return hit
+
+            hits = await asyncio.gather(*(worker(base) for base in templates))
+    finally:
+        loop.set_exception_handler(previous_handler)
     # Best leads first, then a stable order for the rest. Duplicate final
     # addresses (two templates redirecting to one profile) are collapsed.
     ordered = sorted(hits, key=lambda hit: (

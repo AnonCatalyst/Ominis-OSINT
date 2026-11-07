@@ -4,5 +4,5 @@ An MIT-licensed reconnaissance helper maintained by AnonCatalyst and the
 WinterGate Intelligence Collective. See https://wintergate.org.
 """
 
-__version__ = "1.2.3"
+__version__ = "1.2.4"
 __all__ = ["__version__"]
