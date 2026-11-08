@@ -57,6 +57,14 @@ def test_load_platforms_skips_comments(tmp_path):
     assert username.load_platforms(path) == ["https://a.example/", "https://b.example/"]
 
 
+def test_load_platforms_drops_a_bom(tmp_path):
+    path = tmp_path / "urls.txt"
+    path.write_text("https://a.example/\nhttps://b.example/\n",
+                    encoding="utf-8-sig")
+    assert username.load_platforms(path) == [
+        "https://a.example/", "https://b.example/"]
+
+
 def test_parse_page_reads_title_and_description():
     title, description = username.parse_page(
         "<html><head><title>Acme on Example</title>"

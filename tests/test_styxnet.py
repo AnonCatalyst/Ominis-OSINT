@@ -41,6 +41,13 @@ def test_key_precedence_explicit_then_environment_then_file(tmp_path, monkeypatc
     assert styxnet.load_key() == "sgn_from_file"
 
 
+def test_key_file_with_a_bom_is_still_a_key(tmp_path, monkeypatch):
+    saved = tmp_path / "styxnet-key.txt"
+    saved.write_text("sgn_with_bom\n", encoding="utf-8-sig")
+    monkeypatch.setattr(styxnet, "key_candidates", lambda: [saved])
+    assert styxnet.load_key() == "sgn_with_bom"
+
+
 def test_key_validation_refuses_an_empty_or_foreign_key():
     with pytest.raises(styxnet.StyxNetError, match="needs a key"):
         styxnet.search("acme", key="")

@@ -144,12 +144,22 @@ def build_settings(request: InvestigationRequest) -> config.Settings:
     )
 
 
+def check_output_path(request: InvestigationRequest) -> None:
+    """Reject a report path that is an existing file before the network run."""
+    if not request.formats:
+        return
+    target = Path(request.out_dir)
+    if target.exists() and not target.is_dir():
+        raise ValueError(f"Output path is not a directory: {target}")
+
+
 async def execute_async(request: InvestigationRequest,
                         log: Callable[[str], None],
                         progress: Callable[[int, int], None]) -> dict[str, Any]:
     target = str(request.target or "").strip()
     if not target:
         raise ValueError("Enter a target first.")
+    check_output_path(request)
     started = time.perf_counter()
 
     if request.is_username:

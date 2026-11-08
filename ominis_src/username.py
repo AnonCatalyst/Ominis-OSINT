@@ -133,7 +133,10 @@ def profile_url(base: str, username: str) -> str:
 
 
 def load_platforms(path: str | Path = DEFAULT_PLATFORMS) -> list[str]:
-    lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
+    # utf-8-sig drops the BOM Notepad and PowerShell add to a saved list.
+    # Without it the first URL keeps an invisible character and fails with
+    # "Request URL is missing an 'http://' or 'https://' protocol".
+    lines = Path(path).read_text(encoding="utf-8-sig", errors="replace").splitlines()
     templates: list[str] = []
     seen: set[str] = set()
     for line in lines:

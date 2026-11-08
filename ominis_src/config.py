@@ -130,6 +130,8 @@ class Settings:
             raise ValueError("max_results must be between 1 and 1000")
         if float(self.timeout) <= 0:
             raise ValueError("timeout must be positive")
+        if self.since and self.until and str(self.since) > str(self.until):
+            raise ValueError("since must not be later than until")
         if int(self.scan_limit) < 1:
             raise ValueError("scan_limit must be at least 1")
         if int(self.scan_limit) > 1000:
@@ -204,8 +206,14 @@ def load_proxy_file(path: str | Path) -> tuple[str, ...]:
     if not file.is_file():
         raise ValueError(f"no proxy file at {file}")
     entries: list[str] = []
-    for line in file.read_text(encoding="utf-8", errors="replace").splitlines():
+    # utf-8-sig drops the BOM a Windows editor may add; otherwise the first
+    # endpoint carries an invisible character and is rejected as invalid.
+    for line in file.read_text(encoding="utf-8-sig", errors="replace").splitlines():
         line = line.split("#", 1)[0].strip()
         if line:
             entries.append(line)
+    if not entries:
+        # An explicitly supplied proxy file with no endpoints is a mistake,
+        # not permission to search directly and silently.
+        raise ValueError(f"no proxy endpoints in {file}")
     return tuple(entries)

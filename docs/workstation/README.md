@@ -5,8 +5,8 @@ window built with PySide6 — **not a browser page, not a local web server, and
 not an Electron shell**. There is no embedded browser: search results, profile
 checks, StyxNet runs, and reports all happen inside one desktop window.
 
-- Workstation version: **1.0.4**
-- Bundled engine: **Ominis 1.2.4**
+- Workstation version: **1.0.5**
+- Bundled engine: **Ominis 1.2.5**
 - Platform: Windows 10/11, 64-bit
 - License: MIT
 
@@ -14,12 +14,12 @@ checks, StyxNet runs, and reports all happen inside one desktop window.
 
 ## Download and install
 
-Download `Ominis-Workstation-1.0.4-win64-setup.exe` and run it. The installer is
+Download `Ominis-Workstation-1.0.5-win64-setup.exe` and run it. The installer is
 per-user by default, so it does not need administrator rights. It adds a
 **Desktop** shortcut, a **Start menu** entry, and an entry under **Settings >
 Apps** so the app can be uninstalled normally.
 
-A portable `Ominis-Workstation-1.0.4-win64.zip` is also published. Unpack it and
+A portable `Ominis-Workstation-1.0.5-win64.zip` is also published. Unpack it and
 run `OminisWorkstation.exe` if you do not want an installed copy.
 
 If you use the portable build, or move the folder after installing, run
@@ -216,7 +216,7 @@ Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then compile
 ISCC.exe workstation.iss
 ```
 
-The result is `dist\Ominis-Workstation-1.0.4-win64-setup.exe`. The installer is
+The result is `dist\Ominis-Workstation-1.0.5-win64-setup.exe`. The installer is
 per-user, so testing it does not require an administrator shell. It contains
 the same executable as the portable zip plus `README.md`, `LICENSE`,
 `TRADEMARKS.md`, and `CODE_SIGNING.md`.

@@ -24,38 +24,24 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
-## Version 1.2.4
+## What's new in 1.2.5
 
-A small polish release for Windows command-line output.
+- **Windows input files keep their first line.** Platform lists, proxy files,
+  and StyxNet key files saved with a UTF-8 BOM (Notepad, PowerShell) no longer
+  fail on an invisible first character.
+- **A dead proxy fails the username command.** When every checked platform
+  errors, `ominis username` now exits non-zero instead of reporting success.
+- **Clean errors instead of tracebacks.** An `--out` path that is an existing
+  file is rejected before the network run, an empty `--proxy-file` says so,
+  and a report write failure prints one error line.
+- **Reversed date ranges are rejected.** `--since` later than `--until` is a
+  usage error instead of a silent empty search.
+- **No phantom socket traceback** on Windows when a checked site resets a
+  pooled connection during username checks.
 
-- **No more phantom socket traceback.** When a checked site reset a pooled
-  connection while the username checker closed it, Windows' asyncio proactor
-  printed `ERROR: Exception in callback ... _call_connection_lost` even though
-  the site was already recorded as an error and the run succeeded. That one
-  callback is now ignored; real loop errors, including other connection
-  failures, still surface.
+Full history: [CHANGELOG.md](CHANGELOG.md).
 
-## Version 1.2.3
-
-A maintenance release for the desktop path and username checks. Highlights:
-
-- **Proxy runs work in the windowed workstation again.** The legacy
-  "enable proxy rotation display?" prompt tried to read standard input, which
-  a windowed build does not have. Explicit proxy runs failed with
-  `lost sys.stdin` before touching the network. Non-interactive callers now
-  keep the display off and use the proxy; a terminal user can still opt in.
-- **Leading `@` is accepted.** `ominis username @AnonCatalyst` and the
-  workstation username mode now treat the at-sign as notation and check
-  `AnonCatalyst`. Unsafe names are still rejected.
-- **Build metadata is consistent.** The workstation executable reports
-  `1.0.3.0` in both the fixed and string version fields.
-
-## Version 1.2.2
-
-This is the full suite. It is published alongside the patched original
-(`v0.5.0`) so anyone relying on the old layout can keep it. 1.2.2 adds page
-inspection, explicit proxy controls, and raw-only output, and fixes searches
-that silently returned nothing when a dead proxy variable was set. Highlights:
+## Capabilities
 
 - **Result pages are read, not just snippets.** The default scan pass fetches
   the top results and records what each page itself proves: metadata,
@@ -65,32 +51,22 @@ that silently returned nothing when a dead proxy variable was set. Highlights:
   it with `--scan-limit`.
 - **Environment proxies are opt-in.** `HTTP_PROXY`, `HTTPS_PROXY`, and
   `ALL_PROXY` are ignored unless `--use-env-proxy` is passed. A stale dead
-  proxy can no longer empty every engine. Explicit `--proxy`/`--proxy-file`
-  pools still work, and a failed proxy still fails instead of falling back.
+  proxy cannot empty every engine. Explicit `--proxy`/`--proxy-file` pools
+  still work, and a failed proxy still fails instead of falling back.
 - **Raw output is allowed.** `--format none` prints results and writes no
   report files. The workstation has a matching "Save report files" switch.
 - **Optional StyxNet search.** `--styxnet` sends the query to WinterGate's
-  engine pool instead of scraping; local DuckDuckGo/Bing remain the fallback.
-- **Cleaner results.** Canonical URLs collapse duplicate engine hits, engines
-  are paged in lockstep, search plumbing is filtered out, and mentions are
-  counted as whole words (including multi-word queries).
-- **Better profile checks.** Username checks also read Open Graph metadata,
-  canonical links, and structured handle fields, so valid TikTok, Twitch, and
-  YouTube profiles are found without trusting a footer mention or a soft 404.
+  engine pool; local DuckDuckGo/Bing remain the fallback.
 - **Deep detection.** A curated platform registry runs first, then the original
   wide `social_platforms.json` table (still shipped), then generic
   Discourse/Fediverse/forum rules. False positives from substrings, reserved
   words, and canonical links are rejected.
 - **Real filters.** Language, country, and date ranges are passed to each
   engine instead of being accepted and ignored.
-- **Optional results API.** Set `SERPBASE_API_KEY` and the Google leg goes
-  through a SerpBase-compatible JSON API; leave it unset and the scrapers run
-  as before.
-- **No browser download.** Username checks share one HTTPX client instead of
-  starting a `requests_html` Chromium session per URL.
 - **Reports in four formats.** `txt`, `json`, `csv`, and `md`, with file names
   that are safe for any query. Or no files at all.
-- **A real CLI.** Scriptable subcommands, exit codes, and a `doctor` check.
+- **A real CLI and a real desktop app.** Scriptable subcommands, exit codes,
+  and a `doctor` check, plus a native Qt workstation on Windows.
 
 ### See it run
 
@@ -112,9 +88,9 @@ a browser page and not an embedded web view. It wraps the same engine in one
 desk for web search, username checks, and StyxNet, and it labels every profile
 with the signal that detected it.
 
-- Latest workstation: **1.0.4** (bundled engine **1.2.4**)
-- Installer: [`Ominis-Workstation-1.0.4-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.4)
-- Portable: [`Ominis-Workstation-1.0.4-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.4)
+- Latest workstation: **1.0.5** (bundled engine **1.2.5**)
+- Installer: [`Ominis-Workstation-1.0.5-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.5)
+- Portable: [`Ominis-Workstation-1.0.5-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.5)
 - Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)
 
 | | |

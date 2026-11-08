@@ -210,6 +210,24 @@ def test_username_command_writes_a_report(monkeypatch, tmp_path, capsys):
     assert "1 match(es) out of 1 checked." in capsys.readouterr().out
 
 
+def test_username_command_fails_when_every_check_errors(monkeypatch, tmp_path, capsys):
+    outcome = username.UsernameReport(username="acme", hits=[
+        username.Hit(username="acme", url="https://a.example/acme",
+                     error="ConnectTimeout: timed out"),
+        username.Hit(username="acme", url="https://b.example/acme",
+                     error="ConnectTimeout: timed out")])
+
+    async def fake_run(*args, **kwargs):
+        return outcome
+
+    monkeypatch.setattr(cli.username_mod, "run", fake_run)
+    monkeypatch.setattr(cli.username_mod, "write", lambda *args, **kwargs: {})
+    code = cli.main(["username", "acme", "--format", "none",
+                     "--out", str(tmp_path)])
+    assert code == cli.EXIT_ERROR
+    assert "Every checked platform failed" in capsys.readouterr().err
+
+
 def test_print_hit_can_show_checked_platforms(capsys):
     hit = username.Hit(username="acme", url="https://a.example/acme", status=404)
     cli._print_hit(hit, show_all=True)
@@ -261,6 +279,53 @@ def test_search_command_returns_success_for_results(monkeypatch, tmp_path, capsy
             in capsys.readouterr().out)
 
 
+def test_search_fails_before_network_when_out_is_a_file(monkeypatch, tmp_path, capsys):
+    target = tmp_path / "results.txt"
+    target.write_text("x", encoding="utf-8")
+    called = []
+
+    async def fake_run(settings, progress):
+        called.append(True)
+
+    monkeypatch.setattr(cli.search, "run", fake_run)
+    code = cli.main(["search", "acme", "--out", str(target)])
+    assert code == cli.EXIT_USAGE
+    assert called == []
+    assert "not a directory" in capsys.readouterr().err
+
+
+def test_username_fails_before_network_when_out_is_a_file(monkeypatch, tmp_path, capsys):
+    target = tmp_path / "results.txt"
+    target.write_text("x", encoding="utf-8")
+    called = []
+
+    async def fake_run(*args, **kwargs):
+        called.append(True)
+
+    monkeypatch.setattr(cli.username_mod, "run", fake_run)
+    code = cli.main(["username", "acme", "--out", str(target)])
+    assert code == cli.EXIT_USAGE
+    assert called == []
+    assert "not a directory" in capsys.readouterr().err
+
+
+def test_search_reports_a_write_error_without_a_traceback(monkeypatch, tmp_path, capsys):
+    from ominis_src import report
+
+    async def fake_run(settings, progress):
+        return report.SearchReport(query="acme")
+
+    monkeypatch.setattr(cli.search, "run", fake_run)
+
+    def broken_write(result, settings):
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(cli.search, "write", broken_write)
+    code = cli.main(["search", "acme", "--quiet", "--out", str(tmp_path)])
+    assert code == cli.EXIT_ERROR
+    assert "could not write reports" in capsys.readouterr().err
+
+
 def test_search_command_uses_styxnet_settings(monkeypatch, tmp_path, capsys):
     from ominis_src import report
 
@@ -303,3 +368,10 @@ def test_invalid_date_is_reported_as_a_usage_error(monkeypatch, tmp_path, capsys
     assert cli.main(["search", "acme", "--since", "31-01-2026",
                      "--out", str(tmp_path)]) == cli.EXIT_USAGE
     assert "YYYY-MM-DD" in capsys.readouterr().err
+
+
+def test_reversed_date_range_is_reported_as_a_usage_error(monkeypatch, tmp_path, capsys):
+    assert cli.main(["search", "acme", "--since", "2026-12-31",
+                     "--until", "2024-01-01",
+                     "--out", str(tmp_path)]) == cli.EXIT_USAGE
+    assert "since" in capsys.readouterr().err

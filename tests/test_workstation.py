@@ -115,6 +115,18 @@ def test_build_settings_uses_request_values():
     assert settings.proxies == ()
 
 
+def test_output_path_that_is_a_file_is_rejected(tmp_path):
+    target = tmp_path / "cases.txt"
+    target.write_text("x", encoding="utf-8")
+    request = backend.InvestigationRequest(
+        target="acme", formats=("json",), out_dir=target)
+    with pytest.raises(ValueError, match="not a directory"):
+        backend.check_output_path(request)
+    raw = backend.InvestigationRequest(
+        target="acme", formats=(), out_dir=target)
+    backend.check_output_path(raw)  # no report files, no check needed
+
+
 def test_build_settings_requires_a_styxnet_key(monkeypatch):
     monkeypatch.setattr(styxnet, "load_key", lambda explicit="": "")
     request = backend.InvestigationRequest(

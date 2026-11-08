@@ -62,6 +62,12 @@ def test_settings_validate_ranges():
         config.Settings(query="acme", formats=("xml",))
 
 
+def test_settings_reject_a_reversed_date_range():
+    with pytest.raises(ValueError, match="since"):
+        config.Settings(query="acme", since="2026-12-31",
+                        until="2024-01-01")
+
+
 def test_settings_page_size_is_bounded():
     assert config.Settings(query="acme", max_results=1).page_size == 10
     assert config.Settings(query="acme", max_results=1000).page_size == 200
@@ -171,6 +177,21 @@ def test_load_proxy_file_skips_comments_and_blanks(tmp_path):
                     encoding="utf-8")
     assert config.load_proxy_file(path) == (
         "127.0.0.1:8080", "socks5://127.0.0.1:1080")
+
+
+def test_load_proxy_file_drops_a_bom(tmp_path):
+    path = tmp_path / "proxies.txt"
+    path.write_text("127.0.0.1:8080\nsocks5://127.0.0.1:1080\n",
+                    encoding="utf-8-sig")
+    assert config.load_proxy_file(path) == (
+        "127.0.0.1:8080", "socks5://127.0.0.1:1080")
+
+
+def test_load_proxy_file_rejects_an_empty_list(tmp_path):
+    path = tmp_path / "proxies.txt"
+    path.write_text("# only a comment\n\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="no proxy endpoints"):
+        config.load_proxy_file(path)
 
 
 def test_load_proxy_file_requires_a_file(tmp_path):

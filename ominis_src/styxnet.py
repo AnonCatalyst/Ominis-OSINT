@@ -131,7 +131,10 @@ def load_key(explicit: str = "") -> str:
             return environment
     for path in key_candidates():
         try:
-            value = path.read_text(encoding="utf-8", errors="replace").strip()
+            # utf-8-sig accepts a BOM from a Windows editor; a leading BOM
+            # would otherwise hide the sgn_ prefix and reject a valid key.
+            value = path.read_text(encoding="utf-8-sig",
+                                   errors="replace").strip()
         except OSError:
             continue
         if value:

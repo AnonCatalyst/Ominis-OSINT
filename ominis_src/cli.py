@@ -247,6 +247,17 @@ def _gather_proxies(args: argparse.Namespace) -> tuple[str, ...]:
     return tuple(entries)
 
 
+def _check_out_dir(path: str | Path) -> None:
+    """Fail before the network when reports cannot be written.
+
+    Without this, ``--out`` pointing at an existing file ran the whole search
+    and then crashed with a raw ``FileExistsError`` traceback.
+    """
+    target = Path(path)
+    if target.exists() and not target.is_dir():
+        raise ValueError(f"output path is not a directory: {target}")
+
+
 def _print_record(record: engines.Result) -> None:
     print(f"[{record.engine}] {record.title}")
     print(f"  {record.url}")
@@ -280,6 +291,8 @@ def cmd_search(args: argparse.Namespace) -> int:
         styxnet_engines=args.styxnet_engines,
         styxnet_scopes=args.styxnet_scopes,
     )
+    if settings.formats:
+        _check_out_dir(settings.out_dir)
     if settings.proxy_enabled:
         if settings.proxies:
             print(f"Using {len(settings.proxies)} proxy endpoint(s).")
@@ -291,7 +304,11 @@ def cmd_search(args: argparse.Namespace) -> int:
         print(f"Inspecting up to {settings.scan_limit} result page(s).")
     outcome = asyncio.run(search.run(
         settings, None if args.quiet else _print_record))
-    paths = search.write(outcome, settings)
+    try:
+        paths = search.write(outcome, settings)
+    except OSError as exc:
+        print(f"error: could not write reports: {exc}", file=sys.stderr)
+        return EXIT_ERROR
     for name, path in paths.items():
         print(f"{name}: {path}")
     for error in outcome.errors:
@@ -308,6 +325,8 @@ def cmd_search(args: argparse.Namespace) -> int:
 
 
 def cmd_username(args: argparse.Namespace) -> int:
+    if args.format:
+        _check_out_dir(args.out)
     settings_proxies = _gather_proxies(args)
     platforms = (username_mod.load_platforms(args.urls)
                  if args.urls else None)
@@ -326,10 +345,21 @@ def cmd_username(args: argparse.Namespace) -> int:
         print(f"{len(outcome.found)} match(es) out of {len(outcome.hits)} checked.")
     else:
         print(f"No matches across {len(outcome.hits)} platforms.")
-    paths = username_mod.write(outcome, args.out, args.format,
-                               include_all=args.all)
+    try:
+        paths = username_mod.write(outcome, args.out, args.format,
+                                   include_all=args.all)
+    except OSError as exc:
+        print(f"error: could not write reports: {exc}", file=sys.stderr)
+        return EXIT_ERROR
     for name, path in paths.items():
         print(f"{name}: {path}")
+    # A dead proxy used to look successful because the command always
+    # returned zero. If no platform produced a response, say so with a
+    # failing exit code so scripts can notice.
+    if outcome.hits and all(hit.error for hit in outcome.hits):
+        print("Every checked platform failed; see the errors above.",
+              file=sys.stderr)
+        return EXIT_ERROR
     return EXIT_OK
 
 
