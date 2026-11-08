@@ -258,6 +258,18 @@ def _check_out_dir(path: str | Path) -> None:
         raise ValueError(f"output path is not a directory: {target}")
 
 
+def _check_proxies(proxies: tuple[str, ...]) -> None:
+    """Reject a malformed endpoint before a request is attempted.
+
+    Search used to hand the bad value to each engine and finish with exit 1
+    and a generic warning, while username exited 2 with a clear message.
+    Validate once so both commands fail the same way.
+    """
+    from .tools_handler import _normalize_proxy_pool
+
+    _normalize_proxy_pool(proxies)
+
+
 def _print_record(record: engines.Result) -> None:
     print(f"[{record.engine}] {record.title}")
     print(f"  {record.url}")
@@ -291,6 +303,8 @@ def cmd_search(args: argparse.Namespace) -> int:
         styxnet_engines=args.styxnet_engines,
         styxnet_scopes=args.styxnet_scopes,
     )
+    if settings.proxies:
+        _check_proxies(settings.proxies)
     if settings.formats:
         _check_out_dir(settings.out_dir)
     if settings.proxy_enabled:
@@ -328,8 +342,19 @@ def cmd_username(args: argparse.Namespace) -> int:
     if args.format:
         _check_out_dir(args.out)
     settings_proxies = _gather_proxies(args)
-    platforms = (username_mod.load_platforms(args.urls)
-                 if args.urls else None)
+    if settings_proxies:
+        _check_proxies(settings_proxies)
+    try:
+        platforms = (username_mod.load_platforms(args.urls)
+                     if args.urls else None)
+    except OSError as exc:
+        # A missing or unreadable --urls file used to raise FileNotFoundError
+        # straight through main and print a traceback.
+        raise ValueError(
+            f"could not read platform list at {args.urls}: "
+            f"{exc.strerror or exc}") from exc
+    if platforms is not None and not platforms:
+        raise ValueError(f"no platform URLs in {args.urls}")
 
     def progress(hit: username_mod.Hit) -> None:
         _print_hit(hit, show_all=args.all)
@@ -378,8 +403,15 @@ def cmd_proxy(args: argparse.Namespace) -> int:
 
     if args.proxy_action != "harvest":
         return EXIT_USAGE
-    valid = asyncio.run(proxy_handler.scrape_proxies(
-        output=args.out, validate=not args.no_validate, limit=args.limit))
+    target = Path(args.out)
+    if target.exists() and target.is_dir():
+        raise ValueError(f"output path is not a file: {target}")
+    try:
+        valid = asyncio.run(proxy_handler.scrape_proxies(
+            output=args.out, validate=not args.no_validate, limit=args.limit))
+    except OSError as exc:
+        print(f"error: could not save proxies: {exc}", file=sys.stderr)
+        return EXIT_ERROR
     print(f"{len(valid)} endpoint(s) saved to {args.out}")
     return EXIT_OK if valid else EXIT_ERROR
 

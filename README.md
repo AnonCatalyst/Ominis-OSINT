@@ -24,20 +24,22 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
-## What's new in 1.2.5
+## What's new in 1.2.6
 
-- **Windows input files keep their first line.** Platform lists, proxy files,
-  and StyxNet key files saved with a UTF-8 BOM (Notepad, PowerShell) no longer
-  fail on an invisible first character.
-- **A dead proxy fails the username command.** When every checked platform
-  errors, `ominis username` now exits non-zero instead of reporting success.
-- **Clean errors instead of tracebacks.** An `--out` path that is an existing
-  file is rejected before the network run, an empty `--proxy-file` says so,
-  and a report write failure prints one error line.
-- **Reversed date ranges are rejected.** `--since` later than `--until` is a
-  usage error instead of a silent empty search.
-- **No phantom socket traceback** on Windows when a checked site resets a
-  pooled connection during username checks.
+- **A bad `--urls` file is a usage error.** A missing, unreadable, or empty
+  platform list (`ominis username --urls ...`) now prints one clear line and
+  exits 2 instead of a `FileNotFoundError` traceback or a silent zero-platform
+  run.
+- **A malformed proxy fails before the network.** `ominis search --proxy ...`
+  with an unsupported scheme now exits 2 with the same message the username
+  command already used, instead of trying each engine and ending with a
+  generic warning.
+- **Proxy harvest output is checked first.** `ominis proxy harvest --out` that
+  points at a directory is rejected before downloading anything, and a write
+  failure prints one error line instead of a traceback.
+- **Earlier 1.2.5 fixes remain:** BOM-tolerant input files, a failing exit
+  code when every username check errors, clean report errors, rejected
+  reversed date ranges, and no phantom Windows socket traceback.
 
 Full history: [CHANGELOG.md](CHANGELOG.md).
 
@@ -88,9 +90,9 @@ a browser page and not an embedded web view. It wraps the same engine in one
 desk for web search, username checks, and StyxNet, and it labels every profile
 with the signal that detected it.
 
-- Latest workstation: **1.0.5** (bundled engine **1.2.5**)
-- Installer: [`Ominis-Workstation-1.0.5-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.5)
-- Portable: [`Ominis-Workstation-1.0.5-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.5)
+- Latest workstation: **1.0.6** (bundled engine **1.2.6**)
+- Installer: [`Ominis-Workstation-1.0.6-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.6)
+- Portable: [`Ominis-Workstation-1.0.6-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.6)
 - Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)
 
 | | |

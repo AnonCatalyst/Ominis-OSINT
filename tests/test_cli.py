@@ -309,6 +309,77 @@ def test_username_fails_before_network_when_out_is_a_file(monkeypatch, tmp_path,
     assert "not a directory" in capsys.readouterr().err
 
 
+def test_username_missing_platform_file_is_a_usage_error(monkeypatch, tmp_path, capsys):
+    called = []
+
+    async def fake_run(*args, **kwargs):
+        called.append(True)
+
+    monkeypatch.setattr(cli.username_mod, "run", fake_run)
+    code = cli.main(["username", "acme",
+                     "--urls", str(tmp_path / "nope.txt")])
+    assert code == cli.EXIT_USAGE
+    assert called == []
+    assert "could not read platform list" in capsys.readouterr().err
+
+
+def test_username_empty_platform_file_is_a_usage_error(monkeypatch, tmp_path, capsys):
+    called = []
+
+    async def fake_run(*args, **kwargs):
+        called.append(True)
+
+    monkeypatch.setattr(cli.username_mod, "run", fake_run)
+    empty = tmp_path / "urls.txt"
+    empty.write_text("# nothing here\n", encoding="utf-8")
+    code = cli.main(["username", "acme", "--urls", str(empty)])
+    assert code == cli.EXIT_USAGE
+    assert called == []
+    assert "no platform URLs" in capsys.readouterr().err
+
+
+def test_search_rejects_a_malformed_proxy_before_network(monkeypatch, tmp_path, capsys):
+    called = []
+
+    async def fake_run(settings, progress):
+        called.append(True)
+
+    monkeypatch.setattr(cli.search, "run", fake_run)
+    code = cli.main(["search", "acme", "--proxy", "ftp://127.0.0.1:9",
+                     "--format", "none", "--out", str(tmp_path)])
+    assert code == cli.EXIT_USAGE
+    assert called == []
+    assert "Invalid proxy endpoint" in capsys.readouterr().err
+
+
+def test_proxy_harvest_rejects_an_output_directory(monkeypatch, tmp_path, capsys):
+    from ominis_src import proxy_handler
+
+    called = []
+
+    async def fake_scrape(**kwargs):
+        called.append(True)
+        return ["127.0.0.1:8080"]
+
+    monkeypatch.setattr(proxy_handler, "scrape_proxies", fake_scrape)
+    code = cli.main(["proxy", "harvest", "--out", str(tmp_path)])
+    assert code == cli.EXIT_USAGE
+    assert called == []
+    assert "not a file" in capsys.readouterr().err
+
+
+def test_proxy_harvest_reports_a_write_error(monkeypatch, tmp_path, capsys):
+    from ominis_src import proxy_handler
+
+    async def fake_scrape(**kwargs):
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(proxy_handler, "scrape_proxies", fake_scrape)
+    code = cli.main(["proxy", "harvest", "--out", str(tmp_path / "pool.txt")])
+    assert code == cli.EXIT_ERROR
+    assert "could not save proxies" in capsys.readouterr().err
+
+
 def test_search_reports_a_write_error_without_a_traceback(monkeypatch, tmp_path, capsys):
     from ominis_src import report
 

@@ -7,6 +7,21 @@ downloads; each entry names both versions when they shipped together.
 The full list of older releases and their assets is on the
 [GitHub releases page](https://github.com/AnonCatalyst/Ominis-OSINT/releases).
 
+## 1.2.6 / Workstation 1.0.6 - 2026-11-08
+
+### Fixed
+
+- `ominis username --urls FILE` prints one clear line and exits 2 when the
+  platform list is missing, unreadable, or contains no URLs. A missing file
+  used to raise a `FileNotFoundError` traceback; an empty file used to report
+  success after checking nothing.
+- `ominis search --proxy ...` validates the endpoint before any request. An
+  unsupported scheme or malformed value now exits 2 with a clear message,
+  matching the username command, instead of a per-engine warning and exit 1.
+- `ominis proxy harvest --out` rejects an existing directory before
+  downloading, and a write failure prints one error line instead of a
+  traceback.
+
 ## 1.2.5 / Workstation 1.0.5 - 2026-11-08
 
 ### Fixed
