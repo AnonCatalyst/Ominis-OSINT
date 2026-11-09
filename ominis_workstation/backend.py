@@ -98,6 +98,7 @@ def username_payload(outcome: username_mod.UsernameReport,
             "errors": len(errors),
             "elapsed_ms": elapsed_ms,
         },
+        "detections": outcome.detections(),
         "hits": [asdict(hit) for hit in outcome.hits],
         "profiles": [
             {
@@ -105,9 +106,11 @@ def username_payload(outcome: username_mod.UsernameReport,
                 "profile_url": hit.url,
                 "category": hit.category,
                 "confidence": hit.confidence,
+                "handle": hit.handle,
                 "title": hit.title,
                 "source": hit.match or "local",
                 "status": hit.status,
+                "verified": hit.matched,
             }
             for hit in found
         ],

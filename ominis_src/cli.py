@@ -192,8 +192,10 @@ def build_parser() -> argparse.ArgumentParser:
              "scraping DuckDuckGo/Bing")
     search_cmd.add_argument(
         "--styxnet-key", default="", metavar="KEY",
-        help="StyxNet access key (or STYXNET_ACCESS_KEY, or "
-             "~/.config/ominis/styxnet-key.txt)")
+        help="StyxNet access key; also STYXNET_ACCESS_KEY, "
+             "OMINIS_STYXNET_KEY, ~/.config/ominis/styxnet-key.txt "
+             "(%USERPROFILE%\\.config\\ominis\\styxnet-key.txt on Windows), "
+             "or %APPDATA%\\ominis\\styxnet-key.txt")
     search_cmd.add_argument(
         "--styxnet-engines", type=_styxnet_engines,
         default=_env_int("OMINIS_STYXNET_ENGINES", 35), metavar="N",
@@ -331,6 +333,23 @@ def cmd_search(args: argparse.Namespace) -> int:
           f"{len(outcome.profiles)} social profile(s), "
           f"{sum(1 for record in outcome.records if record.matched)} "
           f"page match(es).")
+    detections = outcome.detections()
+    if detections["matched_signals"]:
+        print("Detection signals: " + ", ".join(
+            f"{report.SIGNAL_LABELS.get(signal, signal)} x{count}"
+            for signal, count in detections["matched_signals"].items()))
+    if detections["handles"]:
+        print("Identifiers: " + ", ".join(detections["handles"]))
+    if detections["strengths"]:
+        print("Lead strength: " + ", ".join(
+            f"{name} {count}"
+            for name, count in detections["strengths"].items()))
+    if detections["leads"]:
+        print(f"Verified leads: {detections['verified']} of "
+              f"{detections['leads']} profile(s).")
+    if outcome.records:
+        print(f"Results resolving to a profile: {detections['resolved']} of "
+              f"{len(outcome.records)}.")
     if not outcome.records and not outcome.profiles:
         print("No results. Check the warnings above; if a proxy is set, "
               "retry without --use-env-proxy or without a proxy pool.",
@@ -370,6 +389,20 @@ def cmd_username(args: argparse.Namespace) -> int:
         print(f"{len(outcome.found)} match(es) out of {len(outcome.hits)} checked.")
     else:
         print(f"No matches across {len(outcome.hits)} platforms.")
+    detections = outcome.detections()
+    if detections["matched_signals"]:
+        print("Detection signals: " + ", ".join(
+            f"{username_mod.STATE_LABELS.get(signal, signal)} x{count}"
+            for signal, count in detections["matched_signals"].items()))
+    if detections["handles"]:
+        print("Identifiers: " + ", ".join(detections["handles"]))
+    if detections["strengths"]:
+        print("Lead strength: " + ", ".join(
+            f"{name} {count}"
+            for name, count in detections["strengths"].items()))
+    if detections["leads"]:
+        print(f"Verified leads: {detections['verified']} of "
+              f"{detections['leads']} profile(s).")
     try:
         paths = username_mod.write(outcome, args.out, args.format,
                                    include_all=args.all)
@@ -391,7 +424,15 @@ def cmd_username(args: argparse.Namespace) -> int:
 def _print_hit(hit: username_mod.Hit, *, show_all: bool = False) -> None:
     if hit.found:
         label = f" ({hit.platform})" if hit.platform else ""
-        print(f"[found] {hit.url}{label}")
+        detail = []
+        if hit.handle:
+            detail.append(hit.handle)
+        if hit.confidence:
+            detail.append(f"confidence {hit.confidence}")
+        if hit.match:
+            detail.append(username_mod.STATE_LABELS.get(hit.match, hit.match))
+        suffix = f" - {', '.join(detail)}" if detail else ""
+        print(f"[found] {hit.url}{label}{suffix}")
     elif hit.error:
         print(f"[error] {hit.url}: {hit.error}")
     elif show_all:
@@ -430,6 +471,13 @@ def cmd_doctor(_: argparse.Namespace) -> int:
 
     paths = ssl.get_default_verify_paths()
     print(f"TLS CA bundle: {paths.cafile or paths.capath or 'system store'}")
+    key, source = styxnet.key_source()
+    if key:
+        note = "" if key.startswith("sgn_") else (
+            " (warning: expected a key beginning with sgn_)")
+        print(f"StyxNet key: found via {source}{note}")
+    else:
+        print("StyxNet key: not set (only needed for --styxnet)")
     try:
         import httpx
 

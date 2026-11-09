@@ -279,6 +279,58 @@ def test_search_command_returns_success_for_results(monkeypatch, tmp_path, capsy
             in capsys.readouterr().out)
 
 
+def test_search_command_prints_detection_depth(monkeypatch, tmp_path, capsys):
+    from ominis_src import report
+
+    outcome = report.SearchReport(
+        query="acme",
+        records=[report.SearchRecord(
+            title="acme", url="https://github.com/acme", engine="duckduckgo",
+            scanned=True, matched=True, signal="metadata", platform="GitHub",
+            category="dev", confidence=90, handle="acme")],
+        profiles=[{"platform": "GitHub", "profile_url":
+                   "https://github.com/acme", "category": "dev",
+                   "confidence": 92, "handle": "acme", "verified": True}])
+
+    async def fake_run(settings, progress):
+        return outcome
+
+    monkeypatch.setattr(cli.search, "run", fake_run)
+    monkeypatch.setattr(cli.search, "write",
+                        lambda result, settings: {})
+    code = cli.main(["search", "acme", "--quiet", "--out", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert code == cli.EXIT_OK
+    assert "Detection signals: Page metadata x1" in out
+    assert "Identifiers: acme" in out
+    assert "Verified leads: 1 of 1 profile(s)." in out
+
+
+def test_username_command_prints_detection_depth(monkeypatch, tmp_path, capsys):
+    outcome = username.UsernameReport(username="acme", hits=[
+        username.Hit(username="acme", url="https://github.com/acme",
+                     status=200, title="acme", matched=True, match="metadata",
+                     platform="GitHub", category="dev", confidence=90,
+                     handle="acme")])
+
+    async def fake_run(*args, **kwargs):
+        progress = kwargs.get("progress")
+        if progress:
+            progress(outcome.hits[0])
+        return outcome
+
+    monkeypatch.setattr(cli.username_mod, "run", fake_run)
+    monkeypatch.setattr(cli.username_mod, "write", lambda *args, **kwargs: {})
+    code = cli.main(["username", "acme", "--format", "none",
+                     "--out", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert code == cli.EXIT_OK
+    assert "[found] https://github.com/acme (GitHub) - acme, confidence 90, Page metadata" in out
+    assert "Detection signals: Page metadata x1" in out
+    assert "Identifiers: acme" in out
+    assert "Verified leads: 1 of 1 profile(s)." in out
+
+
 def test_search_fails_before_network_when_out_is_a_file(monkeypatch, tmp_path, capsys):
     target = tmp_path / "results.txt"
     target.write_text("x", encoding="utf-8")

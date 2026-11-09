@@ -71,8 +71,22 @@ def _add(outcome: report.SearchReport,
             existing.snippet = record.snippet
         if not existing.title and record.title:
             existing.title = record.title
+        if not existing.platform and record.platform:
+            existing.platform = record.platform
+            existing.category = record.category
+            existing.confidence = record.confidence
+            existing.handle = record.handle
         return False
     record.position = len(outcome.records) + 1
+    if not record.platform:
+        # Record the profile shape now, so an unscanned result still reports
+        # the platform, category, confidence and handle the URL rules read.
+        detected = platforms.detect_profiles(record.url)
+        if detected:
+            record.platform = str(detected[0].get("platform") or "")
+            record.category = str(detected[0].get("category") or "")
+            record.confidence = int(detected[0].get("confidence") or 0)
+            record.handle = str(detected[0].get("handle") or "")
     seen[key] = record
     outcome.records.append(record)
     if progress:
@@ -192,8 +206,9 @@ def _profiles(known: list[dict[str, object]],
             candidate = {
                 "platform": record.platform,
                 "profile_url": record.final_url or record.url,
-                "category": "",
-                "confidence": evidence["confidence"],
+                "category": record.category,
+                "confidence": record.confidence or evidence["confidence"],
+                "handle": record.handle,
                 "source": record.signal or "url",
                 "title": record.page_title or record.title,
                 "description": record.page_description,
@@ -254,6 +269,8 @@ def _with_evidence(profile: dict[str, object],
         candidate["title"] = record.page_title
     if record.page_description:
         candidate["description"] = record.page_description
+    if record.handle and (record.matched or not record.scanned):
+        candidate["handle"] = record.handle
     if record.status:
         candidate["status"] = record.status
     # Only a confirmed page may move a profile URL. An unconfirmed check that

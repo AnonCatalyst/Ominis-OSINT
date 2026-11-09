@@ -63,6 +63,7 @@ def inspect_page(url: str, status: int, final_url: str, body: str,
     platform = str(platform_info.get("platform") or "")
     category = str(platform_info.get("category") or "")
     confidence = int(platform_info.get("confidence") or 0)
+    handle = str(platform_info.get("handle") or "")
     result: dict[str, object] = {
         "status": int(status or 0),
         "final_url": final_url or url,
@@ -73,6 +74,7 @@ def inspect_page(url: str, status: int, final_url: str, body: str,
         "platform": platform,
         "category": category,
         "confidence": confidence,
+        "handle": handle,
         "page_title": "",
         "page_description": "",
         "error": error,
@@ -201,6 +203,9 @@ async def scan_records(records: Iterable[report.SearchRecord], query: str, *,
                 record.matched = bool(evidence["matched"])
                 record.scanned = True
                 record.platform = str(evidence["platform"] or "")
+                record.category = str(evidence["category"] or "")
+                record.confidence = int(evidence["confidence"] or 0)
+                record.handle = str(evidence["handle"] or "")
                 record.page_title = str(evidence["page_title"] or "")
                 record.page_description = str(evidence["page_description"] or "")
                 record.error = str(evidence["error"] or "")

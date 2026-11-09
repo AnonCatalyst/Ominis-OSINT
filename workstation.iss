@@ -9,7 +9,7 @@
 ; shortcuts. It never bundles the StyxNet key or any case report.
 
 #define MyAppName "Ominis Investigation Workstation"
-#define MyAppVersion "1.0.6"
+#define MyAppVersion "1.0.7"
 #define MyAppPublisher "WinterGate Intelligence Collective"
 #define MyAppURL "https://wintergate.org"
 #define MyAppExeName "OminisWorkstation.exe"
@@ -23,14 +23,14 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL=https://github.com/AnonCatalyst/Ominis-OSINT/issues
 AppUpdatesURL=https://github.com/AnonCatalyst/Ominis-OSINT/releases
-AppComments=Native Qt desktop application for the Ominis engine. Bundled engine 1.2.6.
+AppComments=Native Qt desktop application for the Ominis engine. Bundled engine 1.2.7.
 DefaultDirName={autopf}\Ominis Workstation
 DefaultGroupName=Ominis Workstation
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 LicenseFile=LICENSE
 OutputDir=dist
-OutputBaseFilename=Ominis-Workstation-1.0.6-win64-setup
+OutputBaseFilename=Ominis-Workstation-1.0.7-win64-setup
 SetupIconFile=ominis_workstation\assets\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
@@ -42,7 +42,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
 RestartApplications=no
 ShowLanguageDialog=no
-VersionInfoVersion=1.0.6.0
+VersionInfoVersion=1.0.7.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} Setup
 VersionInfoProductName={#MyAppName}

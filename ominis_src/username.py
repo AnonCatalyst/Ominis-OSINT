@@ -61,6 +61,8 @@ class Hit:
     platform: str = ""
     category: str = ""
     confidence: int = 0
+    #: The account identifier the check read from the URL or page.
+    handle: str = ""
     source: str = "local"
 
     @property
@@ -99,6 +101,18 @@ _HANDLE_JSON = re.compile(
     re.IGNORECASE)
 
 
+STATE_LABELS = report.SIGNAL_LABELS
+
+
+def _tally(values: Iterable[object]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        key = str(value or "").strip()
+        if key:
+            counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
+
+
 @dataclass
 class UsernameReport:
     username: str
@@ -113,6 +127,34 @@ class UsernameReport:
     @property
     def errors(self) -> list[Hit]:
         return [hit for hit in self.hits if hit.error]
+
+    def detections(self) -> dict[str, object]:
+        """Roll up what confirmed the profiles this check found."""
+        found = self.found
+        return {
+            "signals": _tally(hit.match for hit in self.hits if hit.match),
+            "matched_signals": _tally(hit.match for hit in found),
+            "sources": _tally(hit.source for hit in self.hits),
+            "categories": _tally(hit.category for hit in found),
+            "platforms": _tally(hit.platform for hit in found),
+            "handles": sorted({hit.handle for hit in found if hit.handle}),
+            "leads": len(found),
+            "verified": sum(1 for hit in found if hit.matched),
+            "strengths": _tally(
+                report.SIGNAL_STRENGTH.get(
+                    hit.match, "strong" if hit.matched else "none")
+                for hit in found),
+        }
+
+    def summary(self) -> dict[str, object]:
+        return {
+            "username": self.username,
+            "started": self.started,
+            "found": len(self.found),
+            "checked": len(self.hits),
+            "errors": len(self.errors),
+            "detections": self.detections(),
+        }
 
 
 def profile_url(base: str, username: str) -> str:
@@ -259,16 +301,17 @@ async def check_one(client: httpx.AsyncClient, username: str, base: str,
     platform = str(details.get("platform") or platforms.host_label(url))
     category = str(details.get("category") or "")
     confidence = int(details.get("confidence") or 0)
+    handle = str(details.get("handle") or username)
     try:
         response = await client.get(url, timeout=timeout,
                                     follow_redirects=True)
     except httpx.HTTPError as exc:
         return Hit(username=username, url=url, platform=platform,
-                   category=category, confidence=confidence,
+                   category=category, confidence=confidence, handle=handle,
                    error=_error_text(exc))
     hit = Hit(username=username, url=str(response.url),
               status=response.status_code, platform=platform,
-              category=category, confidence=confidence)
+              category=category, confidence=confidence, handle=handle)
     if response.status_code != 200:
         return hit
     info = parse_page_info(response.text)
@@ -440,6 +483,8 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
                 "started": outcome.started,
                 "found": len(outcome.found),
                 "checked": len(outcome.hits),
+                "summary": outcome.summary(),
+                "detections": outcome.detections(),
                 "profiles": [asdict(hit) for hit in outcome.found],
                 "errors": [asdict(hit) for hit in outcome.errors],
             }
@@ -453,7 +498,7 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
                     handle, fieldnames=["username", "url", "status", "title",
                                         "description", "matched", "match",
                                         "error", "platform", "category",
-                                        "confidence", "source"])
+                                        "confidence", "handle", "source"])
                 writer.writeheader()
                 for hit in outcome.hits:
                     writer.writerow(asdict(hit))
@@ -462,11 +507,34 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
                      f"_{outcome.started}_", "",
                      f"Checked **{len(outcome.hits)}** platforms, "
                      f"found **{len(outcome.found)}** profiles.", ""]
+            detections = outcome.detections()
+            if detections["leads"]:
+                lines += ["## Detections", ""]
+                for signal, count in detections["matched_signals"].items():
+                    lines.append(
+                        f"- {STATE_LABELS.get(signal, signal)}: **{count}**")
+                for category, count in detections["categories"].items():
+                    lines.append(f"- Category `{category}`: **{count}**")
+                if detections["handles"]:
+                    lines.append("- Handles: " + ", ".join(
+                        f"`{handle}`" for handle in detections["handles"]))
+                lines.append(f"- Verified leads: **{detections['verified']}** "
+                             f"of {detections['leads']}")
+                lines.append("")
             for hit in outcome.found:
                 label = hit.platform or hit.url
                 if hit.category:
                     label += f" ({hit.category})"
-                lines.append(f"- [{hit.title or label}]({hit.url}) - {hit.status}")
+                detail = []
+                if hit.handle:
+                    detail.append(f"`{hit.handle}`")
+                if hit.confidence:
+                    detail.append(f"confidence {hit.confidence}")
+                if hit.match:
+                    detail.append(STATE_LABELS.get(hit.match, hit.match))
+                suffix = f" - {', '.join(detail)}" if detail else ""
+                lines.append(f"- [{hit.title or label}]({hit.url}) - "
+                             f"{hit.status}{suffix}")
             if include_all:
                 lines += ["", "## All checked", "",
                           "| Platform | Status | URL | Result |",
@@ -485,13 +553,31 @@ def write(outcome: UsernameReport, out_dir: str | Path = "Results",
                 if hit.platform:
                     lines.append(f"Platform: {hit.platform}"
                                  + (f" ({hit.category})" if hit.category else ""))
+                if hit.handle:
+                    lines.append(f"Handle: {hit.handle}")
+                if hit.confidence:
+                    lines.append(f"Confidence: {hit.confidence}")
                 if hit.title:
                     lines.append(f"Title: {hit.title}")
                 if hit.description:
                     lines.append(f"Description: {hit.description}")
                 if hit.match:
-                    lines.append(f"Matched on: {hit.match}")
+                    lines.append("Matched on: "
+                                 f"{STATE_LABELS.get(hit.match, hit.match)}")
                 lines.append("-" * 78)
+            detections = outcome.detections()
+            if detections["leads"]:
+                lines += ["", "Detections", "=" * 78]
+                for signal, count in detections["matched_signals"].items():
+                    lines.append(
+                        f"{STATE_LABELS.get(signal, signal)} x{count}")
+                for category, count in detections["categories"].items():
+                    lines.append(f"Category {category}: {count}")
+                if detections["handles"]:
+                    lines.append("Handles: "
+                                 + ", ".join(detections["handles"]))
+                lines.append(f"Verified leads: {detections['verified']} of "
+                             f"{detections['leads']}")
             lines += ["", f"Found {len(outcome.found)} of {len(outcome.hits)} platforms."]
             if include_all:
                 lines += ["", "All checked", "=" * 78]

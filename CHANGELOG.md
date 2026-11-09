@@ -7,6 +7,31 @@ downloads; each entry names both versions when they shipped together.
 The full list of older releases and their assets is on the
 [GitHub releases page](https://github.com/AnonCatalyst/Ominis-OSINT/releases).
 
+## 1.2.7 / Workstation 1.0.7 - 2026-11-09
+
+### Added
+
+- Search and username results on the command line now report the same detection
+  depth as the workstation. Each profile row carries its handle, category,
+  confidence, detecting signal, and lead strength, and each report summarizes
+  verified leads and results that resolve to a profile. The console and the
+  `txt`, `json`, `csv`, and `md` writers all include the new fields, so
+  `--format none` still prints them.
+- Search enriches records the page scan did not reach, and merges detection
+  depth when a duplicate profile appears, instead of keeping whichever record
+  arrived first.
+- `ominis doctor` reports whether a StyxNet key is ready and which source
+  supplied it, without printing the key.
+
+### Changed
+
+- A StyxNet key can come from `--styxnet-key`, `STYXNET_ACCESS_KEY`,
+  `OMINIS_STYXNET_KEY`, `~/.config/ominis/styxnet-key.txt`
+  (`%USERPROFILE%\.config\ominis\styxnet-key.txt` on Windows), or
+  `%APPDATA%\ominis\styxnet-key.txt` when the first file is absent. A key from
+  any of these is sufficient; no other configuration is required, and
+  `--styxnet` remains the switch that routes the search.
+
 ## 1.2.6 / Workstation 1.0.6 - 2026-11-08
 
 ### Fixed

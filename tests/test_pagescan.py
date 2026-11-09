@@ -28,6 +28,9 @@ def test_inspect_page_uses_metadata_evidence():
     assert evidence["matched"] is True
     assert evidence["signal"] == "metadata"
     assert evidence["platform"] == "GitHub"
+    assert evidence["category"] == "dev"
+    assert evidence["confidence"] == 90
+    assert evidence["handle"] == "acme"
     assert "mentions the query" in evidence["detail"]
 
 
@@ -94,6 +97,9 @@ async def test_scan_records_fills_the_result_fields(monkeypatch):
     assert record.status == 200
     assert record.final_url == "https://github.com/acme"
     assert record.platform == "GitHub"
+    assert record.category == "dev"
+    assert record.confidence == 90
+    assert record.handle == "acme"
     assert _Client.kwargs["trust_env"] is False
 
 

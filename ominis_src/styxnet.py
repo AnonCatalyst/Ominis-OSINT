@@ -11,7 +11,9 @@ is required. The key is never written to a report or printed:
 1. ``--styxnet-key KEY`` (highest priority)
 2. ``STYXNET_ACCESS_KEY`` in the environment
 3. ``OMINIS_STYXNET_KEY`` in the environment
-4. ``~/.config/ominis/styxnet-key.txt`` (or ``%APPDATA%\\ominis\\...``)
+4. ``~/.config/ominis/styxnet-key.txt``
+   (``%USERPROFILE%\\.config\\ominis\\styxnet-key.txt`` on Windows)
+5. ``%APPDATA%\\ominis\\styxnet-key.txt`` when that first file is absent
 """
 
 from __future__ import annotations
@@ -56,8 +58,12 @@ ROTATION_NOTE = (
 ACCESS_NOTE = (
     "StyxNet access is free during the preview, but it needs a key. Join the "
     "WinterGate Discord at https://discord.gg/tu5CynxjZq and request access "
-    "from AnonCatalyst, then pass --styxnet-key, set STYXNET_ACCESS_KEY, or "
-    "save the key to ~/.config/ominis/styxnet-key.txt."
+    "from AnonCatalyst, then provide the key in any one of these places: "
+    "--styxnet-key KEY, STYXNET_ACCESS_KEY, OMINIS_STYXNET_KEY, "
+    "~/.config/ominis/styxnet-key.txt "
+    "(%USERPROFILE%\\.config\\ominis\\styxnet-key.txt on Windows), or "
+    "%APPDATA%\\ominis\\styxnet-key.txt. Nothing else is required; "
+    "--styxnet is still the switch that sends the search there."
 )
 
 #: Result titles that mean the platform answered with an error page.
@@ -113,7 +119,12 @@ class StyxNetAnswer:
 
 
 def key_candidates() -> list[Path]:
-    """Places the CLI looks for a saved key, in order."""
+    """Places the CLI looks for a saved key, in order.
+
+    ``Path.home()`` is ``%USERPROFILE%`` on Windows, so the first entry is the
+    same ``~/.config`` path on every platform. ``%APPDATA%`` is the fallback
+    when that file is absent or empty.
+    """
     paths = [Path.home() / ".config" / "ominis" / KEY_FILE]
     appdata = os.environ.get("APPDATA")
     if appdata:
@@ -121,14 +132,19 @@ def key_candidates() -> list[Path]:
     return paths
 
 
-def load_key(explicit: str = "") -> str:
-    """Return the first key found, or an empty string."""
+def key_source(explicit: str = "") -> tuple[str, str]:
+    """Return ``(key, source)`` without ever exposing the key in the source.
+
+    The source is safe to print: it names the argument, environment variable,
+    or file that supplied the key, so ``ominis doctor`` can say whether a key
+    is ready without echoing the secret.
+    """
     if explicit and explicit.strip():
-        return explicit.strip()
+        return explicit.strip(), "--styxnet-key"
     for name in (KEY_ENV, "OMINIS_STYXNET_KEY"):
         environment = os.environ.get(name, "").strip()
         if environment:
-            return environment
+            return environment, f"{name} (environment)"
     for path in key_candidates():
         try:
             # utf-8-sig accepts a BOM from a Windows editor; a leading BOM
@@ -138,8 +154,13 @@ def load_key(explicit: str = "") -> str:
         except OSError:
             continue
         if value:
-            return value
-    return ""
+            return value, str(path)
+    return "", ""
+
+
+def load_key(explicit: str = "") -> str:
+    """Return the first key found, or an empty string."""
+    return key_source(explicit)[0]
 
 
 def _check_key(key: str) -> str:

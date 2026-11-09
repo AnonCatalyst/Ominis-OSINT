@@ -24,22 +24,28 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/tu5CynxjZq__
 
 
-## What's new in 1.2.6
+## What's new in 1.2.7
 
-- **A bad `--urls` file is a usage error.** A missing, unreadable, or empty
-  platform list (`ominis username --urls ...`) now prints one clear line and
-  exits 2 instead of a `FileNotFoundError` traceback or a silent zero-platform
-  run.
-- **A malformed proxy fails before the network.** `ominis search --proxy ...`
-  with an unsupported scheme now exits 2 with the same message the username
-  command already used, instead of trying each engine and ending with a
-  generic warning.
-- **Proxy harvest output is checked first.** `ominis proxy harvest --out` that
-  points at a directory is rejected before downloading anything, and a write
-  failure prints one error line instead of a traceback.
-- **Earlier 1.2.5 fixes remain:** BOM-tolerant input files, a failing exit
-  code when every username check errors, clean report errors, rejected
-  reversed date ranges, and no phantom Windows socket traceback.
+- **CLI reports now carry the workstation's detection depth.** Search and
+  username results show the handle, category, confidence, detecting signal, and
+  lead strength for every profile, plus verified-lead and resolving-result
+  counts. This lands in the console and in all four report formats (`txt`,
+  `json`, `csv`, `md`), so `--format none` still prints the same detail.
+- **Unscanned and duplicate profiles keep their identifiers.** Search refines
+  records the page scan did not reach, and merges depth when the same profile
+  surfaces twice instead of dropping the handle or evidence.
+- **A StyxNet key is enough on its own.** Supply it once with `--styxnet-key`,
+  `STYXNET_ACCESS_KEY`, `OMINIS_STYXNET_KEY`,
+  `~/.config/ominis/styxnet-key.txt`
+  (`%USERPROFILE%\.config\ominis\styxnet-key.txt` on Windows), or the
+  `%APPDATA%\ominis\styxnet-key.txt` fallback when the first file is absent.
+  No extra setting is needed; `--styxnet` remains the switch that sends the
+  query there.
+- **`doctor` names the key source, never the key.** It reports whether a key is
+  ready and which source supplied it.
+- **Earlier fixes remain:** clean exit codes for bad `--urls`, malformed
+  proxies, and harvest output errors; BOM-tolerant input files; rejected
+  reversed date ranges; and no phantom Windows socket traceback.
 
 Full history: [CHANGELOG.md](CHANGELOG.md).
 
@@ -90,9 +96,9 @@ a browser page and not an embedded web view. It wraps the same engine in one
 desk for web search, username checks, and StyxNet, and it labels every profile
 with the signal that detected it.
 
-- Latest workstation: **1.0.6** (bundled engine **1.2.6**)
-- Installer: [`Ominis-Workstation-1.0.6-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.6)
-- Portable: [`Ominis-Workstation-1.0.6-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.6)
+- Latest workstation: **1.0.7** (bundled engine **1.2.7**)
+- Installer: [`Ominis-Workstation-1.0.7-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.7)
+- Portable: [`Ominis-Workstation-1.0.7-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.7)
 - Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)
 
 | | |

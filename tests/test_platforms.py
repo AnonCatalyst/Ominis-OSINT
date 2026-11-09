@@ -67,6 +67,27 @@ def test_wide_original_table_still_detects_its_platforms():
     assert found[0]["platform"] == "Guru"
     assert found[0]["category"] == "marketplace"
     assert found[0]["confidence"] == 45
+    assert found[0]["handle"] == "acme"
+
+
+def test_every_detection_carries_the_account_handle():
+    # The handle is the identifier the reports show, so every rule family has
+    # to return it: registry, subdomain, subpage, query parameter, wide table,
+    # and the two generic fallbacks.
+    assert platforms.detect_profiles(
+        "https://github.com/acme")[0]["handle"] == "acme"
+    assert platforms.detect_profiles(
+        "https://acme.bandcamp.com/album/one")[0]["handle"] == "acme"
+    assert platforms.detect_profiles(
+        "https://youtube.com/@acme/posts")[0]["handle"] == "acme"
+    assert platforms.detect_profiles(
+        "https://www.yelp.com/user_details?userid=acme")[0]["handle"] == "acme"
+    assert platforms.detect_profiles(
+        "https://guru.com/acme")[0]["handle"] == "acme"
+    assert platforms.detect_profiles(
+        "https://forum.example/u/acme")[0]["handle"] == "acme"
+    assert platforms.detect_profiles(
+        "https://social.example/@acme")[0]["handle"] == "acme"
 
 
 def test_wide_table_strips_www_before_matching():

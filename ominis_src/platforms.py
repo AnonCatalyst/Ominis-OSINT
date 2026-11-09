@@ -637,6 +637,7 @@ def _extended_profiles(host: str, path: str, query: str) -> list[dict[str, objec
             "profile_url": "https://" + match.group(0),
             "category": EXTENDED_CATEGORIES.get(name, "other"),
             "confidence": 45 if name in EXTENDED_CATEGORIES else 35,
+            "handle": handle,
         }]
     return []
 
@@ -793,9 +794,11 @@ def _profile_url(platform: Platform, host: str, path: str,
 def detect_profiles(url: str) -> list[dict[str, object]]:
     """Return at most one profile record for a URL.
 
-    The record is ``platform``, ``profile_url``, ``category`` and
-    ``confidence``. ``profile_url`` is the canonical profile address, not the
-    raw URL, so tracking parameters are dropped.
+    The record is ``platform``, ``profile_url``, ``category``, ``confidence``
+    and ``handle``. ``profile_url`` is the canonical profile address, not the
+    raw URL, so tracking parameters are dropped. ``handle`` is the identifier
+    the platform rules read from the URL, which is what reports show as the
+    detected account name.
     """
     if not isinstance(url, str) or not url.strip():
         return []
@@ -814,6 +817,7 @@ def detect_profiles(url: str) -> list[dict[str, object]]:
             "profile_url": _profile_url(platform, host, path, handle),
             "category": platform.category,
             "confidence": platform.confidence,
+            "handle": handle,
         }]
     subpage = _known_subpage(host, path)
     if subpage:
@@ -836,6 +840,7 @@ def _known_subpage(host: str, path: str) -> dict[str, object] | None:
                     "profile_url": f"https://{host}/{segment}",
                     "category": "video",
                     "confidence": 90,
+                    "handle": handle,
                 }
     if _host_ok(host, ("twitch.tv",)):
         match = _TWITCH_SUBPAGE.match(path)
@@ -845,6 +850,7 @@ def _known_subpage(host: str, path: str) -> dict[str, object] | None:
                 "profile_url": f"https://{host}/{match.group(1)}",
                 "category": "video",
                 "confidence": 85,
+                "handle": match.group(1),
             }
     return None
 
@@ -881,6 +887,7 @@ def _fallbacks(host: str, path: str) -> list[dict[str, object]]:
             "profile_url": f"https://{host}/u/{match.group(1)}",
             "category": "forum",
             "confidence": 55,
+            "handle": match.group(1),
         }]
     match = _FEDIVERSE.match(path)
     if match:
@@ -889,6 +896,7 @@ def _fallbacks(host: str, path: str) -> list[dict[str, object]]:
             "profile_url": f"https://{host}/@{match.group(1)}",
             "category": "social",
             "confidence": 45,
+            "handle": match.group(1),
         }]
     return []
 

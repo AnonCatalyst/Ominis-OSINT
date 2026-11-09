@@ -48,6 +48,46 @@ def test_key_file_with_a_bom_is_still_a_key(tmp_path, monkeypatch):
     assert styxnet.load_key() == "sgn_with_bom"
 
 
+def test_key_source_names_the_source_without_exposing_the_key(
+        tmp_path, monkeypatch):
+    saved = tmp_path / "styxnet-key.txt"
+    saved.write_text("sgn_from_file\n", encoding="utf-8")
+    monkeypatch.setattr(styxnet, "key_candidates", lambda: [saved])
+
+    assert styxnet.key_source("sgn_explicit") == (
+        "sgn_explicit", "--styxnet-key")
+    monkeypatch.setenv(styxnet.KEY_ENV, "sgn_environment")
+    assert styxnet.key_source() == (
+        "sgn_environment", "STYXNET_ACCESS_KEY (environment)")
+    monkeypatch.delenv(styxnet.KEY_ENV)
+    monkeypatch.setenv("OMINIS_STYXNET_KEY", "sgn_ominis")
+    assert styxnet.key_source() == (
+        "sgn_ominis", "OMINIS_STYXNET_KEY (environment)")
+    monkeypatch.delenv("OMINIS_STYXNET_KEY")
+    assert styxnet.key_source() == ("sgn_from_file", str(saved))
+
+
+def test_appdata_key_is_a_fallback_after_the_userprofile_file(
+        tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    appdata = tmp_path / "appdata"
+    monkeypatch.setattr(styxnet.Path, "home", classmethod(lambda cls: home))
+    monkeypatch.setenv("APPDATA", str(appdata))
+
+    appdata_key = appdata / "ominis" / styxnet.KEY_FILE
+    appdata_key.parent.mkdir(parents=True)
+    appdata_key.write_text("sgn_appdata\n", encoding="utf-8")
+    home_key = home / ".config" / "ominis" / styxnet.KEY_FILE
+
+    assert styxnet.key_candidates() == [home_key, appdata_key]
+    # The first file is absent, so the APPDATA copy is used.
+    assert styxnet.key_source() == ("sgn_appdata", str(appdata_key))
+
+    home_key.parent.mkdir(parents=True)
+    home_key.write_text("sgn_home\n", encoding="utf-8")
+    assert styxnet.key_source() == ("sgn_home", str(home_key))
+
+
 def test_key_validation_refuses_an_empty_or_foreign_key():
     with pytest.raises(styxnet.StyxNetError, match="needs a key"):
         styxnet.search("acme", key="")

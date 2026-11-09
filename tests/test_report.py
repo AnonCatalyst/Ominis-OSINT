@@ -40,12 +40,20 @@ def _sample_report():
         query="Acme Corp",
         records=[
             report.SearchRecord(title="One", url="https://one.example/",
-                                engine="duckduckgo", snippet="first", position=1),
+                                engine="duckduckgo", snippet="first", position=1,
+                                scanned=True, matched=True, signal="metadata",
+                                platform="GitHub", category="dev",
+                                confidence=90, handle="acme"),
             report.SearchRecord(title="Two", url="https://two.example/",
-                                engine="bing", snippet="second", position=2),
+                                engine="bing", snippet="second", position=2,
+                                scanned=True, matched=False, signal="url",
+                                platform="GitHub", category="dev",
+                                confidence=90, handle="other"),
         ],
         mentions={"acme": 3},
-        profiles=[{"platform": "GitHub", "profile_url": "github.com/acme"}],
+        profiles=[{"platform": "GitHub", "profile_url": "github.com/acme",
+                   "category": "dev", "confidence": 92, "handle": "acme",
+                   "source": "metadata", "verified": True}],
         engines=["duckduckgo", "bing"],
         errors=["bing: timed out"],
     )
@@ -71,6 +79,15 @@ def test_json_report_is_machine_readable(tmp_path):
     assert [row["url"] for row in payload["results"]] == [
         "https://one.example/", "https://two.example/"]
     assert payload["profiles"][0]["platform"] == "GitHub"
+    assert payload["summary"]["detections"]["matched_signals"] == {
+        "metadata": 1}
+    assert payload["detections"]["handles"] == ["acme"]
+    assert payload["detections"]["categories"] == {"dev": 1}
+    assert payload["detections"]["verified"] == 1
+    assert payload["detections"]["strengths"] == {"strong": 1}
+    assert payload["results"][0]["handle"] == "acme"
+    assert payload["results"][0]["category"] == "dev"
+    assert payload["results"][0]["confidence"] == 90
 
 
 def test_csv_report_has_a_row_per_result(tmp_path):
@@ -79,6 +96,9 @@ def test_csv_report_has_a_row_per_result(tmp_path):
         rows = list(csv.DictReader(handle))
     assert [row["title"] for row in rows] == ["One", "Two"]
     assert rows[0]["engine"] == "duckduckgo"
+    assert rows[0]["category"] == "dev"
+    assert rows[0]["confidence"] == "90"
+    assert rows[0]["handle"] == "acme"
 
 
 def test_txt_and_markdown_include_the_summary(tmp_path):
@@ -88,13 +108,35 @@ def test_txt_and_markdown_include_the_summary(tmp_path):
     assert "Unique mentions: 1" in text
     assert "Social profiles: 1" in text
     assert "timed out" in text
+    assert "Detections" in text
+    assert "Page metadata x1" in text
+    assert "Handle: acme" in text
+    assert "Verified: yes" in text
     markdown = written["md"].read_text(encoding="utf-8")
     assert markdown.startswith("# Ominis search: `Acme Corp`")
     assert "- Results: **2**" in markdown
+    assert "## Detections" in markdown
+    assert "Page metadata: **1**" in markdown
     # Detected profiles are listed with their platform and category.
     assert "## Detected platforms" in markdown
     assert "**GitHub**" in markdown
     assert "github.com/acme" in markdown
+    assert "`acme`" in markdown
+
+
+def test_detections_count_results_that_resolve_to_a_profile():
+    outcome = report.SearchReport(
+        query="acme",
+        records=[
+            report.SearchRecord(title="One", url="https://github.com/acme"),
+            report.SearchRecord(title="Two", url="https://other.example/"),
+        ],
+        profiles=[{"platform": "GitHub",
+                   "profile_url": "https://github.com/acme",
+                   "source": "registry", "category": "dev"}])
+    detections = outcome.detections()
+    assert detections["resolved"] == 1
+    assert detections["strengths"] == {"medium": 1}
 
 
 def test_unknown_format_is_rejected(tmp_path):

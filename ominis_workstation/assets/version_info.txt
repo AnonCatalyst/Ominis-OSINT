@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 0, 6, 0),
-    prodvers=(1, 0, 6, 0),
+    filevers=(1, 0, 7, 0),
+    prodvers=(1, 0, 7, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -17,12 +17,12 @@ VSVersionInfo(
           [
             StringStruct(u'CompanyName', u'WinterGate Intelligence Collective'),
             StringStruct(u'FileDescription', u'Ominis Investigation Workstation'),
-            StringStruct(u'FileVersion', u'1.0.6.0'),
+            StringStruct(u'FileVersion', u'1.0.7.0'),
             StringStruct(u'InternalName', u'OminisWorkstation'),
             StringStruct(u'LegalCopyright', u'MIT licensed. Maintained by AnonCatalyst with the WinterGate Intelligence Collective.'),
             StringStruct(u'OriginalFilename', u'OminisWorkstation.exe'),
             StringStruct(u'ProductName', u'Ominis Investigation Workstation'),
-            StringStruct(u'ProductVersion', u'1.0.6.0')
+            StringStruct(u'ProductVersion', u'1.0.7.0')
           ]
         )
       ]

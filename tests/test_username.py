@@ -231,7 +231,9 @@ async def test_run_requires_platforms():
 def _report():
     return username.UsernameReport(username="acme", hits=[
         username.Hit(username="acme", url="https://a.example/acme", status=200,
-                     title="Acme", matched=True),
+                     title="Acme", matched=True, match="metadata",
+                     platform="GitHub", category="dev", confidence=90,
+                     handle="acme"),
         username.Hit(username="acme", url="https://b.example/acme",
                      error="ConnectError: no route"),
     ])
@@ -245,11 +247,24 @@ def test_write_produces_every_requested_format(tmp_path):
     assert payload["found"] == 1
     assert payload["checked"] == 2
     assert payload["profiles"][0]["url"] == "https://a.example/acme"
+    assert payload["profiles"][0]["handle"] == "acme"
+    assert payload["summary"]["found"] == 1
+    assert payload["detections"]["matched_signals"] == {"metadata": 1}
+    assert payload["detections"]["handles"] == ["acme"]
+    assert payload["detections"]["categories"] == {"dev": 1}
     with Path(written["csv"]).open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     assert len(rows) == 2
+    assert rows[0]["handle"] == "acme"
+    assert rows[0]["category"] == "dev"
     assert "found **1** profiles" in Path(written["md"]).read_text(encoding="utf-8")
-    assert "Found 1 of 2 platforms." in Path(written["txt"]).read_text(encoding="utf-8")
+    markdown = Path(written["md"]).read_text(encoding="utf-8")
+    assert "## Detections" in markdown
+    assert "`acme`" in markdown
+    text = Path(written["txt"]).read_text(encoding="utf-8")
+    assert "Found 1 of 2 platforms." in text
+    assert "Handle: acme" in text
+    assert "Detections" in text
 
 
 def test_write_defaults_to_txt(tmp_path):
@@ -286,6 +301,7 @@ async def test_check_one_labels_the_detected_platform():
     assert hit.platform == "GitHub"
     assert hit.category == "dev"
     assert hit.confidence == 90
+    assert hit.handle == "acme"
 
 
 @pytest.mark.asyncio

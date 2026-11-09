@@ -133,6 +133,30 @@ async def test_profiles_are_collected_once(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_unscanned_records_still_carry_profile_depth(monkeypatch):
+    async def fake_fetch(engine, settings, page):
+        if page > 1:
+            return []
+        return [_result("https://github.com/acme")]
+
+    monkeypatch.setattr(engines, "fetch_engine", fake_fetch)
+    outcome = await search.run(config.Settings(query="acme"))
+    record = outcome.records[0]
+    assert record.scanned is False
+    assert record.platform == "GitHub"
+    assert record.category == "dev"
+    assert record.confidence == 90
+    assert record.handle == "acme"
+    profile = outcome.profiles[0]
+    assert profile["handle"] == "acme"
+    assert profile["category"] == "dev"
+    assert profile["confidence"] == 90
+    detection = outcome.detections()
+    assert detection["handles"] == ["acme"]
+    assert detection["categories"] == {"dev": 1}
+
+
+@pytest.mark.asyncio
 async def test_styxnet_replaces_the_local_engines(monkeypatch):
     async def must_not_run(engine, settings, page):
         raise AssertionError("local engines should not run")
