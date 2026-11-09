@@ -7,7 +7,7 @@ validators==0.35.0; python_version < "3.11"
 validators==0.36.0; python_version >= "3.11"
 urllib3==2.8.0
 pytest==9.2.0
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
 trustme==1.2.1
 build==1.6.1
 setuptools==84.2.1
