@@ -21,7 +21,7 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 • **Want Access?** Request your StyxNet token here.
 • **Stay Updated:** Track our latest releases and operations.
 
-**Join now**: __https://discord.gg/tu5CynxjZq__
+**Join now**: __https://discord.gg/Rh2mzmMjMp__
 
 
 ## What's new in 1.2.7
