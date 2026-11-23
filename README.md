@@ -76,6 +76,15 @@ Full history: [CHANGELOG.md](CHANGELOG.md).
 - **A real CLI and a real desktop app.** Scriptable subcommands, exit codes,
   and a `doctor` check, plus a native Qt workstation on Windows.
 
+## WIC integration — StyxNet
+
+StyxNet, the WinterGate Intelligence Collective's OSINT platform, uses Ominis page-inspection primitives as a downstream validation layer for profile-like search results. It applies the same page-reading approach to confirm handle linkage, classify results as Confirmed, Linkage-confirmed, or Unverified, and prioritise stronger evidence.
+
+This is a downstream integration note; it does not change Ominis' standalone CLI or workstation behaviour.
+
+- StyxNet documentation: https://github.com/WinterGate-IC/StyxNet
+- Integration notes: [docs/STYXNET_INTEGRATION.md](docs/STYXNET_INTEGRATION.md)
+
 ### See it run
 
 Every image below comes from a real run on Windows, generated from the JSON

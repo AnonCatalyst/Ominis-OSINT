@@ -1,3 +1,9 @@
+## 2026-11-22 — Downstream WIC/StyxNet integration note
+
+- Documented how StyxNet uses Ominis page-inspection primitives for result validation.
+- Added `docs/STYXNET_INTEGRATION.md`.
+- No standalone Ominis behaviour changed.
+
 # Changelog
 
 Notable changes to the Ominis command line suite and the Ominis Investigation
