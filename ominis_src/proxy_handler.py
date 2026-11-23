@@ -3,12 +3,11 @@ import asyncio
 import logging
 import re
 import random
-import time
 import json
 import os
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
-from aiohttp import ClientSession, ClientConnectorError, ClientProxyConnectionError, TCPConnector
+from aiohttp import ClientSession, TCPConnector
 from bs4 import BeautifulSoup
 from colorama import Fore, Style
 

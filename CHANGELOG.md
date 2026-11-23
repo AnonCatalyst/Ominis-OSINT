@@ -7,11 +7,24 @@ downloads; each entry names both versions when they shipped together.
 The full list of older releases and their assets is on the
 [GitHub releases page](https://github.com/AnonCatalyst/Ominis-OSINT/releases).
 
-## Unreleased — documentation
+## 1.2.8 - 2026-11-22
 
-- Documented how StyxNet uses Ominis page-inspection primitives for result validation.
-- Added `docs/STYXNET_INTEGRATION.md`.
-- No standalone Ominis behaviour changed.
+### Fixed
+
+- Known profiles from StyxNet now merge page-scan evidence from matching search
+  records. Verified status, page signal, and confidence are preserved instead
+  of being discarded by `setdefault`.
+
+### Added
+
+- Documented downstream StyxNet integration in `docs/STYXNET_INTEGRATION.md`.
+- Clarified that Ominis is free and standalone, and that `--styxnet` is optional.
+
+### Changed
+
+- Removed unused source imports and unused local variables.
+- No standalone Ominis search or username behavior changed by the cleanup.
+
 
 ## 1.2.7 / Workstation 1.0.7 - 2026-11-09
 

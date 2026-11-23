@@ -97,8 +97,6 @@ def inspect_page(url: str, status: int, final_url: str, body: str,
         result["detail"] = "No query was supplied for page matching."
         return result
 
-    requested = urllib.parse.urlsplit(url)
-    final = urllib.parse.urlsplit(final_url or url)
     moved = _normalised(final_url or url) != _normalised(url)
     canonical = urllib.parse.urljoin(final_url or url, info.canonical) \
         if info.canonical else ""

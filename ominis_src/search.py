@@ -186,20 +186,43 @@ def _mentions(outcome: report.SearchReport, query: str) -> dict[str, int]:
     return dict(total)
 
 
+def _merge_profile(existing: dict[str, object],
+                   candidate: dict[str, object]) -> dict[str, object]:
+    """Merge a new profile observation without losing stronger evidence."""
+    if not existing:
+        return candidate
+    if candidate.get("verified") and not existing.get("verified"):
+        # A confirmed page observation is stronger than an unverified URL row.
+        for field in ("platform", "profile_url", "category", "handle", "source",
+                      "page_signal", "title", "description", "status"):
+            value = candidate.get(field)
+            if value not in ("", None):
+                existing[field] = value
+    else:
+        for field in ("platform", "profile_url", "category", "handle", "source",
+                      "page_signal", "title", "description", "status"):
+            value = candidate.get(field)
+            if value not in ("", None) and existing.get(field) in ("", None):
+                existing[field] = value
+    existing["verified"] = bool(existing.get("verified") or candidate.get("verified"))
+    existing["confidence"] = max(_confidence(existing), _confidence(candidate))
+    return existing
+
+
 def _profiles(known: list[dict[str, object]],
               records: list[report.SearchRecord]) -> list[dict[str, object]]:
     found: dict[str, dict[str, object]] = {}
     for profile in known:
         key = platforms.profile_key(profile)
         if key:
-            found.setdefault(key, profile)
+            found[key] = _merge_profile(found.get(key, {}), profile)
     for record in records:
         evidence = _evidence(record)
         for profile in utils.find_social_profiles(record.url):
             candidate = _with_evidence(profile, record, evidence)
             key = platforms.profile_key(candidate)
             if key:
-                found.setdefault(key, candidate)
+                found[key] = _merge_profile(found.get(key, {}), candidate)
         # A redirect can land on a profile that the original URL did not look
         # like (short links, regional hosts). The page scan knows the final URL.
         if record.platform and (record.matched or not record.scanned):
@@ -217,13 +240,7 @@ def _profiles(known: list[dict[str, object]],
             }
             key = platforms.profile_key(candidate)
             if key:
-                existing = found.get(key)
-                if existing is None:
-                    found[key] = candidate
-                elif record.matched:
-                    for field, value in candidate.items():
-                        if value not in ("", None, 0, False):
-                            existing.setdefault(field, value)
+                found[key] = _merge_profile(found.get(key, {}), candidate)
     ordered = sorted(found.values(),
                      key=lambda profile: (
                          -_confidence(profile),

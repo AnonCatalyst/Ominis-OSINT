@@ -24,30 +24,29 @@ the [WinterGate Intelligence Collective](https://wintergate.org).
 **Join now**: __https://discord.gg/Rh2mzmMjMp__
 
 
-## What's new in 1.2.7
+## What's new in 1.2.8
 
-- **CLI reports now carry the workstation's detection depth.** Search and
-  username results show the handle, category, confidence, detecting signal, and
-  lead strength for every profile, plus verified-lead and resolving-result
-  counts. This lands in the console and in all four report formats (`txt`,
-  `json`, `csv`, `md`), so `--format none` still prints the same detail.
-- **Unscanned and duplicate profiles keep their identifiers.** Search refines
-  records the page scan did not reach, and merges depth when the same profile
-  surfaces twice instead of dropping the handle or evidence.
-- **A StyxNet key is enough on its own.** Supply it once with `--styxnet-key`,
-  `STYXNET_ACCESS_KEY`, `OMINIS_STYXNET_KEY`,
-  `~/.config/ominis/styxnet-key.txt`
-  (`%USERPROFILE%\.config\ominis\styxnet-key.txt` on Windows), or the
-  `%APPDATA%\ominis\styxnet-key.txt` fallback when the first file is absent.
-  No extra setting is needed; `--styxnet` remains the switch that sends the
-  query there.
-- **`doctor` names the key source, never the key.** It reports whether a key is
-  ready and which source supplied it.
-- **Earlier fixes remain:** clean exit codes for bad `--urls`, malformed
-  proxies, and harvest output errors; BOM-tolerant input files; rejected
-  reversed date ranges; and no phantom Windows socket traceback.
+- **Profile evidence merging fixed.** Known profiles from StyxNet now inherit
+  page-scan evidence, verified status, and higher confidence from matching
+  search records instead of keeping only the original lead.
+- **Free and standalone clarified.** Ominis works without StyxNet. Local search
+  and username checks need no key, no account, and no WinterGate service.
+  `--styxnet` is optional and off by default.
+- **StyxNet integration documented.** Added a downstream integration note for
+  users who want to see how the WinterGate platform uses Ominis page inspection.
+- **Internal cleanup.** Removed unused source imports and variables; no
+  standalone behavior changed by that cleanup.
 
 Full history: [CHANGELOG.md](CHANGELOG.md).
+
+## Free and standalone
+
+Ominis is free, MIT-licensed, and fully usable without StyxNet.
+
+- Local search and username checks need **no key and no account**.
+- `--styxnet` is **optional** and off by default.
+- StyxNet is an additional provider for users who have access; it is not a requirement for Ominis.
+- If StyxNet is unavailable, Ominis falls back to its local engines.
 
 ## Capabilities
 

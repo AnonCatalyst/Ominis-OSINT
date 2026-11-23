@@ -24,6 +24,10 @@ Confirmed results are prioritised in StyxNet. Weak profile-like results are demo
 
 StyxNet validates a small number of profile-like candidates per search with bounded concurrency and timeouts. This keeps validation useful without making search latency unbounded.
 
+## Optional and standalone
+
+Ominis is free and standalone. StyxNet is an optional downstream consumer; using Ominis does not require StyxNet, a StyxNet key, or a WinterGate account. Local search and username checks continue to work without `--styxnet`.
+
 ## Scope
 
 This is a documentation note for a downstream integration. It does not change Ominis' standalone CLI or workstation behaviour.

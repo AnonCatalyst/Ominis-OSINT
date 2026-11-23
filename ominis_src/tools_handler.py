@@ -1,7 +1,6 @@
 import random
 import asyncio
 import os
-import re
 import json
 import logging
 import sys
@@ -10,11 +9,11 @@ import httpx
 from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
 from httpx import TimeoutException, RequestError
-from urllib.parse import urlencode, quote_plus, parse_qs, urlparse
+from urllib.parse import quote_plus, urlparse
 
 # Load utility functions from ominis_src/utils.py
 from ominis_src.utils import (extract_mentions, find_social_profiles,
-                              host_matches, is_potential_forum, ssl_verify,
+                              host_matches, ssl_verify,
                               unwrap_bing_url, unwrap_duckduckgo_url)
 
 # Initialize colorama for colored output
