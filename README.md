@@ -104,7 +104,7 @@ a browser page and not an embedded web view. It wraps the same engine in one
 desk for web search, username checks, and StyxNet, and it labels every profile
 with the signal that detected it.
 
-- Latest workstation: **1.0.7** (bundled engine **1.2.7**)
+- Latest workstation: **1.0.7** · Current engine: **1.2.8**
 - Installer: [`Ominis-Workstation-1.0.7-win64-setup.exe`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.7)
 - Portable: [`Ominis-Workstation-1.0.7-win64.zip`](https://github.com/AnonCatalyst/Ominis-OSINT/releases/tag/workstation-v1.0.7)
 - Guide and detection-signal table: [`docs/workstation/README.md`](docs/workstation/README.md)

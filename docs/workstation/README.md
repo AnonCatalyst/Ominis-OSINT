@@ -6,7 +6,7 @@ not an Electron shell**. There is no embedded browser: search results, profile
 checks, StyxNet runs, and reports all happen inside one desktop window.
 
 - Workstation version: **1.0.7**
-- Bundled engine: **Ominis 1.2.7**
+- Engine in current source tree: **Ominis 1.2.8**
 - Platform: Windows 10/11, 64-bit
 - License: MIT
 
